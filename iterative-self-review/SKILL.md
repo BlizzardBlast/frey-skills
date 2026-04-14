@@ -1,0 +1,93 @@
+---
+name: iterative-self-review
+description: Use this skill whenever the user asks for a self-review, quality pass, final code check, or post-refactor verification. Also use it after implementing features, bug fixes, or risky edits where regressions are likely, even if the user does not explicitly say "review." Run iterative review-fix cycles until zero issues remain, while preventing infinite fix toggles and reintroduced bugs.
+license: MIT
+metadata:
+  author: BlizzardBlast
+  version: '1.0.0'
+---
+
+# Iterative Self-Review
+
+## When to use this skill
+
+Use this skill whenever:
+
+- You write new code.
+- You refactor existing code.
+- The user asks to "review your work" or requests a self-check.
+
+## Activation boundaries
+
+Prefer this skill when correctness and regression risk matter more than speed.
+
+Do use it for:
+
+- Pre-merge or pre-commit quality passes.
+- Bug-fix verification after code edits.
+- Sensitive changes (data flow, auth, validation, migrations).
+
+Do not over-apply it for:
+
+- Purely informational responses with no code edits.
+- Trivial non-behavioral changes (e.g., comment-only wording tweaks), unless the
+  user explicitly requests a full review loop.
+
+## Goal
+
+Rigorously review newly changed code, identify concrete issues, and iteratively
+fix them until the codebase is clean while preventing regression loops.
+
+## Iterative review loop (required order)
+
+Follow these steps in exact order:
+
+1. **Initial code review**
+   - Analyze the code you just wrote or modified.
+   - Check for syntax errors, logic bugs, edge-case failures, performance issues,
+     and prompt-requirement mismatches.
+2. **Status check**
+   - If **no issues** are found, output: `Code review complete. No issues found.`
+     and exit the loop.
+   - If **issues** are found, continue.
+3. **Log issues before editing**
+   - Explicitly list each issue before applying fixes.
+4. **Apply fixes**
+   - Update the code to resolve the logged issues.
+5. **Update regression ledger**
+   - Track fixed issues in a mental "Regression Ledger."
+   - Explicitly verify new changes do not reintroduce previously fixed problems.
+6. **Repeat**
+   - Return to step 1 and run a fresh review pass on updated code.
+
+## Strict constraints and anti-loop rules
+
+- **No guessing:** Do not stop until a full pass finds zero issues.
+- **Break infinite loops:** If you toggle between the same fixes more than
+  3 times, stop and ask the user for intervention.
+- **No regressions:** Never sacrifice an earlier fix to solve a newer one.
+  Rethink the approach if fixes conflict.
+
+## Gotchas
+
+- Do not skip the issue log step before making fixes.
+- Do not claim completion without an explicit zero-issue final pass.
+- Do not collapse multiple distinct issues into one vague bullet.
+- Do not hide unresolved conflicts; surface them clearly when blocked.
+- If the same issue recurs across passes, compare against the regression ledger
+  before editing again.
+
+## Required output for each pass
+
+Use this structure during the loop:
+
+1. `Review pass N`
+2. `Issues found:`
+   - `- <issue 1>`
+   - `- <issue 2>`
+3. `Fixes applied:`
+   - `- <fix 1>`
+4. `Regression check:`
+   - `- Verified no reintroduction of <prior issue>`
+5. `Next status:`
+   - `Continue loop` or `Code review complete. No issues found.`
