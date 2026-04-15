@@ -31,6 +31,8 @@ def run_git(args: list[str]) -> str:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         check=False,
     )
     if result.returncode != 0:
@@ -39,28 +41,40 @@ def run_git(args: list[str]) -> str:
     return result.stdout
 
 
+def _split_nul(text: str) -> list[str]:
+    fields = text.split("\0")
+    if fields and fields[-1] == "":
+        fields = fields[:-1]
+    return fields
+
+
 def parse_name_status(text: str) -> list[dict[str, Any]]:
     changes: list[dict[str, Any]] = []
-    for raw_line in text.splitlines():
-        # Preserve significant path whitespace; git paths may include leading/trailing spaces.
-        line = raw_line
-        if not line:
-            continue
-        parts = line.split("\t")
-        if len(parts) < 2:
+    fields = _split_nul(text)
+    i = 0
+
+    while i < len(fields):
+        raw_status = fields[i]
+        i += 1
+        if not raw_status:
             continue
 
-        raw_status = parts[0]
         status = raw_status[0] if raw_status else "?"
 
         previous_path: str | None = None
         path: str
 
-        if status in {"R", "C"} and len(parts) >= 3:
-            previous_path = parts[1]
-            path = parts[2]
+        if status in {"R", "C"}:
+            if i + 1 >= len(fields):
+                break
+            previous_path = fields[i]
+            path = fields[i + 1]
+            i += 2
         else:
-            path = parts[1]
+            if i >= len(fields):
+                break
+            path = fields[i]
+            i += 1
 
         changes.append(
             {
@@ -75,40 +89,80 @@ def parse_name_status(text: str) -> list[dict[str, Any]]:
     return changes
 
 
+def _parse_numstat_header(header: str) -> tuple[str, str, str] | None:
+    if "\t" not in header:
+        return None
+
+    parts = header.split("\t", 2)
+    if len(parts) < 3:
+        return None
+
+    return parts[0], parts[1], parts[2]
+
+
+def _consume_numstat_paths(path: str, fields: list[str], index: int) -> tuple[str, str | None, int]:
+    previous_path: str | None = None
+
+    if path != "":
+        return path, previous_path, index
+
+    # In -z mode, rename/copy numstat records provide paths as separate NUL fields.
+    if index + 1 >= len(fields):
+        raise ValueError("incomplete numstat rename/copy record")
+
+    previous_path = fields[index]
+    path = fields[index + 1]
+    return path, previous_path, index + 2
+
+
+def _build_numstat_stat(added_raw: str, deleted_raw: str) -> dict[str, Any] | None:
+    if added_raw == "-" or deleted_raw == "-":
+        return {
+            "added_lines": None,
+            "deleted_lines": None,
+            "binary": True,
+        }
+
+    try:
+        added = int(added_raw)
+        deleted = int(deleted_raw)
+    except ValueError:
+        return None
+
+    return {
+        "added_lines": added,
+        "deleted_lines": deleted,
+        "binary": False,
+    }
+
+
 def parse_numstat(text: str) -> dict[str, dict[str, Any]]:
     stats: dict[str, dict[str, Any]] = {}
-    for raw_line in text.splitlines():
-        # Preserve significant path whitespace; git paths may include leading/trailing spaces.
-        line = raw_line
-        if not line:
+    fields = _split_nul(text)
+    i = 0
+
+    while i < len(fields):
+        header = fields[i]
+        i += 1
+        parsed = _parse_numstat_header(header)
+        if parsed is None:
             continue
 
-        parts = line.split("\t")
-        if len(parts) < 3:
-            continue
-
-        added_raw, deleted_raw = parts[0], parts[1]
-        path = parts[-1]
-
-        if added_raw == "-" or deleted_raw == "-":
-            stats[path] = {
-                "added_lines": None,
-                "deleted_lines": None,
-                "binary": True,
-            }
-            continue
+        added_raw, deleted_raw, path = parsed
 
         try:
-            added = int(added_raw)
-            deleted = int(deleted_raw)
+            path, previous_path, i = _consume_numstat_paths(path, fields, i)
         except ValueError:
+            break
+
+        stat = _build_numstat_stat(added_raw, deleted_raw)
+        if stat is None:
             continue
 
-        stats[path] = {
-            "added_lines": added,
-            "deleted_lines": deleted,
-            "binary": False,
-        }
+        stats[path] = stat
+        if previous_path:
+            stats[previous_path] = stat
+
     return stats
 
 
@@ -120,23 +174,23 @@ def collect_context(
     max_files: int,
     include_generated_at: bool,
 ) -> dict[str, Any]:
-    git_root = run_git(["rev-parse", "--show-toplevel"]).strip()
+    git_root = Path(run_git(["rev-parse", "--show-toplevel"]).strip()).name
 
     if base and head:
         mode = "range"
         diff_target = f"{base}...{head}"
-        name_status = run_git(["diff", "--name-status", "--find-renames", diff_target])
-        numstat = run_git(["diff", "--numstat", "--find-renames", diff_target])
+        name_status = run_git(["diff", "-z", "--name-status", "--find-renames", diff_target])
+        numstat = run_git(["diff", "-z", "--numstat", "--find-renames", diff_target])
         base_ref, head_ref = base, head
     elif staged:
         mode = "staged"
-        name_status = run_git(["diff", "--cached", "--name-status", "--find-renames"])
-        numstat = run_git(["diff", "--cached", "--numstat", "--find-renames"])
+        name_status = run_git(["diff", "--cached", "-z", "--name-status", "--find-renames"])
+        numstat = run_git(["diff", "--cached", "-z", "--numstat", "--find-renames"])
         base_ref, head_ref = "HEAD", "INDEX"
     else:
         mode = "working-tree"
-        name_status = run_git(["diff", "--name-status", "--find-renames", "HEAD"])
-        numstat = run_git(["diff", "--numstat", "--find-renames", "HEAD"])
+        name_status = run_git(["diff", "-z", "--name-status", "--find-renames", "HEAD"])
+        numstat = run_git(["diff", "-z", "--numstat", "--find-renames", "HEAD"])
         base_ref, head_ref = "HEAD", "WORKTREE"
 
     changes = parse_name_status(name_status)
