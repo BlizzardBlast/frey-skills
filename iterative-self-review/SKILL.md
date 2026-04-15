@@ -2,9 +2,7 @@
 name: iterative-self-review
 description: Use this skill whenever the user asks for a self-review, quality pass, final code check, or post-refactor verification. Also use it after implementing features, bug fixes, or risky edits where regressions are likely, even if the user does not explicitly say "review." Run iterative review-fix cycles until zero issues remain, while preventing infinite fix toggles and reintroduced bugs.
 license: MIT
-metadata:
-  author: BlizzardBlast
-  version: '1.0.0'
+metadata: { author: BlizzardBlast, version: '1.0.1' }
 ---
 
 # Iterative Self-Review
@@ -37,6 +35,15 @@ Do not over-apply it for:
 
 Rigorously review newly changed code, identify concrete issues, and iteratively
 fix them until the codebase is clean while preventing regression loops.
+
+## Companion usage with `code-review`
+
+When this skill is used after `code-review` findings:
+
+- Treat incoming P0/P1 findings as mandatory fix-first blockers.
+- Fix in severity order (P0 → P1 → P2 → P3) unless the user overrides.
+- Preserve traceability: map each fix to the finding it resolves.
+- Do not mark completion while blocker findings remain unresolved.
 
 ## Iterative review loop (required order)
 
