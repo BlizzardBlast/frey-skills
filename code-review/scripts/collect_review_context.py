@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
 """Collect deterministic git review context as JSON.
 
+Output semantics:
+    - `included_totals`: stats for the returned `files` list (may be truncated).
+    - `overall_totals`: stats for the full diff scope before truncation.
+    - `generated_at`: optional wall-clock timestamp, included only with
+        `--include-generated-at`.
+
 Examples:
   python3 scripts/collect_review_context.py
   python3 scripts/collect_review_context.py --staged
   python3 scripts/collect_review_context.py --base origin/main --head HEAD
+    python3 scripts/collect_review_context.py --include-generated-at
   python3 scripts/collect_review_context.py --base origin/main --head HEAD --output review-context.json
 """
 
@@ -14,7 +21,6 @@ import argparse
 import json
 import subprocess
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +42,8 @@ def run_git(args: list[str]) -> str:
 def parse_name_status(text: str) -> list[dict[str, Any]]:
     changes: list[dict[str, Any]] = []
     for raw_line in text.splitlines():
-        line = raw_line.strip()
+        # Preserve significant path whitespace; git paths may include leading/trailing spaces.
+        line = raw_line
         if not line:
             continue
         parts = line.split("\t")
@@ -60,8 +67,8 @@ def parse_name_status(text: str) -> list[dict[str, Any]]:
                 "path": path,
                 "status": status,
                 "previous_path": previous_path,
-                "added_lines": 0,
-                "deleted_lines": 0,
+                "added_lines": None,
+                "deleted_lines": None,
                 "binary": False,
             }
         )
@@ -71,7 +78,8 @@ def parse_name_status(text: str) -> list[dict[str, Any]]:
 def parse_numstat(text: str) -> dict[str, dict[str, Any]]:
     stats: dict[str, dict[str, Any]] = {}
     for raw_line in text.splitlines():
-        line = raw_line.strip()
+        # Preserve significant path whitespace; git paths may include leading/trailing spaces.
+        line = raw_line
         if not line:
             continue
 
@@ -110,6 +118,7 @@ def collect_context(
     head: str | None,
     staged: bool,
     max_files: int,
+    include_generated_at: bool,
 ) -> dict[str, Any]:
     git_root = run_git(["rev-parse", "--show-toplevel"]).strip()
 
@@ -149,6 +158,15 @@ def collect_context(
 
     changes.sort(key=lambda item: item["path"])
 
+    overall_files = len(changes)
+    overall_added_total = sum(
+        item["added_lines"] for item in changes if isinstance(item.get("added_lines"), int)
+    )
+    overall_deleted_total = sum(
+        item["deleted_lines"] for item in changes if isinstance(item.get("deleted_lines"), int)
+    )
+    overall_binary_total = sum(1 for item in changes if item.get("binary"))
+
     truncated = False
     omitted_files = 0
     if len(changes) > max_files:
@@ -164,22 +182,35 @@ def collect_context(
     )
     binary_total = sum(1 for item in changes if item.get("binary"))
 
-    return {
+    result = {
         "mode": mode,
         "git_root": git_root,
         "base": base_ref,
         "head": head_ref,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
         "truncated": truncated,
         "omitted_files": omitted_files,
-        "totals": {
+        "included_totals": {
             "files": len(changes),
             "added_lines": added_total,
             "deleted_lines": deleted_total,
             "binary_files": binary_total,
         },
+        "overall_totals": {
+            "files": overall_files,
+            "added_lines": overall_added_total,
+            "deleted_lines": overall_deleted_total,
+            "binary_files": overall_binary_total,
+        },
         "files": changes,
     }
+
+    if include_generated_at:
+        # Optional wall-clock metadata. Excluded by default to keep output deterministic.
+        from datetime import datetime, timezone
+
+        result["generated_at"] = datetime.now(timezone.utc).isoformat()
+
+    return result
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -206,6 +237,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--output",
         help="Optional output file path for JSON (stdout still receives JSON).",
     )
+    parser.add_argument(
+        "--include-generated-at",
+        action="store_true",
+        help=(
+            "Include wall-clock generated_at timestamp metadata. "
+            "Disabled by default to keep output deterministic."
+        ),
+    )
     return parser
 
 
@@ -228,6 +267,7 @@ def main() -> int:
             head=args.head,
             staged=args.staged,
             max_files=args.max_files,
+            include_generated_at=args.include_generated_at,
         )
     except RuntimeError as err:
         print(f"Error: {err}", file=sys.stderr)
