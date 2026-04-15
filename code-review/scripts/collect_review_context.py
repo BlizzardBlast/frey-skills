@@ -2,17 +2,26 @@
 """Collect deterministic git review context as JSON.
 
 Output semantics:
-    - `included_totals`: stats for the returned `files` list (may be truncated).
-    - `overall_totals`: stats for the full diff scope before truncation.
-    - `generated_at`: optional wall-clock timestamp, included only with
-        `--include-generated-at`.
+        - `mode`: one of `range`, `staged`, or `working-tree`.
+        - `git_root`: repository directory name (not an absolute local path).
+        - `base` / `head`: labels describing the compared refs.
+        - `truncated` / `omitted_files`: whether `files` was capped by `--max-files`.
+        - `included_totals`: stats for the returned `files` list (may be truncated).
+        - `overall_totals`: stats for the full diff scope before truncation.
+        - `files`: per-file status and line stats.
+        - `generated_at`: optional wall-clock timestamp, included only with
+            `--include-generated-at`.
+
+Range semantics:
+        When both `--base` and `--head` are supplied, diff scope uses three-dot
+        syntax (`base...head`), i.e. changes from merge-base(base, head) to head.
 
 Examples:
-  python3 scripts/collect_review_context.py
-  python3 scripts/collect_review_context.py --staged
-  python3 scripts/collect_review_context.py --base origin/main --head HEAD
-    python3 scripts/collect_review_context.py --include-generated-at
-  python3 scripts/collect_review_context.py --base origin/main --head HEAD --output review-context.json
+        python3 scripts/collect_review_context.py
+        python3 scripts/collect_review_context.py --staged
+        python3 scripts/collect_review_context.py --base origin/main --head HEAD
+        python3 scripts/collect_review_context.py --include-generated-at
+        python3 scripts/collect_review_context.py --base origin/main --head HEAD --output review-context.json
 """
 
 from __future__ import annotations
@@ -274,8 +283,20 @@ def build_parser() -> argparse.ArgumentParser:
             "Outputs structured JSON to stdout."
         )
     )
-    parser.add_argument("--base", help="Base ref for range mode (e.g., origin/main)")
-    parser.add_argument("--head", help="Head ref for range mode (e.g., HEAD)")
+    parser.add_argument(
+        "--base",
+        help=(
+            "Base ref for range mode (e.g., origin/main). "
+            "When combined with --head, uses merge-base diff semantics via base...head."
+        ),
+    )
+    parser.add_argument(
+        "--head",
+        help=(
+            "Head ref for range mode (e.g., HEAD). "
+            "When combined with --base, uses merge-base diff semantics via base...head."
+        ),
+    )
     parser.add_argument(
         "--staged",
         action="store_true",

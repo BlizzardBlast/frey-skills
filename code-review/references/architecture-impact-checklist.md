@@ -53,3 +53,21 @@ When any boundary is impacted, include:
 - “Small” refactors can still break contracts if types/field names change.
 - Migration success is not enough; rollback safety must be reviewed too.
 - New dependencies should include failure-mode behavior, not only happy-path integration.
+
+## Focused checklist: portability, determinism, and review reliability
+
+Use this section when reviewing helper scripts, CLIs, or generated artifacts.
+
+- [ ] **Portability / decoding stability**
+  - Text decoding is explicit (encoding + error policy), not locale-dependent.
+- [ ] **Determinism of outputs**
+  - Default output avoids wall-clock, host, or session-dependent values.
+  - Non-deterministic fields are explicit opt-ins.
+- [ ] **Diff-format robustness**
+  - Parsing logic handles rename/copy/path edge cases (prefer machine-stable formats such as `-z` where applicable).
+- [ ] **Privacy-safe outputs**
+  - Avoid leaking absolute local paths, usernames, or machine-specific identifiers in default output.
+- [ ] **Comment validity triage**
+  - Verify whether a review comment targets current code or stale diff hunks before applying changes.
+- [ ] **Micro-fixture validation**
+  - Use small synthetic fixtures for edge-case behavior (e.g., rename/copy diff records) before finalizing fixes.
