@@ -1,9 +1,9 @@
 ---
 name: code-review
-description: Use this skill when reviewing pull requests, branch diffs, pre-merge changes, or review comments for correctness, security, architecture impact, and maintainability. Trigger on requests like "review this PR", "final code check", "merge readiness", "check this diff", "find risks", or "address review comments", even when the user does not explicitly say "code review".
+description: Use this skill as the first-pass review for pull requests, branch diffs, merge-readiness checks, and final quality checks on changed code. Trigger on requests like "review this PR", "check this diff", "merge readiness", "final code check", "find risks", or "address review comments". If an iterative fix loop is also requested, run this skill first, then hand off to `iterative-self-review`.
 license: MIT
 compatibility: Core instructions are tool-agnostic. Optional helper script requires git and Python 3.9+.
-metadata: { author: BlizzardBlast, version: '1.0.0' }
+metadata: { author: BlizzardBlast, version: '1.0.1' }
 ---
 
 # Code Review
@@ -28,11 +28,15 @@ Do use it for:
 - Architecture and maintainability assessment of changed code.
 - Security and correctness checks on modified files.
 - Post-implementation quality gates before final response.
+- First-pass issue discovery before any iterative remediation loop.
 
 Do not over-apply it for:
 
 - Requests to directly implement features without a review ask.
 - Pure style/formatting-only checks that are better handled by automation.
+
+If both skills match a request, run this skill first to discover and prioritize
+issues, then use `iterative-self-review` for repeated fix-and-recheck cycles.
 
 ## Review modes
 

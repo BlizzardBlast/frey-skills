@@ -1,8 +1,8 @@
 ---
 name: iterative-self-review
-description: Use this skill whenever the user asks for a self-review, quality pass, final code check, or post-refactor verification. Also use it after implementing features, bug fixes, or risky edits where regressions are likely, even if the user does not explicitly say "review." Run iterative review-fix cycles until zero issues remain, while preventing infinite fix toggles and reintroduced bugs.
+description: Use this skill when the user asks for an iterative self-review loop, repeated fix-and-recheck cycles, or post-review remediation until zero issues remain. Trigger on requests like "iterate until no issues," "review and keep fixing," or "run another pass." For PR/diff/merge-readiness discovery, use `code-review` first and then hand off findings to this skill.
 license: MIT
-metadata: { author: BlizzardBlast, version: '1.0.1' }
+metadata: { author: BlizzardBlast, version: '1.0.2' }
 ---
 
 # Iterative Self-Review
@@ -24,12 +24,16 @@ Do use it for:
 - Pre-merge or pre-commit quality passes.
 - Bug-fix verification after code edits.
 - Sensitive changes (data flow, auth, validation, migrations).
+- Follow-up iterative remediation after `code-review` findings.
 
 Do not over-apply it for:
 
 - Purely informational responses with no code edits.
 - Trivial non-behavioral changes (e.g., comment-only wording tweaks), unless the
   user explicitly requests a full review loop.
+
+If a request includes PR/diff/merge-readiness analysis, do not replace
+`code-review`; use this skill after first-pass findings are available.
 
 ## Goal
 
