@@ -11,18 +11,22 @@ This repository is designed for the
 
 ### iterative-self-review
 
-Rigorously reviews newly written or refactored code in an iterative loop,
-applies fixes, and prevents regressions or infinite fix-toggle cycles.
+Rigorously reviews current code against the previous code and `master` in an
+iterative loop, applies fixes, and prevents regressions or infinite
+fix-toggle cycles.
 
 **Use when:**
 
 - You just wrote new code and want a structured self-review pass
 - You refactored existing logic and need regression-safe validation
 - You explicitly ask the agent to "review your work"
+- You want the review to compare the full current state against both recent
+  changes and `master`
 
 **What it enforces:**
 
 - Explicit issue discovery before applying fixes
+- Dual-baseline comparison: current vs previous code, and current vs `master`
 - A repeatable fix-and-recheck loop until no issues remain
 - An anti-loop safeguard after repeated implementation toggling
 - Regression discipline so new fixes do not reintroduce old bugs
