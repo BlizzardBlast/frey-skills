@@ -357,6 +357,11 @@ def write_output_file(output: str, out_path: Path, *, force: bool) -> None:
     if out_path.is_symlink():
         raise OutputWriteError(f"output file is a symbolic link: {out_path}")
 
+    if out_path.exists() and not out_path.is_file():
+        if out_path.is_dir():
+            raise OutputWriteError(f"output path is a directory: {out_path}")
+        raise OutputWriteError(f"output path exists and is not a regular file: {out_path}")
+
     if out_path.exists() and not force:
         raise OutputWriteError(f"output file already exists: {out_path}. Use --force to overwrite it.")
 

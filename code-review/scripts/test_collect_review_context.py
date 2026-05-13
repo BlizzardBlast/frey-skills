@@ -218,6 +218,24 @@ class CollectReviewContextTests(unittest.TestCase):
         self.assertIn("Use --force to overwrite", result.stderr)
         self.assertEqual(json.loads(result.stdout)["mode"], "working-tree")
 
+    def test_output_refuses_directory_target_even_with_force(self) -> None:
+        self.write("tracked.txt", "one\n")
+        self.commit_all("initial")
+        output_path = self.repo / "review-context"
+        output_path.mkdir()
+
+        for args in (
+            ("--output", str(output_path)),
+            ("--output", str(output_path), "--force"),
+        ):
+            with self.subTest(args=args):
+                result = self.run_collect(*args)
+
+                self.assertEqual(result.returncode, 3)
+                self.assertIn("output path is a directory", result.stderr)
+                self.assertNotIn("Use --force to overwrite", result.stderr)
+                self.assertEqual(json.loads(result.stdout)["mode"], "working-tree")
+
     def test_output_force_overwrites_existing_file(self) -> None:
         self.write("tracked.txt", "one\n")
         self.commit_all("initial")
