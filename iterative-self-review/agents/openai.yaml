@@ -1,0 +1,6 @@
+interface:
+  display_name: "Iterative Self-Review"
+  short_description: "Repeat review and fix passes"
+  default_prompt: "Use $iterative-self-review to review my changes, fix issues, and repeat until no issues remain."
+policy:
+  allow_implicit_invocation: true

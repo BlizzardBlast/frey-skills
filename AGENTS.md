@@ -17,12 +17,14 @@ This repository stores reusable **agent skills** for the Agent Skills ecosystem.
 Follow this structure for each skill:
 
 - `SKILL.md` (required): metadata + usage rules
+- `agents/` (optional): client-specific metadata such as `openai.yaml`
 - `scripts/` (optional): helper scripts used by the skill
 - `references/` (optional): supporting docs/examples
 - `assets/` (optional): templates or static resources
 
-Current example:
+Current skill examples:
 
+- `code-review/SKILL.md`
 - `iterative-self-review/SKILL.md`
 
 ## SKILL.md Requirements
@@ -79,3 +81,5 @@ When opening a PR, include:
 - Keep folder names lowercase kebab-case (for example: `iterative-self-review`).
 - Keep the README skill list in sync when adding/removing skills.
 - Keep skill instructions tool-agnostic unless a tool dependency is essential.
+- Keep product-specific metadata in `agents/` instead of mixing it into the
+  core skill instructions.

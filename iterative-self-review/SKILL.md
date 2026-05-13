@@ -1,8 +1,8 @@
 ---
 name: iterative-self-review
-description: Use this skill when the user asks for an iterative self-review loop, repeated fix-and-recheck cycles, or post-review remediation until zero issues remain. Trigger on requests like "iterate until no issues," "review and keep fixing," or "run another pass." Always compare the current code against the previous code and against `master`, not only the agent's latest edits. For PR/diff/merge-readiness discovery, use `code-review` first and then hand off findings to this skill.
+description: Use this skill when the user asks for iterative self-review, repeated fix-and-recheck cycles, post-review remediation, or to keep reviewing until no issues remain. Always compare current code against previous code and the repository default branch, not only latest edited hunks. For PR/diff/merge-readiness discovery, run `code-review` first and hand findings here.
 license: MIT
-metadata: { author: BlizzardBlast, version: '1.0.3' }
+metadata: { author: BlizzardBlast, version: '1.0.4' }
 ---
 
 # Iterative Self-Review
@@ -15,7 +15,7 @@ Use this skill whenever:
 - You refactor existing code.
 - The user asks to "review your work" or requests a self-check.
 - You need the review scope to cover the full current code state against both
-  the previous code and `master`.
+  the previous code and the repository default branch.
 
 ## Activation boundaries
 
@@ -40,8 +40,8 @@ If a request includes PR/diff/merge-readiness analysis, do not replace
 ## Goal
 
 Rigorously review the current code by comparing it to the previous code and to
-`master`, identify concrete issues, and iteratively fix them until the codebase
-is clean while preventing regression loops.
+the repository default branch, identify concrete issues, and iteratively fix
+them until the codebase is clean while preventing regression loops.
 
 ## Required comparison scope
 
@@ -49,7 +49,7 @@ On every review pass, inspect both of these comparisons before deciding whether
 issues exist:
 
 - Current code vs previous code.
-- Current code vs `master`.
+- Current code vs the repository default branch.
 
 Use both comparisons to identify impacted files, behavioral drift, and missed
 regressions. Do not limit the review scope to files the agent edited in the
@@ -70,7 +70,7 @@ Follow these steps in exact order:
 
 1. **Initial code review**
    - Compare the current code against the previous code.
-   - Compare the current code against `master`.
+   - Compare the current code against the repository default branch.
    - Analyze the resulting current code using both comparisons, not just the
      agent's latest edits.
    - Check for syntax errors, logic bugs, edge-case failures, performance
@@ -86,7 +86,7 @@ Follow these steps in exact order:
 5. **Update regression ledger**
    - Track fixed issues in a mental "Regression Ledger."
    - Explicitly verify new changes do not reintroduce previously fixed problems
-     relative to both the previous code and `master`.
+     relative to both the previous code and the repository default branch.
 6. **Repeat**
    - Return to step 1 and rerun both required comparisons on updated code.
 
@@ -104,7 +104,7 @@ Follow these steps in exact order:
 
 - Do not skip the issue log step before making fixes.
 - Do not skip either required comparison: current vs previous code, and current
-  vs `master`.
+  vs the repository default branch.
 - Do not claim completion without an explicit zero-issue final pass.
 - Do not collapse multiple distinct issues into one vague bullet.
 - Do not hide unresolved conflicts; surface them clearly when blocked.
@@ -118,7 +118,7 @@ Use this structure during the loop:
 1. `Review pass N`
 2. `Comparison scope:`
    - `- Current code vs previous code`
-   - `- Current code vs master`
+   - `- Current code vs default branch`
 3. `Issues found:`
    - `- <issue 1>`
    - `- <issue 2>`

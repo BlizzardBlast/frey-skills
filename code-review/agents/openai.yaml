@@ -1,0 +1,6 @@
+interface:
+  display_name: "Code Review"
+  short_description: "Review diffs and merge risk"
+  default_prompt: "Use $code-review to review the current diff for correctness, risk, and merge readiness."
+policy:
+  allow_implicit_invocation: true
