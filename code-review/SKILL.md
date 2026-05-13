@@ -1,9 +1,9 @@
 ---
 name: code-review
-description: Use this skill as the first-pass review for pull requests, branch diffs, merge-readiness checks, and final quality checks on changed code. Trigger on requests like "review this PR", "check this diff", "merge readiness", "final code check", "find risks", or "address review comments". If an iterative fix loop is also requested, run this skill first, then hand off to `iterative-self-review`.
+description: Use this skill when the user asks to review a PR, branch diff, current changes, merge readiness, code risks, or review comments. Produces severity-ranked findings, architecture impact, and an APPROVE/COMMENT/REQUEST_CHANGES decision. If the user also asks to fix issues, run this first, then hand findings to `iterative-self-review`.
 license: MIT
 compatibility: Core instructions are tool-agnostic. Optional helper script requires git and Python 3.9+.
-metadata: { author: BlizzardBlast, version: '1.0.1' }
+metadata: { author: BlizzardBlast, version: '1.0.2' }
 ---
 
 # Code Review
@@ -115,6 +115,9 @@ Use progressive disclosure. Load only what is needed:
 - `scripts/collect_review_context.py`
   - Optional helper for deterministic diff scope summary.
   - Run only when git context is ambiguous or large.
+- `scripts/test_collect_review_context.py`
+  - Regression tests for the review-context helper.
+  - Run after editing `scripts/collect_review_context.py`.
 - `references/evaluation-playbook.md`
   - Load when improving this skill itself (trigger quality and output quality evals).
 

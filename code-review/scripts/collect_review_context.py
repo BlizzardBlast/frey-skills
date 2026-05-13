@@ -8,7 +8,8 @@ Output semantics:
         - `truncated` / `omitted_files`: whether `files` was capped by `--max-files`.
         - `included_totals`: stats for the returned `files` list (may be truncated).
         - `overall_totals`: stats for the full diff scope before truncation.
-        - `files`: per-file status and line stats.
+        - `files`: per-file status and line stats. In working-tree mode,
+            untracked files are included with status `?`.
         - `generated_at`: optional wall-clock timestamp, included only with
             `--include-generated-at`.
 
@@ -22,6 +23,7 @@ Examples:
         python3 scripts/collect_review_context.py --base origin/main --head HEAD
         python3 scripts/collect_review_context.py --include-generated-at
         python3 scripts/collect_review_context.py --base origin/main --head HEAD --output review-context.json
+        python3 scripts/collect_review_context.py --output review-context.json --force
 """
 
 from __future__ import annotations
@@ -48,6 +50,71 @@ def run_git(args: list[str]) -> str:
         error = result.stderr.strip() or result.stdout.strip() or "unknown git error"
         raise RuntimeError(f"git {' '.join(args)} failed: {error}")
     return result.stdout
+
+
+def stat_untracked_file(path: Path) -> dict[str, Any] | None:
+    if path.is_symlink():
+        return {
+            "added_lines": 1,
+            "deleted_lines": 0,
+            "binary": False,
+        }
+
+    try:
+        with path.open("rb") as handle:
+            added_lines = 0
+            saw_data = False
+            last_byte = b""
+
+            while True:
+                chunk = handle.read(1024 * 1024)
+                if not chunk:
+                    break
+
+                saw_data = True
+                if b"\0" in chunk:
+                    return {
+                        "added_lines": None,
+                        "deleted_lines": None,
+                        "binary": True,
+                    }
+
+                added_lines += chunk.count(b"\n")
+                last_byte = chunk[-1:]
+    except OSError:
+        return None
+
+    if saw_data and last_byte != b"\n":
+        added_lines += 1
+
+    return {
+        "added_lines": added_lines,
+        "deleted_lines": 0,
+        "binary": False,
+    }
+
+
+def collect_untracked_changes(git_root_path: Path) -> list[dict[str, Any]]:
+    paths = _split_nul(run_git(["ls-files", "--others", "--exclude-standard", "-z"]))
+    changes: list[dict[str, Any]] = []
+
+    for path in paths:
+        stat = stat_untracked_file(git_root_path / path)
+        change = {
+            "path": path,
+            "status": "?",
+            "previous_path": None,
+            "added_lines": None,
+            "deleted_lines": None,
+            "binary": False,
+        }
+
+        if stat is not None:
+            change.update(stat)
+
+        changes.append(change)
+
+    return changes
 
 
 def _split_nul(text: str) -> list[str]:
@@ -183,7 +250,8 @@ def collect_context(
     max_files: int,
     include_generated_at: bool,
 ) -> dict[str, Any]:
-    git_root = Path(run_git(["rev-parse", "--show-toplevel"]).strip()).name
+    git_root_path = Path(run_git(["rev-parse", "--show-toplevel"]).strip())
+    git_root = git_root_path.name
 
     if base and head:
         mode = "range"
@@ -218,6 +286,9 @@ def collect_context(
         change["added_lines"] = stat["added_lines"]
         change["deleted_lines"] = stat["deleted_lines"]
         change["binary"] = stat["binary"]
+
+    if mode == "working-tree":
+        changes.extend(collect_untracked_changes(git_root_path))
 
     changes.sort(key=lambda item: item["path"])
 
@@ -281,7 +352,19 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Collect a deterministic git diff summary for code reviews. "
             "Outputs structured JSON to stdout."
-        )
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Exit codes:\n"
+            "  0  Success.\n"
+            "  2  Invalid arguments or git command failure.\n"
+            "  3  Output file write failure.\n\n"
+            "Examples:\n"
+            "  python3 scripts/collect_review_context.py\n"
+            "  python3 scripts/collect_review_context.py --staged\n"
+            "  python3 scripts/collect_review_context.py --base origin/main --head HEAD\n"
+            "  python3 scripts/collect_review_context.py --output review-context.json --force"
+        ),
     )
     parser.add_argument(
         "--base",
@@ -310,7 +393,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--output",
-        help="Optional output file path for JSON (stdout still receives JSON).",
+        help=(
+            "Optional output file path for JSON (stdout still receives JSON). "
+            "Refuses to overwrite existing files unless --force is set."
+        ),
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Allow --output to overwrite an existing file.",
     )
     parser.add_argument(
         "--include-generated-at",
@@ -352,8 +443,21 @@ def main() -> int:
 
     if args.output:
         out_path = Path(args.output)
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(output + "\n", encoding="utf-8")
+        if out_path.exists() and not args.force:
+            print(
+                f"Error: output file already exists: {out_path}. "
+                "Use --force to overwrite it.",
+                file=sys.stderr,
+            )
+            return 3
+
+        try:
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(output + "\n", encoding="utf-8")
+        except OSError as err:
+            print(f"Error: failed to write output file {out_path}: {err}", file=sys.stderr)
+            return 3
+
         print(f"Wrote review context to {out_path}", file=sys.stderr)
 
     print(output)

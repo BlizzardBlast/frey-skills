@@ -90,6 +90,7 @@ Review this PR, then fix only P0/P1 findings in an iterative self-review loop.
 Each skill directory can include:
 
 - `SKILL.md` — required metadata + instructions
+- `agents/` — optional client-specific metadata
 - `scripts/` — optional helper automation
 - `references/` — optional supporting docs
 - `assets/` — optional templates/resources
@@ -98,14 +99,19 @@ Current layout:
 
 ```text
 code-review/
+├── agents/
+│   └── openai.yaml
 ├── SKILL.md
 ├── references/
 │   ├── architecture-impact-checklist.md
 │   ├── evaluation-playbook.md
 │   └── review-quality-checklist.md
 └── scripts/
-    └── collect_review_context.py
+    ├── collect_review_context.py
+    └── test_collect_review_context.py
 iterative-self-review/
+├── agents/
+│   └── openai.yaml
 ├── SKILL.md
 ```
 

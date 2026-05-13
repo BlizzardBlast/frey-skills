@@ -1,8 +1,8 @@
 ---
 name: iterative-self-review
-description: Use this skill when the user asks for an iterative self-review loop, repeated fix-and-recheck cycles, or post-review remediation until zero issues remain. Trigger on requests like "iterate until no issues," "review and keep fixing," or "run another pass." Always compare the current code against the previous code and against `master`, not only the agent's latest edits. For PR/diff/merge-readiness discovery, use `code-review` first and then hand off findings to this skill.
+description: Use this skill when the user asks for iterative self-review, repeated fix-and-recheck cycles, post-review remediation, or to keep reviewing until no issues remain. Always compare current code against previous code and `master`, not only latest edited hunks. For PR/diff/merge-readiness discovery, run `code-review` first and hand findings here.
 license: MIT
-metadata: { author: BlizzardBlast, version: '1.0.3' }
+metadata: { author: BlizzardBlast, version: '1.0.4' }
 ---
 
 # Iterative Self-Review
