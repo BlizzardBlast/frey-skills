@@ -30,8 +30,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -50,6 +52,10 @@ def run_git(args: list[str]) -> str:
         error = result.stderr.strip() or result.stdout.strip() or "unknown git error"
         raise RuntimeError(f"git {' '.join(args)} failed: {error}")
     return result.stdout
+
+
+class OutputWriteError(RuntimeError):
+    pass
 
 
 def stat_untracked_file(path: Path) -> dict[str, Any] | None:
@@ -347,6 +353,37 @@ def collect_context(
     return result
 
 
+def write_output_file(output: str, out_path: Path, *, force: bool) -> None:
+    if out_path.is_symlink():
+        raise OutputWriteError(f"output file is a symbolic link: {out_path}")
+
+    if out_path.exists() and not force:
+        raise OutputWriteError(f"output file already exists: {out_path}. Use --force to overwrite it.")
+
+    temp_path: Path | None = None
+    try:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(
+            "w",
+            dir=out_path.parent,
+            prefix=f".{out_path.name}.",
+            suffix=".tmp",
+            encoding="utf-8",
+            delete=False,
+        ) as handle:
+            temp_path = Path(handle.name)
+            handle.write(output + "\n")
+
+        os.replace(temp_path, out_path)
+    except OSError as err:
+        if temp_path is not None:
+            try:
+                temp_path.unlink()
+            except OSError:
+                pass
+        raise OutputWriteError(f"failed to write output file {out_path}: {err}") from err
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
@@ -443,19 +480,11 @@ def main() -> int:
 
     if args.output:
         out_path = Path(args.output)
-        if out_path.exists() and not args.force:
-            print(
-                f"Error: output file already exists: {out_path}. "
-                "Use --force to overwrite it.",
-                file=sys.stderr,
-            )
-            return 3
-
         try:
-            out_path.parent.mkdir(parents=True, exist_ok=True)
-            out_path.write_text(output + "\n", encoding="utf-8")
-        except OSError as err:
-            print(f"Error: failed to write output file {out_path}: {err}", file=sys.stderr)
+            write_output_file(output, out_path, force=args.force)
+        except OutputWriteError as err:
+            print(f"Error: {err}", file=sys.stderr)
+            print(output)
             return 3
 
         print(f"Wrote review context to {out_path}", file=sys.stderr)

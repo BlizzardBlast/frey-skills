@@ -14,9 +14,10 @@ from pathlib import Path
 
 SCRIPT = Path(__file__).with_name("collect_review_context.py")
 SPEC = importlib.util.spec_from_file_location("collect_review_context", SCRIPT)
-assert SPEC is not None
+if SPEC is None or SPEC.loader is None:
+    raise RuntimeError(f"Unable to load collect_review_context module from {SCRIPT}")
+
 COLLECT_REVIEW_CONTEXT = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
 SPEC.loader.exec_module(COLLECT_REVIEW_CONTEXT)
 
 
@@ -215,6 +216,7 @@ class CollectReviewContextTests(unittest.TestCase):
         self.assertEqual(result.returncode, 3)
         self.assertEqual(output_path.read_text(encoding="utf-8"), "keep me\n")
         self.assertIn("Use --force to overwrite", result.stderr)
+        self.assertEqual(json.loads(result.stdout)["mode"], "working-tree")
 
     def test_output_force_overwrites_existing_file(self) -> None:
         self.write("tracked.txt", "one\n")
@@ -227,6 +229,22 @@ class CollectReviewContextTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         written = json.loads(output_path.read_text(encoding="utf-8"))
         self.assertEqual(written["mode"], "working-tree")
+
+    @unittest.skipUnless(hasattr(os, "symlink"), "symlink support is unavailable")
+    def test_output_force_refuses_symlink_target(self) -> None:
+        self.write("tracked.txt", "one\n")
+        self.commit_all("initial")
+        target = self.repo.parent / "outside.json"
+        target.write_text("outside\n", encoding="utf-8")
+        output_path = self.repo / "review-context.json"
+        os.symlink(target, output_path)
+
+        result = self.run_collect("--output", str(output_path), "--force")
+
+        self.assertEqual(result.returncode, 3)
+        self.assertEqual(target.read_text(encoding="utf-8"), "outside\n")
+        self.assertIn("symbolic link", result.stderr)
+        self.assertEqual(json.loads(result.stdout)["mode"], "working-tree")
 
 
 if __name__ == "__main__":
