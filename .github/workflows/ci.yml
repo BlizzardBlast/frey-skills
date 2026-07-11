@@ -37,6 +37,15 @@ jobs:
       - name: Run repository validator test suite
         run: python -m unittest scripts/test_validate_repository.py
 
+      - name: Build plugin bundle
+        run: python scripts/build_plugin.py --force dist/frey-skills
+
+      - name: Validate plugin bundle
+        run: python scripts/validate_plugin_bundle.py dist/frey-skills
+
+      - name: Run plugin bundle test suite
+        run: python -m unittest scripts/test_build_plugin.py
+
       - name: Ensure origin/main is available
         run: git fetch --no-tags --prune origin +refs/heads/main:refs/remotes/origin/main
 
