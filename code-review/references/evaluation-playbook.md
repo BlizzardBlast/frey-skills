@@ -1,57 +1,31 @@
-# Code Review Skill Evaluation Playbook
+# Code Review Evaluation Playbook
 
-Use this playbook to iteratively improve this skill using eval-driven feedback.
+Use this only when evaluating or revising the `code-review` skill.
 
-## 1) Trigger evaluation (description quality)
+## Fresh-context method
 
-Create realistic should-trigger and should-not-trigger prompts.
+Run each prompt in a fresh context with only the skill and the referenced fixture files. Grade the current skill behavior against prior accepted output patterns, but do not expose prior answers to the model under test.
 
-- Include near-misses (mentions “review” but asks for implementation)
-- Include implicit prompts (“Can you sanity-check this before merge?”)
-- Run each query multiple times to account for model nondeterminism
+## Targets
 
-Target:
+- Desired activation rate: >= 90%.
+- Undesired activation rate: <= 10%.
+- Required output assertions: 100% on accepted runs.
+- Model runs stay outside CI; CI may validate fixture syntax only.
 
-- Should-trigger queries: trigger rate >= 0.5
-- Should-not-trigger queries: trigger rate < 0.5
+## Manual evidence grading
 
-## 2) Output quality evaluation
+For each accepted run, grade:
 
-Define scenario-based prompts and expected review outcomes.
+- Correct trigger or non-trigger behavior.
+- Presence and correctness of the coverage matrix.
+- Completeness label matches inspected/missing context.
+- Finding IDs, severity, evidence, impact, remediation, and verification.
+- Decision follows the severity/completeness rules.
+- Read-only behavior; fix requests produce a hand-off to `iterative-self-review`.
 
-For each scenario, evaluate:
+Reject runs that approve uninspected required context, mutate files, omit requested concerns, or fail to identify the fixture's primary P0/P1 issue.
 
-- Severity assignment accuracy (P0-P3)
-- Evidence quality (location + impact + fix)
-- Architecture impact coverage
-- Decision correctness (`APPROVE`/`COMMENT`/`REQUEST_CHANGES`)
+## Release use
 
-## 3) Assertions
-
-Prefer verifiable assertions such as:
-
-- “Findings are grouped by P0-P3 in order.”
-- “At least one blocker includes explicit remediation steps.”
-- “Architecture impact is explicitly labeled low/medium/high.”
-
-Avoid vague assertions like “review is good.”
-
-## 4) Iteration loop
-
-1. Run evals
-2. Grade results with evidence
-3. Identify recurring failure patterns
-4. Update `SKILL.md` and/or references
-5. Re-run evals in a new iteration
-
-Stop when results plateau or failure patterns are resolved.
-
-## 5) Cost-awareness
-
-Track quality vs cost:
-
-- Pass rate delta
-- Token usage delta
-- Duration delta
-
-Keep the skill lean: remove instructions that add overhead without measurable quality gains.
+Before releasing skill changes, run a small mixed set from `evals/evals.json`, compare current-vs-prior behavior, record failures with evidence, revise instructions, and re-run only the affected scenarios plus one clean-diff control.

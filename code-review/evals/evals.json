@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "evals": [
+    {
+      "id": "cr-trigger-pr-review",
+      "prompt": "Please review this PR diff for merge readiness. Fixture: evals/fixtures/clean-diff.md",
+      "expected_output": "Invokes code-review, uses diff review mode, includes coverage matrix, marks review COMPLETE, has no actionable findings, and decides APPROVE.",
+      "files": ["evals/fixtures/clean-diff.md"],
+      "assertions": [
+        "scope mode is diff review",
+        "coverage matrix includes correctness and tests",
+        "review completeness is COMPLETE",
+        "decision is APPROVE"
+      ]
+    },
+    {
+      "id": "cr-non-trigger-implementation",
+      "prompt": "Implement the TODOs in this fixture without reviewing. Fixture: evals/fixtures/non-trigger-implementation.md",
+      "expected_output": "Does not invoke code-review because this is an implementation request, not a review request.",
+      "files": ["evals/fixtures/non-trigger-implementation.md"],
+      "assertions": [
+        "code-review should not activate",
+        "no review decision is required"
+      ]
+    },
+    {
+      "id": "cr-security-request-changes",
+      "prompt": "Security-review this diff before merge. Fixture: evals/fixtures/security-command-injection.md",
+      "expected_output": "Finds the command injection as a P0 or P1 with ID, evidence, impact, remediation, verification, and decides REQUEST_CHANGES.",
+      "files": ["evals/fixtures/security-command-injection.md"],
+      "assertions": [
+        "coverage matrix includes security",
+        "finding ledger contains a P0 or P1 command injection finding",
+        "finding includes remediation and verification",
+        "decision is REQUEST_CHANGES"
+      ]
+    },
+    {
+      "id": "cr-accessibility-comment",
+      "prompt": "Review the frontend change for accessibility and correctness. Fixture: evals/fixtures/accessibility-button.md",
+      "expected_output": "Finds the inaccessible clickable div as a P2, marks review COMPLETE, and decides COMMENT.",
+      "files": ["evals/fixtures/accessibility-button.md"],
+      "assertions": [
+        "coverage matrix includes accessibility",
+        "finding ledger includes a P2 keyboard/semantic control finding",
+        "decision is COMMENT"
+      ]
+    },
+    {
+      "id": "cr-targeted-toolchain",
+      "prompt": "Targeted audit: review only the build-tooling change. Fixture: evals/fixtures/toolchain-cache.md",
+      "expected_output": "Uses targeted audit mode, reviews monorepo/toolchain concern, identifies the cache key regression as P1 or P2, and does not broaden scope.",
+      "files": ["evals/fixtures/toolchain-cache.md"],
+      "assertions": [
+        "scope mode is targeted audit",
+        "coverage matrix includes monorepo/toolchain",
+        "finding mentions stale or cross-branch cache risk",
+        "does not claim repository-wide review"
+      ]
+    },
+    {
+      "id": "cr-repository-audit-partial",
+      "prompt": "Audit this repository snapshot for dependency and docs/dead-code risk. Fixture: evals/fixtures/repository-audit-snapshot.md",
+      "expected_output": "Uses repository audit mode, samples available files, reports PARTIAL completeness due to snapshot limits, includes requested concerns, and decides COMMENT unless a P0/P1 is found.",
+      "files": ["evals/fixtures/repository-audit-snapshot.md"],
+      "assertions": [
+        "scope mode is repository audit",
+        "review completeness is PARTIAL",
+        "coverage matrix includes dependencies and docs/dead code",
+        "decision is COMMENT when no P0/P1 is found"
+      ]
+    },
+    {
+      "id": "cr-stale-comment-triage",
+      "prompt": "Triage this old review comment against current code. Fixture: evals/fixtures/stale-review-comment.md",
+      "expected_output": "Uses review-comment triage mode, classifies the comment as stale or superseded with current-code evidence, and avoids requesting changes for the stale comment.",
+      "files": ["evals/fixtures/stale-review-comment.md"],
+      "assertions": [
+        "scope mode is review-comment triage",
+        "coverage matrix includes stale comment validity",
+        "finding or note states the comment is stale/superseded",
+        "decision is APPROVE or COMMENT according to completeness"
+      ]
+    }
+  ]
+}

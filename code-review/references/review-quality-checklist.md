@@ -1,47 +1,31 @@
 # Review Quality Checklist
 
-Run this checklist before finalizing a decision.
+Run this before finalizing any `code-review` decision.
 
-## 1) Correctness and reliability
+## Evidence integrity
 
-- [ ] Core behavior matches requested intent.
-- [ ] Edge cases are handled (null/empty/bounds/error states).
-- [ ] Error handling is explicit and actionable (no silent failures).
-- [ ] Concurrency/race-condition risks are addressed where relevant.
+- [ ] The scope mode is stated.
+- [ ] Each requested concern appears in the coverage matrix.
+- [ ] Applicable profile concerns are either reviewed or marked not applicable with evidence.
+- [ ] Missing, truncated, sampled, or stale context is reflected in `Review completeness`.
+- [ ] No command, test, or artifact is claimed unless it was run or inspected.
 
-## 2) Security
+## Finding integrity
 
-- [ ] User input is validated/sanitized.
-- [ ] No injection risk (SQL/command/template/path).
-- [ ] Authn/authz checks are present on sensitive paths.
-- [ ] Secrets/PII are not leaked in code, logs, or responses.
+- [ ] Every actionable finding has an ID, severity, location, evidence, impact, remediation, and verification.
+- [ ] P0/P1 findings are specific enough for a fixer to act without rediscovery.
+- [ ] P2/P3 items are not disguised preference unless they affect maintainability, usability, or risk.
+- [ ] Stale review comments are explicitly classified as current, stale, superseded, or blocked.
 
-## 3) Performance and scalability
+## Decision integrity
 
-- [ ] No obvious N+1 or unnecessary repeated heavy work.
-- [ ] Large data paths have limits/pagination/streaming where needed.
-- [ ] Expensive operations are justified or cached.
+- [ ] Any P0/P1 maps to `REQUEST_CHANGES`.
+- [ ] Complete review with only P2 maps to `COMMENT`.
+- [ ] Complete review with only P3 or no actionable findings maps to `APPROVE`.
+- [ ] Partial/blocked review without P0/P1 maps to `COMMENT`.
+- [ ] `APPROVE` is not used for partial, blocked, sampled, truncated, or materially uninspected context.
 
-## 4) Architecture impact
+## Read-only boundary
 
-- [ ] Contract/schema/boundary impacts were explicitly evaluated.
-- [ ] Rollout and rollback implications were considered.
-- [ ] Dependency and ownership boundaries remain clear.
-
-## 5) Test and verification strategy
-
-- [ ] New behavior is covered by tests or equivalent verification.
-- [ ] Critical regressions have guardrails.
-- [ ] Validation evidence is referenced in the review.
-
-## 6) Maintainability
-
-- [ ] Naming, cohesion, and structure support future changes.
-- [ ] Complexity is proportional to problem scope.
-- [ ] Recommendations are incremental and safe-by-default.
-
-## 7) Decision integrity
-
-- [ ] Decision (`APPROVE`/`COMMENT`/`REQUEST_CHANGES`) matches severity.
-- [ ] Every P0/P1 finding includes a concrete remediation path.
-- [ ] Review includes at least one positive strength when present.
+- [ ] The review did not mutate source, generated files, PR state, branches, or external systems.
+- [ ] If fixes were requested, the response emits the ledger first and hands remediation to `iterative-self-review`.
