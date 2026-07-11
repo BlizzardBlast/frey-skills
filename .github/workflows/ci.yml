@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -35,5 +37,11 @@ jobs:
       - name: Run repository validator test suite
         run: python -m unittest scripts/test_validate_repository.py
 
+      - name: Ensure origin/main is available
+        run: git fetch --no-tags --prune origin +refs/heads/main:refs/remotes/origin/main
+
       - name: Check whitespace errors
-        run: git diff --check
+        run: |
+          git diff --check
+          merge_base="$(git merge-base HEAD origin/main)"
+          git diff --check "${merge_base}"...HEAD

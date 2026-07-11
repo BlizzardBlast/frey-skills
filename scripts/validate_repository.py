@@ -14,10 +14,9 @@ import yaml
 
 
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-REFERENCE_PATTERN = re.compile(r"(?<![\w./-])((?:references|scripts|evals)/[^\s`\"'<>]+)")
+REFERENCE_PATTERN = re.compile(r"(?<![\w./-])(?:\./)?((?:references|scripts|evals)/[^\s`\"'<>]+)")
 SOURCE_SUFFIXES = {".json", ".md", ".yaml", ".yml"}
 EXCLUDED_DIRS = {".git", "dist", "eval-workspace", ".superpowers", ".omo"}
-EXCLUDED_FILES = {"full-project.xml"}
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -247,7 +246,10 @@ class Validator:
             self.add_error(evals_file, "must parse to an object")
             return
 
-        if "skill_name" in data and data.get("skill_name") != skill_dir.name:
+        skill_name = data.get("skill_name")
+        if not isinstance(skill_name, str) or not skill_name.strip():
+            self.add_error(evals_file, "skill_name must be a non-empty string")
+        elif skill_name != skill_dir.name:
             self.add_error(evals_file, f"skill_name must equal folder name {skill_dir.name!r}")
 
         evals = data.get("evals")
@@ -291,7 +293,7 @@ class Validator:
 
     def validate_source_trailing_newlines(self) -> None:
         for path in self.walk_files(self.root):
-            if path.name in EXCLUDED_FILES or path.suffix not in SOURCE_SUFFIXES:
+            if path.suffix not in SOURCE_SUFFIXES:
                 continue
             self.validate_exactly_one_trailing_newline(path)
 

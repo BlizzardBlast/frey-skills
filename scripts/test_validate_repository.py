@@ -146,6 +146,34 @@ class RepositoryValidatorTests(unittest.TestCase):
         output = self.assert_validation_fails_with("trailing newline")
         self.assertIn("README.md", output)
 
+    def test_double_trailing_newline_fails(self) -> None:
+        self.write_valid_skill()
+        self.write("README.md", "# Extra trailing newline\n\n")
+
+        output = self.assert_validation_fails_with("trailing newline")
+        self.assertIn("README.md", output)
+
+    def test_skill_over_500_lines_fails(self) -> None:
+        body = "\n".join(f"Line {index}" for index in range(497))
+        self.write(
+            "long-skill/SKILL.md",
+            "---\nname: long-skill\ndescription: Long skill fixture.\n---\n" + body + "\n",
+        )
+
+        output = self.assert_validation_fails_with("500 lines")
+        self.assertIn("long-skill/SKILL.md", output)
+
+    def test_missing_and_empty_description_fail(self) -> None:
+        self.write("missing-description/SKILL.md", "---\nname: missing-description\n---\n\n# Missing\n")
+        self.write(
+            "empty-description/SKILL.md",
+            "---\nname: empty-description\ndescription: '   '\n---\n\n# Empty\n",
+        )
+
+        output = self.assert_validation_fails_with("description")
+        self.assertIn("missing-description/SKILL.md", output)
+        self.assertIn("empty-description/SKILL.md", output)
+
     def test_missing_local_reference_fails(self) -> None:
         self.write(
             "referencing-skill/SKILL.md",
@@ -153,6 +181,17 @@ class RepositoryValidatorTests(unittest.TestCase):
         )
 
         output = self.assert_validation_fails_with("references/missing.md")
+        self.assertIn("referencing-skill/SKILL.md", output)
+
+    def test_missing_dotted_local_reference_fails(self) -> None:
+        self.write(
+            "referencing-skill/SKILL.md",
+            "---\nname: referencing-skill\ndescription: Missing dotted reference fixture.\n---\n\n"
+            "See [the guide](./references/missing.md) and `./scripts/missing.py`.\n",
+        )
+
+        output = self.assert_validation_fails_with("references/missing.md")
+        self.assertIn("scripts/missing.py", output)
         self.assertIn("referencing-skill/SKILL.md", output)
 
     def test_invalid_openai_metadata_fails(self) -> None:
@@ -191,6 +230,30 @@ class RepositoryValidatorTests(unittest.TestCase):
         output = self.assert_validation_fails_with("evals/evals.json")
         self.assertIn("skill_name", output)
         self.assertIn("evals/fixtures/missing.md", output)
+
+    def test_missing_eval_skill_name_fails(self) -> None:
+        self.write_valid_skill("eval-skill")
+        self.write(
+            "eval-skill/evals/evals.json",
+            json.dumps(
+                {
+                    "evals": [
+                        {
+                            "id": "missing-skill-name",
+                            "prompt": "Prompt exists.",
+                            "expected_output": "Expected exists.",
+                            "files": ["evals/fixtures/example.md"],
+                            "assertions": ["assertion exists"],
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+
+        output = self.assert_validation_fails_with("evals/evals.json")
+        self.assertIn("skill_name", output)
 
 
 if __name__ == "__main__":

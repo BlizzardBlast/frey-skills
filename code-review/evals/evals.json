@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "skill_name": "code-review",
   "evals": [
     {
       "id": "cr-trigger-pr-review",
