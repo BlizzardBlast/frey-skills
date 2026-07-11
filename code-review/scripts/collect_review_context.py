@@ -9,9 +9,15 @@ Output semantics:
         - `git_root`: repository directory name (not an absolute local path).
         - `base` / `head`: labels describing the compared refs.
         - `truncated` / `omitted_files`: whether `files` was capped by `--max-files`.
-        - `included_totals`: stats for the returned `files` list (may be truncated).
-        - `overall_totals`: stats for the full diff scope before truncation.
-        - `files`: per-file status and line stats. In working-tree mode,
+        - `included_totals`: stats for the returned `files` list (may be truncated),
+            including `unknown_stats_files`, the count of files whose line/binary
+            stats could not be determined.
+        - `overall_totals`: stats for the full diff scope before truncation,
+            including `unknown_stats_files`, the count of files whose line/binary
+            stats could not be determined.
+        - `files`: per-file status and line stats. Each file includes
+            `stats_available`, which is true when its line/binary stats were
+            successfully determined and false otherwise. In working-tree mode,
             untracked files are included with status `?`.
         - `generated_at`: optional wall-clock timestamp, included only with
             `--include-generated-at`.
