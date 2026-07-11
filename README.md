@@ -9,49 +9,50 @@ This repository is designed for the
 
 ## Available Skills
 
-### iterative-self-review
-
-Rigorously reviews current code against the previous code and the repository
-default branch in an iterative loop, applies fixes, and prevents regressions or infinite
-fix-toggle cycles.
-
-**Use when:**
-
-- You just wrote new code and want a structured self-review pass
-- You refactored existing logic and need regression-safe validation
-- You explicitly ask the agent to "review your work"
-- You want the review to compare the full current state against both recent
-  changes and the repository default branch
-
-**What it enforces:**
-
-- Explicit issue discovery before applying fixes
-- Dual-baseline comparison: current vs previous code, and current vs the
-  repository default branch
-- A repeatable fix-and-recheck loop until no issues remain
-- An anti-loop safeguard after repeated implementation toggling
-- Regression discipline so new fixes do not reintroduce old bugs
-
 ### code-review
 
-Performs structured code reviews for pull requests and diffs, including
-architecture impact checks, severity triage, and optional remediation loops.
+Performs read-only, evidence-backed reviews for pull requests, diffs, targeted
+files, repository snapshots, and stale review comments. The skill may be
+activated implicitly when the user asks for code review, PR review, merge
+readiness, repository risk review, targeted audit, or review-comment triage.
 
-**Use when:**
+**Scope modes:**
 
-- You want a merge-readiness review of current changes
-- You need severity-ranked findings (P0-P3) with concrete fixes
-- You want a review decision: `APPROVE`, `COMMENT`, or `REQUEST_CHANGES`
-- You need architecture/boundary impact validation before merge
+- `diff review` — review a PR, branch, commit range, staged changes, or
+  working-tree diff.
+- `targeted audit` — review named files, components, concerns, commands, or
+  comments.
+- `repository audit` — sample a repository or package area for broad risk and
+  report limits.
+- `review-comment triage` — decide whether review comments still apply to the
+  current code.
 
 **What it enforces:**
 
-- Review scope and intent confirmation before deep analysis
-- Consistent severity model for triaging risk
-- Explicit architecture impact assessment (contracts, schema, auth, rollback)
-- Evidence-based findings with impact and fix suggestions
-- Optional review+fix iterative loop that composes with `iterative-self-review`
-- Explicit completion criteria and clear next steps
+- A coverage matrix for every requested or materially applicable concern.
+- Explicit review completeness: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
+- Severity-ranked finding ledger with stable IDs and verification guidance.
+- Decision semantics: `APPROVE`, `COMMENT`, or `REQUEST_CHANGES`.
+- A handoff ledger when the user asks for fixes; remediation is delegated
+  explicitly to `iterative-self-review` instead of performed during review.
+
+### iterative-self-review
+
+Runs an explicit-only remediation loop for a provided issue ledger, user-scoped
+defects, failing tests, or review comments. It should not activate for ordinary
+implementation work unless the user explicitly asks for iterative self-review,
+post-review repair, or repeated fix-and-recheck remediation.
+
+**What it enforces:**
+
+- Baseline capture before editing.
+- Scoped fixes by issue ID or user instruction.
+- A default maximum of 3 review/fix/verify passes.
+- Early stop when scoped issues are resolved and focused verification is
+  recorded.
+- A required user follow-up before any pass 4 or later pass.
+- Honest `RESOLVED`, `PARTIAL`, or `BLOCKED` status without whole-repository
+  clean claims.
 
 ## Installation
 
@@ -61,29 +62,33 @@ npx skills add BlizzardBlast/frey-skills
 
 ## Usage
 
-Once installed, compatible agents can automatically activate the skill when the
-task context matches.
+Once installed, compatible agents can activate skills when the task context
+matches each skill's activation rules.
 
 **Example prompts:**
 
 ```text
-Review your latest changes before finalizing.
+Review this pull request for merge readiness.
 ```
 
 ```text
-I refactored this module—do an iterative self-review and fix issues.
+Targeted audit: review only the build-tooling change.
 ```
 
 ```text
-Run a strict self-check on this implementation and prevent regressions.
+Triage these stale review comments against the current code.
 ```
 
 ```text
-Review this pull request and give me severity-ranked findings before merge.
+Review this PR, then hand me the finding ledger for fixes.
 ```
 
 ```text
-Review this PR, then fix only P0/P1 findings in an iterative self-review loop.
+Use iterative-self-review to fix CR-P1-001 and CR-P2-002 from the ledger.
+```
+
+```text
+Run iterative-self-review for only the P1 findings; leave P2/P3 items alone.
 ```
 
 ## Skill Structure
@@ -95,6 +100,7 @@ Each skill directory can include:
 - `scripts/` — optional helper automation
 - `references/` — optional supporting docs
 - `assets/` — optional templates/resources
+- `evals/` — optional behavioral evaluation fixtures
 
 Current layout:
 
@@ -102,19 +108,39 @@ Current layout:
 code-review/
 ├── agents/
 │   └── openai.yaml
-├── SKILL.md
+├── evals/
+│   ├── evals.json
+│   └── fixtures/
 ├── references/
-│   ├── architecture-impact-checklist.md
-│   ├── evaluation-playbook.md
-│   └── review-quality-checklist.md
-└── scripts/
-    ├── collect_review_context.py
-    └── test_collect_review_context.py
+├── scripts/
+│   ├── collect_review_context.py
+│   └── test_collect_review_context.py
+└── SKILL.md
 iterative-self-review/
 ├── agents/
 │   └── openai.yaml
-├── SKILL.md
+├── evals/
+│   ├── evals.json
+│   └── fixtures/
+├── references/
+└── SKILL.md
 ```
+
+## Generated Codex Plugin Bundle
+
+The root skill directories are the canonical source of truth. The generated
+Codex plugin bundle is built into `dist/frey-skills` from those sources and
+`plugin-template/.codex-plugin/plugin.json`.
+
+```bash
+python3 scripts/build_plugin.py --force
+python3 scripts/validate_plugin_bundle.py dist/frey-skills
+```
+
+Do not hand-edit `dist/frey-skills`; rebuild it from the canonical sources.
+The repository does not commit marketplace metadata or a public marketplace
+submission package. Local marketplace wiring, if you use it, is an optional
+personal setup outside this repo workflow.
 
 ## Notes for Authors
 
@@ -123,6 +149,11 @@ iterative-self-review/
 - Include clear trigger language so agents know when to activate the skill.
 - Use short, actionable steps and explicit stop conditions.
 - Move deep detail to `references/` when instructions become too long.
+- Keep generated plugin output in sync by rebuilding and validating
+  `dist/frey-skills`.
+
+See `CONTRIBUTING.md` for setup, validation, manual behavioral evaluation, and
+PR expectations.
 
 ## License
 
