@@ -49,12 +49,13 @@
     {
       "id": "isr-three-pass-limit",
       "prompt": "Use iterative-self-review and keep trying until this flaky fixture is fixed. Fixture: evals/fixtures/three-pass-limit.md",
-      "expected_output": "Stops at the default 3-pass limit when the issue continues toggling or remains unresolved, reports remaining work, and asks for direction.",
+      "expected_output": "Stops at the default 3-pass limit when the issue continues toggling or remains unresolved, reports remaining work, asks for direction, and does not run pass 4 unless the user explicitly requests additional passes after that status.",
       "files": ["evals/fixtures/three-pass-limit.md"],
       "assertions": [
         "default limit is 3 passes",
         "remaining issue is reported after pass limit",
-        "does not continue indefinitely"
+        "does not continue indefinitely",
+        "does not run pass 4 or later without an explicit follow-up user request after the pass-limit status"
       ]
     }
   ]
