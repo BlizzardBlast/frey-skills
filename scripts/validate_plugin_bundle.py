@@ -72,7 +72,7 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
 
 def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(argv)
-    bundle = args.bundle.expanduser().resolve()
+    bundle = args.bundle.expanduser()
     errors = validate_bundle(bundle)
     if errors:
         print("Plugin bundle validation failed:", file=sys.stderr)
@@ -86,9 +86,12 @@ def main(argv: Optional[list[str]] = None) -> int:
 
 def validate_bundle(bundle: Path) -> list[str]:
     errors: list[str] = []
+    if bundle.is_symlink():
+        return [f"bundle path must not be a symlink: {bundle}"]
     if not bundle.is_dir():
         return [f"bundle path is not a directory: {bundle}"]
 
+    validate_root_layout(bundle, errors)
     validate_no_symlinks(bundle, errors)
     manifest = load_manifest(bundle, errors)
     if manifest is not None:
@@ -96,6 +99,27 @@ def validate_bundle(bundle: Path) -> list[str]:
     validate_skill_layout(bundle, errors)
     validate_skill_parity(bundle, errors)
     return errors
+
+
+def validate_root_layout(bundle: Path, errors: list[str]) -> None:
+    expected_root_entries = {".codex-plugin", "skills"}
+    actual_root_entries = {path.name for path in bundle.iterdir()}
+    if actual_root_entries != expected_root_entries:
+        errors.append(
+            "bundle root must contain exactly .codex-plugin and skills; "
+            f"found: {', '.join(sorted(actual_root_entries)) or '(none)'}"
+        )
+
+    plugin_root = bundle / ".codex-plugin"
+    if not plugin_root.is_dir():
+        errors.append("missing .codex-plugin/ directory")
+        return
+    actual_plugin_entries = {path.name for path in plugin_root.iterdir()}
+    if actual_plugin_entries != {"plugin.json"}:
+        errors.append(
+            ".codex-plugin/ must contain exactly plugin.json; "
+            f"found: {', '.join(sorted(actual_plugin_entries)) or '(none)'}"
+        )
 
 
 def load_manifest(bundle: Path, errors: list[str]) -> Optional[dict[str, Any]]:
@@ -200,7 +224,18 @@ def validate_skill_layout(bundle: Path, errors: list[str]) -> None:
     if not skills_root.is_dir():
         errors.append("missing skills/ directory")
         return
-    actual_skills = sorted(path.name for path in skills_root.iterdir() if path.is_dir())
+    unexpected_skill_entries = [
+        path.name
+        for path in skills_root.iterdir()
+        if path.name not in EXPECTED_SKILLS or not path.is_dir() or path.is_symlink()
+    ]
+    if unexpected_skill_entries:
+        errors.append(
+            "skills/ must contain only these directories: "
+            f"{', '.join(sorted(EXPECTED_SKILLS))}; unexpected entries: {', '.join(sorted(unexpected_skill_entries))}"
+        )
+
+    actual_skills = sorted(path.name for path in skills_root.iterdir() if path.is_dir() and not path.is_symlink())
     expected_skills = sorted(EXPECTED_SKILLS)
     if actual_skills != expected_skills:
         errors.append(

@@ -37,9 +37,12 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
 
 def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(argv)
-    output = args.output.expanduser().resolve()
 
     try:
+        raw_output = args.output.expanduser()
+        if raw_output.is_symlink():
+            raise BuildError(f"output must not be a symlink: {raw_output}")
+        output = raw_output.resolve()
         build_bundle(output, force=args.force)
     except BuildError as exc:
         print(f"build_plugin.py: error: {exc}", file=sys.stderr)
@@ -86,8 +89,15 @@ def validate_inputs() -> None:
 
 
 def validate_output_target(output: Path, *, force: bool) -> None:
-    if output == REPOSITORY_ROOT:
+    repository_root = REPOSITORY_ROOT.resolve()
+    default_output = repository_root / "dist" / "frey-skills"
+    protected_sources = [repository_root, PLUGIN_TEMPLATE.resolve()]
+    protected_sources.extend((repository_root / skill_name).resolve() for skill_name in EXPECTED_SKILLS)
+
+    if output in protected_sources:
         raise BuildError("output must not be the repository root")
+    if is_relative_to(output, repository_root) and output != default_output:
+        raise BuildError(f"output inside the source root is only allowed at {default_output}: {output}")
     if output.exists():
         if output.is_symlink():
             raise BuildError(f"output must not be a symlink: {output}")
@@ -95,6 +105,14 @@ def validate_output_target(output: Path, *, force: bool) -> None:
             raise BuildError(f"output exists and is not a directory: {output}")
         if any(output.iterdir()) and not force:
             raise BuildError(f"output is non-empty; pass --force to replace it: {output}")
+
+
+def is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+    except ValueError:
+        return False
+    return True
 
 
 def write_bundle(output: Path) -> None:
