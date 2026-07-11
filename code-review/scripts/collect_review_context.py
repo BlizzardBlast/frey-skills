@@ -1,14 +1,23 @@
 #!/usr/bin/env python3
 """Collect deterministic git review context as JSON.
 
+This helper performs deterministic scope discovery only. It is not a substitute
+for inspecting the actual diff and any relevant complete files during review.
+
 Output semantics:
         - `mode`: one of `range`, `staged`, or `working-tree`.
         - `git_root`: repository directory name (not an absolute local path).
         - `base` / `head`: labels describing the compared refs.
         - `truncated` / `omitted_files`: whether `files` was capped by `--max-files`.
-        - `included_totals`: stats for the returned `files` list (may be truncated).
-        - `overall_totals`: stats for the full diff scope before truncation.
-        - `files`: per-file status and line stats. In working-tree mode,
+        - `included_totals`: stats for the returned `files` list (may be truncated),
+            including `unknown_stats_files`, the count of files whose line/binary
+            stats could not be determined.
+        - `overall_totals`: stats for the full diff scope before truncation,
+            including `unknown_stats_files`, the count of files whose line/binary
+            stats could not be determined.
+        - `files`: per-file status and line stats. Each file includes
+            `stats_available`, which is true when its line/binary stats were
+            successfully determined and false otherwise. In working-tree mode,
             untracked files are included with status `?`.
         - `generated_at`: optional wall-clock timestamp, included only with
             `--include-generated-at`.
@@ -56,6 +65,18 @@ def run_git(args: list[str]) -> str:
 
 class OutputWriteError(RuntimeError):
     pass
+
+
+class ContextParseError(RuntimeError):
+    pass
+
+
+def git_has_head() -> bool:
+    try:
+        run_git(["rev-parse", "--verify", "--quiet", "HEAD"])
+    except RuntimeError:
+        return False
+    return True
 
 
 def stat_untracked_file(path: Path) -> dict[str, Any] | None:
@@ -113,10 +134,12 @@ def collect_untracked_changes(git_root_path: Path) -> list[dict[str, Any]]:
             "added_lines": None,
             "deleted_lines": None,
             "binary": False,
+            "stats_available": False,
         }
 
         if stat is not None:
             change.update(stat)
+            change["stats_available"] = True
 
         changes.append(change)
 
@@ -124,6 +147,9 @@ def collect_untracked_changes(git_root_path: Path) -> list[dict[str, Any]]:
 
 
 def _split_nul(text: str) -> list[str]:
+    if text and not text.endswith("\0"):
+        raise ContextParseError("incomplete NUL record: missing terminator")
+
     fields = text.split("\0")
     if fields and fields[-1] == "":
         fields = fields[:-1]
@@ -139,7 +165,7 @@ def parse_name_status(text: str) -> list[dict[str, Any]]:
         raw_status = fields[i]
         i += 1
         if not raw_status:
-            continue
+            raise ContextParseError("malformed name-status record: missing status")
 
         status = raw_status[0] if raw_status else "?"
 
@@ -148,15 +174,24 @@ def parse_name_status(text: str) -> list[dict[str, Any]]:
 
         if status in {"R", "C"}:
             if i + 1 >= len(fields):
-                break
+                raise ContextParseError(
+                    f"incomplete name-status rename/copy record for status {raw_status!r}"
+                )
             previous_path = fields[i]
             path = fields[i + 1]
             i += 2
         else:
             if i >= len(fields):
-                break
+                raise ContextParseError(
+                    f"incomplete name-status record for status {raw_status!r}"
+                )
             path = fields[i]
             i += 1
+
+        if not path or (status in {"R", "C"} and not previous_path):
+            raise ContextParseError(
+                f"malformed name-status record for status {raw_status!r}: missing path"
+            )
 
         changes.append(
             {
@@ -166,6 +201,7 @@ def parse_name_status(text: str) -> list[dict[str, Any]]:
                 "added_lines": None,
                 "deleted_lines": None,
                 "binary": False,
+                "stats_available": False,
             }
         )
     return changes
@@ -190,14 +226,16 @@ def _consume_numstat_paths(path: str, fields: list[str], index: int) -> tuple[st
 
     # In -z mode, rename/copy numstat records provide paths as separate NUL fields.
     if index + 1 >= len(fields):
-        raise ValueError("incomplete numstat rename/copy record")
+        raise ContextParseError("incomplete numstat rename/copy record")
 
     previous_path = fields[index]
     path = fields[index + 1]
+    if not previous_path or not path:
+        raise ContextParseError("malformed numstat rename/copy record: missing path")
     return path, previous_path, index + 2
 
 
-def _build_numstat_stat(added_raw: str, deleted_raw: str) -> dict[str, Any] | None:
+def _build_numstat_stat(added_raw: str, deleted_raw: str) -> dict[str, Any]:
     if added_raw == "-" or deleted_raw == "-":
         return {
             "added_lines": None,
@@ -209,7 +247,14 @@ def _build_numstat_stat(added_raw: str, deleted_raw: str) -> dict[str, Any] | No
         added = int(added_raw)
         deleted = int(deleted_raw)
     except ValueError:
-        return None
+        raise ContextParseError(
+            f"invalid numstat counts: added={added_raw!r}, deleted={deleted_raw!r}"
+        )
+
+    if added < 0 or deleted < 0:
+        raise ContextParseError(
+            f"invalid numstat counts: added={added_raw!r}, deleted={deleted_raw!r}"
+        )
 
     return {
         "added_lines": added,
@@ -226,26 +271,121 @@ def parse_numstat(text: str) -> dict[str, dict[str, Any]]:
     while i < len(fields):
         header = fields[i]
         i += 1
+        if not header:
+            raise ContextParseError("malformed numstat record: missing header")
+
         parsed = _parse_numstat_header(header)
         if parsed is None:
-            continue
+            raise ContextParseError(f"malformed numstat record: {header!r}")
 
         added_raw, deleted_raw, path = parsed
 
-        try:
-            path, previous_path, i = _consume_numstat_paths(path, fields, i)
-        except ValueError:
-            break
+        path, previous_path, i = _consume_numstat_paths(path, fields, i)
+        if not path:
+            raise ContextParseError("malformed numstat record: missing path")
 
         stat = _build_numstat_stat(added_raw, deleted_raw)
-        if stat is None:
-            continue
 
         stats[path] = stat
         if previous_path:
             stats[previous_path] = stat
 
     return stats
+
+
+def changed_line_count(change: dict[str, Any]) -> int:
+    return sum(
+        value
+        for value in (change.get("added_lines"), change.get("deleted_lines"))
+        if isinstance(value, int)
+    )
+
+
+def risk_priority(path: str) -> int:
+    normalized = path.replace("\\", "/")
+    lowered = normalized.lower()
+    parts = [part for part in lowered.split("/") if part]
+    name = parts[-1] if parts else lowered
+
+    if "migrations" in parts:
+        return 0
+
+    if any(part in {"auth", "authentication", "permission", "permissions"} for part in parts):
+        return 1
+
+    if any(part == "security" or part.startswith("security-") for part in parts):
+        return 2
+
+    if (
+        any(
+            part in {
+                "deploy",
+                "deployment",
+                "deployments",
+                "infra",
+                "infrastructure",
+                "k8s",
+                "kubernetes",
+                "terraform",
+                "helm",
+            }
+            for part in parts
+        )
+        or name in {"dockerfile", "docker-compose.yml", "docker-compose.yaml"}
+    ):
+        return 3
+
+    if (
+        lowered.startswith(".github/workflows/")
+        or lowered.startswith(".circleci/")
+        or name in {"gitlab-ci.yml", ".gitlab-ci.yml", "azure-pipelines.yml"}
+    ):
+        return 4
+
+    if (
+        name.endswith(".lock")
+        or name in {
+            "package.json",
+            "package-lock.json",
+            "pnpm-lock.yaml",
+            "yarn.lock",
+            "composer.lock",
+            "poetry.lock",
+            "pipfile.lock",
+            "gemfile.lock",
+            "go.mod",
+            "go.sum",
+            "cargo.toml",
+            "cargo.lock",
+            "requirements.txt",
+            "pyproject.toml",
+        }
+    ):
+        return 5
+
+    return 6
+
+
+def truncation_sort_key(change: dict[str, Any]) -> tuple[int, int, str]:
+    return (
+        risk_priority(str(change["path"])),
+        -changed_line_count(change),
+        str(change["path"]),
+    )
+
+
+def build_totals(changes: list[dict[str, Any]]) -> dict[str, int]:
+    return {
+        "files": len(changes),
+        "added_lines": sum(
+            item["added_lines"] for item in changes if isinstance(item.get("added_lines"), int)
+        ),
+        "deleted_lines": sum(
+            item["deleted_lines"] for item in changes if isinstance(item.get("deleted_lines"), int)
+        ),
+        "binary_files": sum(1 for item in changes if item.get("binary")),
+        "unknown_stats_files": sum(1 for item in changes if not item.get("stats_available")),
+    }
 
 
 def collect_context(
@@ -258,6 +398,7 @@ def collect_context(
 ) -> dict[str, Any]:
     git_root_path = Path(run_git(["rev-parse", "--show-toplevel"]).strip())
     git_root = git_root_path.name
+    has_head = git_has_head()
 
     if base and head:
         mode = "range"
@@ -269,12 +410,18 @@ def collect_context(
         mode = "staged"
         name_status = run_git(["diff", "--cached", "-z", "--name-status", "--find-renames"])
         numstat = run_git(["diff", "--cached", "-z", "--numstat", "--find-renames"])
-        base_ref, head_ref = "HEAD", "INDEX"
+        base_ref, head_ref = ("HEAD" if has_head else "EMPTY_TREE"), "INDEX"
     else:
         mode = "working-tree"
-        name_status = run_git(["diff", "-z", "--name-status", "--find-renames", "HEAD"])
-        numstat = run_git(["diff", "-z", "--numstat", "--find-renames", "HEAD"])
-        base_ref, head_ref = "HEAD", "WORKTREE"
+        if has_head:
+            name_status = run_git(["diff", "-z", "--name-status", "--find-renames", "HEAD"])
+            numstat = run_git(["diff", "-z", "--numstat", "--find-renames", "HEAD"])
+            base_ref = "HEAD"
+        else:
+            name_status = ""
+            numstat = ""
+            base_ref = "EMPTY_TREE"
+        head_ref = "WORKTREE"
 
     changes = parse_name_status(name_status)
     stats = parse_numstat(numstat)
@@ -292,35 +439,21 @@ def collect_context(
         change["added_lines"] = stat["added_lines"]
         change["deleted_lines"] = stat["deleted_lines"]
         change["binary"] = stat["binary"]
+        change["stats_available"] = True
 
     if mode == "working-tree":
         changes.extend(collect_untracked_changes(git_root_path))
 
     changes.sort(key=lambda item: item["path"])
 
-    overall_files = len(changes)
-    overall_added_total = sum(
-        item["added_lines"] for item in changes if isinstance(item.get("added_lines"), int)
-    )
-    overall_deleted_total = sum(
-        item["deleted_lines"] for item in changes if isinstance(item.get("deleted_lines"), int)
-    )
-    overall_binary_total = sum(1 for item in changes if item.get("binary"))
+    overall_totals = build_totals(changes)
 
     truncated = False
     omitted_files = 0
     if len(changes) > max_files:
         truncated = True
         omitted_files = len(changes) - max_files
-        changes = changes[:max_files]
-
-    added_total = sum(
-        item["added_lines"] for item in changes if isinstance(item.get("added_lines"), int)
-    )
-    deleted_total = sum(
-        item["deleted_lines"] for item in changes if isinstance(item.get("deleted_lines"), int)
-    )
-    binary_total = sum(1 for item in changes if item.get("binary"))
+        changes = sorted(changes, key=truncation_sort_key)[:max_files]
 
     result = {
         "mode": mode,
@@ -329,18 +462,8 @@ def collect_context(
         "head": head_ref,
         "truncated": truncated,
         "omitted_files": omitted_files,
-        "included_totals": {
-            "files": len(changes),
-            "added_lines": added_total,
-            "deleted_lines": deleted_total,
-            "binary_files": binary_total,
-        },
-        "overall_totals": {
-            "files": overall_files,
-            "added_lines": overall_added_total,
-            "deleted_lines": overall_deleted_total,
-            "binary_files": overall_binary_total,
-        },
+        "included_totals": build_totals(changes),
+        "overall_totals": overall_totals,
         "files": changes,
     }
 
@@ -393,13 +516,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Collect a deterministic git diff summary for code reviews. "
-            "Outputs structured JSON to stdout."
+            "Outputs structured JSON to stdout. This is deterministic scope "
+            "discovery only, not a substitute for inspecting the actual diff "
+            "and relevant complete files."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Exit codes:\n"
             "  0  Success.\n"
-            "  2  Invalid arguments or git command failure.\n"
+            "  2  Invalid arguments, git command failure, or diff parse failure.\n"
             "  3  Output file write failure.\n\n"
             "Examples:\n"
             "  python3 scripts/collect_review_context.py\n"
@@ -477,7 +602,7 @@ def main() -> int:
             max_files=args.max_files,
             include_generated_at=args.include_generated_at,
         )
-    except RuntimeError as err:
+    except (RuntimeError, ContextParseError) as err:
         print(f"Error: {err}", file=sys.stderr)
         return 2
 

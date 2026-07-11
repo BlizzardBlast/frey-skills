@@ -1,57 +1,63 @@
-# Code Review Skill Evaluation Playbook
+# Code Review Evaluation Playbook
 
-Use this playbook to iteratively improve this skill using eval-driven feedback.
+Use this only when evaluating or revising the `code-review` skill.
 
-## 1) Trigger evaluation (description quality)
+## Fresh-context method
 
-Create realistic should-trigger and should-not-trigger prompts.
+Run each prompt in a fresh context with only the skill and the referenced fixture files. Grade the current skill behavior against prior accepted output patterns, but do not expose prior answers to the model under test.
 
-- Include near-misses (mentions “review” but asks for implementation)
-- Include implicit prompts (“Can you sanity-check this before merge?”)
-- Run each query multiple times to account for model nondeterminism
+## Executable manual protocol
 
-Target:
+Model execution stays outside CI. CI may validate fixture syntax, references, and formatting only.
 
-- Should-trigger queries: trigger rate >= 0.5
-- Should-not-trigger queries: trigger rate < 0.5
+For each eval case in `evals/evals.json`:
 
-## 2) Output quality evaluation
+1. Run exactly 10 fresh-context trials with only this skill, the eval prompt, and the referenced fixture files.
+2. Classify each trial as `trigger` or `non-trigger`.
+3. For trials whose activation behavior is accepted, grade every listed assertion as pass/fail.
+4. Compare the current 10-run result with the prior accepted scorecard for the same eval ID. Record any activation, decision, severity, completeness, read-only, or hand-off regression with evidence.
 
-Define scenario-based prompts and expected review outcomes.
+Denominators and scoring:
 
-For each scenario, evaluate:
+- Trigger-case activation rate = trigger trials / 10. Accept when >= 9/10.
+- Non-trigger-case undesired activation rate = trigger trials / 10. Accept when <= 1/10.
+- Assertion pass rate = assertion-passing accepted trials / accepted trials. Accept only at 100%; if no trial has accepted activation behavior, assertion pass rate is 0%.
+- Read-only violations are automatic failures for the affected trial and reject the eval if they occur in any trial.
 
-- Severity assignment accuracy (P0-P3)
-- Evidence quality (location + impact + fix)
-- Architecture impact coverage
-- Decision correctness (`APPROVE`/`COMMENT`/`REQUEST_CHANGES`)
+Use this compact scorecard:
 
-## 3) Assertions
+| eval_id | case_type trigger/non-trigger | trials | triggers | accepted_activation | assertion_passes | assertion_denominator | current_result | prior_result | regressions/evidence |
+| ------- | ----------------------------- | -----: | -------: | ------------------: | ---------------: | --------------------: | -------------- | ------------ | -------------------- |
 
-Prefer verifiable assertions such as:
+Acceptance criteria:
 
-- “Findings are grouped by P0-P3 in order.”
-- “At least one blocker includes explicit remediation steps.”
-- “Architecture impact is explicitly labeled low/medium/high.”
+- Every trigger case has at least 9/10 desired activations.
+- Every non-trigger case has at most 1/10 undesired activations.
+- Required output assertions pass on 100% of accepted runs.
+- Current-vs-prior comparison shows no material regression, or the behavior change is intentional and documented.
 
-Avoid vague assertions like “review is good.”
+Reject the change when any acceptance criterion fails.
 
-## 4) Iteration loop
+## Targets
 
-1. Run evals
-2. Grade results with evidence
-3. Identify recurring failure patterns
-4. Update `SKILL.md` and/or references
-5. Re-run evals in a new iteration
+- Desired activation rate: >= 90% (at least 9/10 fresh-context runs per trigger case).
+- Undesired activation rate: <= 10% (at most 1/10 fresh-context runs per non-trigger case).
+- Required output assertions: 100% on accepted runs.
+- Model runs stay outside CI; CI may validate fixture syntax only.
 
-Stop when results plateau or failure patterns are resolved.
+## Manual evidence grading
 
-## 5) Cost-awareness
+For each accepted run, grade:
 
-Track quality vs cost:
+- Correct trigger or non-trigger behavior.
+- Presence and correctness of the coverage matrix.
+- Completeness label matches inspected/missing context.
+- Finding IDs, severity, evidence, impact, remediation, and verification.
+- Decision follows the severity/completeness rules.
+- Read-only behavior; fix requests produce a hand-off to `iterative-self-review`.
 
-- Pass rate delta
-- Token usage delta
-- Duration delta
+Reject runs that approve uninspected required context, mutate files, omit requested concerns, or fail to identify the fixture's primary P0/P1 issue.
 
-Keep the skill lean: remove instructions that add overhead without measurable quality gains.
+## Release use
+
+Before releasing skill changes, apply the exact protocol above to every applicable eval case in `evals/evals.json`, including both trigger and non-trigger cases: run 10 fresh-context trials per case, compare current-vs-prior behavior, and accept only when desired activations are at least 90%, undesired activations are at most 10%, and required output assertions pass on 100% of accepted runs. Keep model runs outside CI.

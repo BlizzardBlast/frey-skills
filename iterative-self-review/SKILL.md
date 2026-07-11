@@ -1,130 +1,93 @@
 ---
 name: iterative-self-review
-description: Use this skill when the user asks for iterative self-review, repeated fix-and-recheck cycles, post-review remediation, or to keep reviewing until no issues remain. Always compare current code against previous code and the repository default branch, not only latest edited hunks. For PR/diff/merge-readiness discovery, run `code-review` first and hand findings here.
+description: Use only when explicitly invoked for an issue ledger, remediation request, repeated fix-and-recheck loop, or post-review repair. Accepts code-review findings or user-specified issues, fixes them in bounded passes, compares against a resolved task/default-branch baseline, and reports scoped verification without claiming the whole repository is clean.
 license: MIT
-metadata: { author: BlizzardBlast, version: '1.0.4' }
+metadata:
+  { author: BlizzardBlast, version: '1.1.0', allow_implicit_invocation: false }
 ---
 
 # Iterative Self-Review
 
-## When to use this skill
+## Activation boundary
 
-Use this skill whenever:
+Use this skill only when the user explicitly requests iterative self-review, repeated remediation, or fixes for a provided issue ledger. Do not invoke it implicitly for ordinary implementation or one-off review.
 
-- You write new code.
-- You refactor existing code.
-- The user asks to "review your work" or requests a self-check.
-- You need the review scope to cover the full current code state against both
-  the previous code and the repository default branch.
+Inputs may be:
 
-## Activation boundaries
+- A `code-review` finding ledger.
+- Explicit user remediation instructions.
+- A scoped list of failing tests, review comments, or defects to fix.
 
-Prefer this skill when correctness and regression risk matter more than speed.
+## Default pass budget
 
-Do use it for:
+Run at most 3 review/fix/verify passes by default. Stop early only when the scoped issues are resolved and the required verification for those issues has passed or is honestly marked blocked. After pass 3, stop and ask for direction if any in-scope item remains unresolved or blocked. Do not run pass 4 or any later pass unless the user explicitly asks for additional passes after seeing the pass-limit status; never continue past the limit silently.
 
-- Pre-merge or pre-commit quality passes.
-- Bug-fix verification after code edits.
-- Sensitive changes (data flow, auth, validation, migrations).
-- Follow-up iterative remediation after `code-review` findings.
+Do not claim “zero issues”, “all clean”, or whole-repository correctness. Report only scoped resolution and verification evidence.
 
-Do not over-apply it for:
+## Baseline setup
 
-- Purely informational responses with no code edits.
-- Trivial non-behavioral changes (e.g., comment-only wording tweaks), unless the
-  user explicitly requests a full review loop.
+Before editing, record a working-state baseline:
 
-If a request includes PR/diff/merge-readiness analysis, do not replace
-`code-review`; use this skill after first-pass findings are available.
+- Branch name and dirty/untracked status.
+- Files in scope and incoming issue IDs.
+- Existing failing or skipped verification that may affect claims.
 
-## Goal
+Resolve the comparison base in this order:
 
-Rigorously review the current code by comparing it to the previous code and to
-the repository default branch, identify concrete issues, and iteratively fix
-them until the codebase is clean while preventing regression loops.
+1. User-provided base.
+2. `origin/HEAD`.
+3. `origin/main`.
+4. `main`.
+5. `origin/master`.
+6. `master`.
 
-## Required comparison scope
+If no base can prove broader regression claims, set `BASELINE_LIMITED` and state what comparison remains valid, such as current working tree only or issue-specific files only.
 
-On every review pass, inspect both of these comparisons before deciding whether
-issues exist:
+## Required loop
 
-- Current code vs previous code.
-- Current code vs the repository default branch.
+For each pass:
 
-Use both comparisons to identify impacted files, behavioral drift, and missed
-regressions. Do not limit the review scope to files the agent edited in the
-current turn.
+1. Review the unresolved ledger items and current code against the baseline.
+2. Plan the smallest safe fix set for this pass.
+3. Edit only in-scope files needed to resolve the ledger.
+4. Verify with the most relevant focused commands or evidence.
+5. Update the ledger: `resolved`, `unresolved`, `blocked`, or `deferred by user scope`.
+6. Stop if scoped issues are resolved; otherwise continue until the pass budget is exhausted.
 
-## Companion usage with `code-review`
+Fix order is `P0 -> P1 -> P2 -> P3` unless the user narrows scope. If a request is P1-only, do not opportunistically fix P2/P3 items except for necessary supporting edits.
 
-When this skill is used after `code-review` findings:
+## Conflict and blocker rules
 
-- Treat incoming P0/P1 findings as mandatory fix-first blockers.
-- Fix in severity order (P0 → P1 → P2 → P3) unless the user overrides.
-- Preserve traceability: map each fix to the finding it resolves.
-- Do not mark completion while blocker findings remain unresolved.
+- If two fixes conflict, choose the safer requirement-preserving path and document the tradeoff.
+- If the same issue toggles across passes, stop rather than churn.
+- If verification cannot run or required context is missing, mark the affected item `blocked` with exact evidence.
+- If the 3-pass default limit is reached with unresolved items, stop, report what remains, and ask for direction. Continue to pass 4 or any later pass only after the user explicitly requests additional passes after that status is reported.
 
-## Iterative review loop (required order)
+## References
 
-Follow these steps in exact order:
+Load only as needed:
 
-1. **Initial code review**
-   - Compare the current code against the previous code.
-   - Compare the current code against the repository default branch.
-   - Analyze the resulting current code using both comparisons, not just the
-     agent's latest edits.
-   - Check for syntax errors, logic bugs, edge-case failures, performance
-     issues, and prompt-requirement mismatches.
-2. **Status check**
-   - If **no issues** are found, output: `Code review complete. No issues found.`
-     and exit the loop.
-   - If **issues** are found, continue.
-3. **Log issues before editing**
-   - Explicitly list each issue before applying fixes.
-4. **Apply fixes**
-   - Update the code to resolve the logged issues.
-5. **Update regression ledger**
-   - Track fixed issues in a mental "Regression Ledger."
-   - Explicitly verify new changes do not reintroduce previously fixed problems
-     relative to both the previous code and the repository default branch.
-6. **Repeat**
-   - Return to step 1 and rerun both required comparisons on updated code.
+- `references/baseline-and-pass-rules.md` for baseline commands, pass ledger states, and `BASELINE_LIMITED` wording.
+- `references/issue-ledger-format.md` for a compact remediation ledger template.
+- `references/evaluation-playbook.md` only when evaluating this skill.
 
-## Strict constraints and anti-loop rules
+## Output format
 
-- **No guessing:** Do not stop until a full pass finds zero issues.
-- **Break infinite loops:** If you toggle between the same fixes more than
-  3 times, stop and ask the user for intervention.
-- **No regressions:** Never sacrifice an earlier fix to solve a newer one.
-  Rethink the approach if fixes conflict.
-- **No narrow diff reviews:** Do not review only the files or hunks the agent
-  most recently edited.
+Use this concise structure:
 
-## Gotchas
+1. `Baseline`
+   - base used, working-state notes, and `BASELINE_LIMITED` if applicable.
+2. `Pass N`
+   - issue IDs attempted, edits made, verification run, and ledger updates.
+3. `Final status`
+   - `RESOLVED`, `PARTIAL`, or `BLOCKED` for the requested scope.
+4. `Remaining concerns`
+   - unresolved blockers, skipped out-of-scope items, and any verification limits.
 
-- Do not skip the issue log step before making fixes.
-- Do not skip either required comparison: current vs previous code, and current
-  vs the repository default branch.
-- Do not claim completion without an explicit zero-issue final pass.
-- Do not collapse multiple distinct issues into one vague bullet.
-- Do not hide unresolved conflicts; surface them clearly when blocked.
-- If the same issue recurs across passes, compare against the regression ledger
-  before editing again.
+## Completion conditions
 
-## Required output for each pass
+This skill is complete when one of these is true:
 
-Use this structure during the loop:
-
-1. `Review pass N`
-2. `Comparison scope:`
-   - `- Current code vs previous code`
-   - `- Current code vs default branch`
-3. `Issues found:`
-   - `- <issue 1>`
-   - `- <issue 2>`
-4. `Fixes applied:`
-   - `- <fix 1>`
-5. `Regression check:`
-   - `- Verified no reintroduction of <prior issue>`
-6. `Next status:`
-   - `Continue loop` or `Code review complete. No issues found.`
+- All in-scope ledger items are resolved and required verification is recorded.
+- The pass budget is exhausted and remaining work is reported.
+- A blocker prevents further safe progress and is reported with evidence.

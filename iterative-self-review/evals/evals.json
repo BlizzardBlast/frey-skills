@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "skill_name": "iterative-self-review",
+  "evals": [
+    {
+      "id": "isr-ledger-remediation",
+      "prompt": "Use iterative-self-review to fix this ledger. Fixture: evals/fixtures/ledger-remediation.md",
+      "expected_output": "Activates explicitly, records baseline, fixes the P1 ledger item, verifies the scoped behavior, and reports RESOLVED for the requested scope.",
+      "files": ["evals/fixtures/ledger-remediation.md"],
+      "assertions": [
+        "baseline section is present",
+        "ledger item CR-P1-001 is tracked",
+        "verification is scoped and recorded",
+        "no whole-repository clean claim"
+      ]
+    },
+    {
+      "id": "isr-p1-only-scope",
+      "prompt": "Use iterative-self-review for only the P1 in this ledger; leave P2/P3 alone. Fixture: evals/fixtures/p1-only-scope.md",
+      "expected_output": "Fixes only the P1 item unless supporting edits are necessary, marks lower severity items deferred by user scope, and reports scoped status.",
+      "files": ["evals/fixtures/p1-only-scope.md"],
+      "assertions": [
+        "P1 is attempted before lower severities",
+        "P2/P3 are deferred by user scope",
+        "does not opportunistically fix lower severity items"
+      ]
+    },
+    {
+      "id": "isr-conflicting-fixes",
+      "prompt": "Use iterative-self-review to remediate the conflicting findings. Fixture: evals/fixtures/conflicting-fixes.md",
+      "expected_output": "Identifies the conflict, chooses or proposes the safer requirement-preserving path, and does not toggle between fixes.",
+      "files": ["evals/fixtures/conflicting-fixes.md"],
+      "assertions": [
+        "conflict is explicitly reported",
+        "tradeoff is documented",
+        "no infinite loop or contradictory completion claim"
+      ]
+    },
+    {
+      "id": "isr-unresolved-blocker",
+      "prompt": "Use iterative-self-review to fix and verify this issue. Fixture: evals/fixtures/unresolved-blocker.md",
+      "expected_output": "Marks the item BLOCKED when required secret/service context is unavailable, records verification limits, and stops safely.",
+      "files": ["evals/fixtures/unresolved-blocker.md"],
+      "assertions": [
+        "blocked state is used",
+        "missing context is concrete",
+        "does not claim verified resolution"
+      ]
+    },
+    {
+      "id": "isr-three-pass-limit",
+      "prompt": "Use iterative-self-review and keep trying until this flaky fixture is fixed. Fixture: evals/fixtures/three-pass-limit.md",
+      "expected_output": "Stops at the default 3-pass limit when the issue continues toggling or remains unresolved, reports remaining work, asks for direction, and does not run pass 4 unless the user explicitly requests additional passes after that status.",
+      "files": ["evals/fixtures/three-pass-limit.md"],
+      "assertions": [
+        "default limit is 3 passes",
+        "remaining issue is reported after pass limit",
+        "does not continue indefinitely",
+        "does not run pass 4 or later without an explicit follow-up user request after the pass-limit status"
+      ]
+    },
+    {
+      "id": "isr-non-trigger-ordinary-implementation",
+      "prompt": "Implement the small UI request in this fixture. Do not run an iterative self-review workflow. Fixture: evals/fixtures/ordinary-implementation-request.md",
+      "expected_output": "Does not invoke iterative-self-review because the user asked for an ordinary one-off implementation and explicitly did not request the remediation loop.",
+      "files": ["evals/fixtures/ordinary-implementation-request.md"],
+      "assertions": [
+        "iterative-self-review should not activate",
+        "no baseline/pass ledger is required",
+        "no 3-pass remediation loop is started"
+      ]
+    }
+  ]
+}

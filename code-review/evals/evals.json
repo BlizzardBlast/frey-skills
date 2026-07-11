@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "skill_name": "code-review",
+  "evals": [
+    {
+      "id": "cr-trigger-pr-review",
+      "prompt": "Please review this PR diff for merge readiness. Fixture: evals/fixtures/clean-diff.md",
+      "expected_output": "Invokes code-review, uses diff review mode, includes coverage matrix, marks review COMPLETE, has no actionable findings, and decides APPROVE.",
+      "files": ["evals/fixtures/clean-diff.md"],
+      "assertions": [
+        "scope mode is diff review",
+        "coverage matrix includes correctness and tests",
+        "review completeness is COMPLETE",
+        "decision is APPROVE"
+      ]
+    },
+    {
+      "id": "cr-non-trigger-implementation",
+      "prompt": "Implement the TODOs in this fixture without reviewing. Fixture: evals/fixtures/non-trigger-implementation.md",
+      "expected_output": "Does not invoke code-review because this is an implementation request, not a review request.",
+      "files": ["evals/fixtures/non-trigger-implementation.md"],
+      "assertions": [
+        "code-review should not activate",
+        "no review decision is required"
+      ]
+    },
+    {
+      "id": "cr-security-request-changes",
+      "prompt": "Security-review this diff before merge. Fixture: evals/fixtures/security-command-injection.md",
+      "expected_output": "Finds the command injection as a P0 or P1 with ID, evidence, impact, remediation, verification, and decides REQUEST_CHANGES.",
+      "files": ["evals/fixtures/security-command-injection.md"],
+      "assertions": [
+        "coverage matrix includes security",
+        "finding ledger contains a P0 or P1 command injection finding",
+        "finding includes remediation and verification",
+        "decision is REQUEST_CHANGES"
+      ]
+    },
+    {
+      "id": "cr-accessibility-comment",
+      "prompt": "Review the frontend change for accessibility and correctness. Fixture: evals/fixtures/accessibility-button.md",
+      "expected_output": "Finds the inaccessible clickable div as a P2, marks review COMPLETE, and decides COMMENT.",
+      "files": ["evals/fixtures/accessibility-button.md"],
+      "assertions": [
+        "coverage matrix includes accessibility",
+        "finding ledger includes a P2 keyboard/semantic control finding",
+        "decision is COMMENT"
+      ]
+    },
+    {
+      "id": "cr-targeted-toolchain",
+      "prompt": "Targeted audit: review only the build-tooling change. Fixture: evals/fixtures/toolchain-cache.md",
+      "expected_output": "Uses targeted audit mode, reviews the monorepo/toolchain concern evidenced by the fixture, identifies the Turborepo build outputs regression as P1 or P2, and does not broaden scope.",
+      "files": ["evals/fixtures/toolchain-cache.md"],
+      "assertions": [
+        "scope mode is targeted audit",
+        "coverage matrix includes monorepo/toolchain",
+        "finding mentions that changing Turborepo build outputs from dist/** to .cache/** omits the repository's packages/*/dist build artifacts from output tracking",
+        "does not claim repository-wide review"
+      ]
+    },
+    {
+      "id": "cr-repository-audit-partial",
+      "prompt": "Audit this repository snapshot for dependency and docs/dead-code risk. Fixture: evals/fixtures/repository-audit-snapshot.md",
+      "expected_output": "Uses repository audit mode, samples available files, reports PARTIAL completeness due to snapshot limits, includes requested concerns, and decides COMMENT unless a P0/P1 is found.",
+      "files": ["evals/fixtures/repository-audit-snapshot.md"],
+      "assertions": [
+        "scope mode is repository audit",
+        "review completeness is PARTIAL",
+        "coverage matrix includes dependencies and docs/dead code",
+        "decision is COMMENT when no P0/P1 is found"
+      ]
+    },
+    {
+      "id": "cr-stale-comment-triage",
+      "prompt": "Triage this old review comment against current code. Fixture: evals/fixtures/stale-review-comment.md",
+      "expected_output": "Uses review-comment triage mode, classifies the comment as stale or superseded with current-code evidence, and avoids requesting changes for the stale comment.",
+      "files": ["evals/fixtures/stale-review-comment.md"],
+      "assertions": [
+        "scope mode is review-comment triage",
+        "coverage matrix includes stale comment validity",
+        "finding or note states the comment is stale/superseded",
+        "decision is APPROVE or COMMENT according to completeness"
+      ]
+    },
+    {
+      "id": "cr-review-then-fix-handoff",
+      "prompt": "Please review this change and then fix anything you find. Fixture: evals/fixtures/review-then-fix-handoff.md",
+      "expected_output": "Invokes code-review, remains read-only despite the fix request, marks the review COMPLETE, reports a full finding ledger, decides COMMENT for the P2 finding even with a P3 present, and explicitly hands remediation to iterative-self-review by finding ID/severity.",
+      "files": ["evals/fixtures/review-then-fix-handoff.md"],
+      "assertions": [
+        "code-review activates before any remediation",
+        "no source/config/fixture mutations are performed",
+        "review completeness is COMPLETE",
+        "finding ledger includes the P2 keyboard/semantic button issue with evidence, impact, remediation, and verification",
+        "finding ledger includes the P3 naming/docs issue or clearly classifies it as follow-up",
+        "decision is COMMENT because a P2 exists and no P0/P1 exists, even with P3 findings",
+        "hand-off for fixes explicitly delegates remediation to iterative-self-review by ledger ID/severity"
+      ]
+    }
+  ]
+}
