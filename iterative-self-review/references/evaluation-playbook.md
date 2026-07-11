@@ -27,7 +27,7 @@ Denominators and scoring:
 Use this compact scorecard:
 
 | eval_id | case_type trigger/non-trigger | trials | triggers | accepted_activation | assertion_passes | assertion_denominator | current_result | prior_result | regressions/evidence |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| ------- | ----------------------------- | -----: | -------: | ------------------: | ---------------: | --------------------: | -------------- | ------------ | -------------------- |
 
 Acceptance criteria:
 

@@ -9,8 +9,8 @@ Current code:
 ```tsx
 export function LoginSubmit() {
   return (
-    <button type="submit" aria-label="Sign in">
-      <Icon name="arrow-right" aria-hidden="true" />
+    <button type='submit' aria-label='Sign in'>
+      <Icon name='arrow-right' aria-hidden='true' />
     </button>
   );
 }

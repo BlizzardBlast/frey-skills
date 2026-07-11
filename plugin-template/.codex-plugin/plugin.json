@@ -25,10 +25,7 @@
     "longDescription": "A curated bundle of agent skills for senior code review and iterative self-review of implementation work.",
     "developerName": "BlizzardBlast",
     "category": "Productivity",
-    "capabilities": [
-      "Review",
-      "Write"
-    ],
+    "capabilities": ["Review", "Write"],
     "websiteURL": "https://github.com/BlizzardBlast/frey-skills",
     "defaultPrompt": [
       "Review my current changes with $code-review.",

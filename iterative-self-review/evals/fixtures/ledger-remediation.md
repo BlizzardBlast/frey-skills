@@ -2,9 +2,9 @@
 
 Incoming issue:
 
-| ID | Severity | Location | Evidence | Impact | Remediation | Verification |
-| --- | --- | --- | --- | --- | --- | --- |
-| CR-P1-001 | P1 | `src/total.ts:2` | empty arrays throw because `reduce` has no initial value | checkout with no items crashes | provide an initial accumulator | unit test for empty and non-empty arrays |
+| ID        | Severity | Location         | Evidence                                                 | Impact                         | Remediation                    | Verification                             |
+| --------- | -------- | ---------------- | -------------------------------------------------------- | ------------------------------ | ------------------------------ | ---------------------------------------- |
+| CR-P1-001 | P1       | `src/total.ts:2` | empty arrays throw because `reduce` has no initial value | checkout with no items crashes | provide an initial accumulator | unit test for empty and non-empty arrays |
 
 Current code:
 

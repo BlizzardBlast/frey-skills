@@ -4,9 +4,9 @@ Use this compact ledger when accepting issues from `code-review` or from the use
 
 ## Incoming ledger
 
-| ID | Severity | Location | Evidence | Impact | Remediation | Verification | State |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| CR-P1-001 | P1 | `path/file.ts:42` | observed failing branch | user-visible failure | smallest safe fix | focused test/build/manual check | unresolved |
+| ID        | Severity | Location          | Evidence                | Impact               | Remediation       | Verification                    | State      |
+| --------- | -------- | ----------------- | ----------------------- | -------------------- | ----------------- | ------------------------------- | ---------- |
+| CR-P1-001 | P1       | `path/file.ts:42` | observed failing branch | user-visible failure | smallest safe fix | focused test/build/manual check | unresolved |
 
 ## Pass update
 

@@ -1,6 +1,6 @@
 interface:
-  display_name: "Iterative Self-Review"
-  short_description: "Bounded fix-and-recheck loop"
-  default_prompt: "Use $iterative-self-review to remediate this issue ledger in bounded passes and report scoped verification."
+  display_name: 'Iterative Self-Review'
+  short_description: 'Bounded fix-and-recheck loop'
+  default_prompt: 'Use $iterative-self-review to remediate this issue ledger in bounded passes and report scoped verification.'
 policy:
   allow_implicit_invocation: false
