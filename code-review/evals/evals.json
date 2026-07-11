@@ -49,12 +49,12 @@
     {
       "id": "cr-targeted-toolchain",
       "prompt": "Targeted audit: review only the build-tooling change. Fixture: evals/fixtures/toolchain-cache.md",
-      "expected_output": "Uses targeted audit mode, reviews monorepo/toolchain concern, identifies the cache key regression as P1 or P2, and does not broaden scope.",
+      "expected_output": "Uses targeted audit mode, reviews monorepo/toolchain concern, identifies the Turborepo build outputs regression as P1 or P2, and does not broaden scope.",
       "files": ["evals/fixtures/toolchain-cache.md"],
       "assertions": [
         "scope mode is targeted audit",
         "coverage matrix includes monorepo/toolchain",
-        "finding mentions stale or cross-branch cache risk",
+        "finding mentions that changing build outputs from dist/** to .cache/** can omit packages/*/dist artifacts or break build caching/artifact tracking",
         "does not claim repository-wide review"
       ]
     },

@@ -31,4 +31,4 @@ Suggested wording:
 
 ## Pass budget behavior
 
-Default to 3 passes. A pass counts once you inspect current code and either make or intentionally skip a fix for an in-scope issue. Stop before the limit when all scoped items are resolved and verified. At the limit, report remaining ledger states and ask for direction.
+Default to 3 passes. A pass counts once you inspect current code and either make or intentionally skip a fix for an in-scope issue. Stop before the limit when all scoped items are resolved and verified. At the limit, report remaining ledger states and ask for direction. A fourth or later pass happens only after the user explicitly requests more passes; never continue silently.

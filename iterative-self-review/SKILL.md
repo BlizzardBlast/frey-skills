@@ -19,7 +19,7 @@ Inputs may be:
 
 ## Default pass budget
 
-Run at most 3 review/fix/verify passes unless the user sets another limit. Stop early only when the scoped issues are resolved and the required verification for those issues has passed or is honestly marked blocked.
+Run at most 3 review/fix/verify passes by default. Stop early only when the scoped issues are resolved and the required verification for those issues has passed or is honestly marked blocked. A fourth or later pass is allowed only when the user explicitly requests more passes; never continue past the limit silently.
 
 Do not claim “zero issues”, “all clean”, or whole-repository correctness. Report only scoped resolution and verification evidence.
 
@@ -60,7 +60,7 @@ Fix order is `P0 -> P1 -> P2 -> P3` unless the user narrows scope. If a request 
 - If two fixes conflict, choose the safer requirement-preserving path and document the tradeoff.
 - If the same issue toggles across passes, stop rather than churn.
 - If verification cannot run or required context is missing, mark the affected item `blocked` with exact evidence.
-- If the 3-pass default limit is reached with unresolved items, stop, report what remains, and ask for direction instead of silently continuing.
+- If the 3-pass default limit is reached with unresolved items, stop, report what remains, and ask for direction. Continue to a fourth or later pass only after an explicit user request.
 
 ## References
 
