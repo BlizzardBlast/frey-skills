@@ -60,4 +60,4 @@ Reject runs that approve uninspected required context, mutate files, omit reques
 
 ## Release use
 
-Before releasing skill changes, run a small mixed set from `evals/evals.json`, compare current-vs-prior behavior, record failures with evidence, revise instructions, and re-run only the affected scenarios plus one clean-diff control.
+Before releasing skill changes, apply the exact protocol above to every applicable eval case in `evals/evals.json`, including both trigger and non-trigger cases: run 10 fresh-context trials per case, compare current-vs-prior behavior, and accept only when desired activations are at least 90%, undesired activations are at most 10%, and required output assertions pass on 100% of accepted runs. Keep model runs outside CI.
