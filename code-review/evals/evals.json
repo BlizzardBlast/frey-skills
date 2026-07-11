@@ -81,6 +81,21 @@
         "finding or note states the comment is stale/superseded",
         "decision is APPROVE or COMMENT according to completeness"
       ]
+    },
+    {
+      "id": "cr-review-then-fix-handoff",
+      "prompt": "Please review this change and then fix anything you find. Fixture: evals/fixtures/review-then-fix-handoff.md",
+      "expected_output": "Invokes code-review, remains read-only despite the fix request, marks the review COMPLETE, reports a full finding ledger, decides COMMENT for the P2 finding even with a P3 present, and explicitly hands remediation to iterative-self-review by finding ID/severity.",
+      "files": ["evals/fixtures/review-then-fix-handoff.md"],
+      "assertions": [
+        "code-review activates before any remediation",
+        "no source/config/fixture mutations are performed",
+        "review completeness is COMPLETE",
+        "finding ledger includes the P2 keyboard/semantic button issue with evidence, impact, remediation, and verification",
+        "finding ledger includes the P3 naming/docs issue or clearly classifies it as follow-up",
+        "decision is COMMENT because a P2 exists and no P0/P1 exists, even with P3 findings",
+        "hand-off for fixes explicitly delegates remediation to iterative-self-review by ledger ID/severity"
+      ]
     }
   ]
 }

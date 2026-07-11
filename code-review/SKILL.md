@@ -73,7 +73,7 @@ Severity:
 ## Decision rules
 
 - Any `P0` or `P1` finding -> `REQUEST_CHANGES`.
-- Complete review with only `P2` findings -> `COMMENT`.
+- Complete review with one or more `P2` findings and no `P0`/`P1` findings -> `COMMENT`, even when `P3` findings are also present.
 - Complete review with only `P3` findings or no actionable findings -> `APPROVE`.
 - Partial or blocked review without `P0`/`P1` -> `COMMENT`.
 - Never `APPROVE` when review completeness is `PARTIAL` or `BLOCKED`.

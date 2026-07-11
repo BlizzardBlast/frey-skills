@@ -57,6 +57,17 @@
         "does not continue indefinitely",
         "does not run pass 4 or later without an explicit follow-up user request after the pass-limit status"
       ]
+    },
+    {
+      "id": "isr-non-trigger-ordinary-implementation",
+      "prompt": "Implement the small UI request in this fixture. Do not run an iterative self-review workflow. Fixture: evals/fixtures/ordinary-implementation-request.md",
+      "expected_output": "Does not invoke iterative-self-review because the user asked for an ordinary one-off implementation and explicitly did not request the remediation loop.",
+      "files": ["evals/fixtures/ordinary-implementation-request.md"],
+      "assertions": [
+        "iterative-self-review should not activate",
+        "no baseline/pass ledger is required",
+        "no 3-pass remediation loop is started"
+      ]
     }
   ]
 }
