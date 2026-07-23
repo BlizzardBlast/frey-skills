@@ -2,3 +2,4 @@ dist/
 eval-workspace/
 .superpowers/
 .omo/
+__pycache__/

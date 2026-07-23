@@ -1,7 +1,7 @@
 {
   "name": "frey-skills",
-  "version": "1.0.0",
-  "description": "Reusable Codex agent skills for rigorous code review and iterative self-review workflows.",
+  "version": "1.1.0",
+  "description": "Reusable Codex agent skills for implementation planning, rigorous code review, and iterative remediation workflows.",
   "author": {
     "name": "BlizzardBlast",
     "url": "https://github.com/BlizzardBlast"
@@ -13,7 +13,9 @@
     "agent-skills",
     "codex",
     "code-review",
+    "implementation-plan",
     "iterative-review",
+    "planning",
     "review",
     "self-review",
     "writing"
@@ -21,16 +23,16 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Frey Skills",
-    "shortDescription": "Review and writing workflows for Codex.",
-    "longDescription": "A curated bundle of agent skills for senior code review and iterative self-review of implementation work.",
+    "shortDescription": "Plan, review, and remediate code changes.",
+    "longDescription": "A curated bundle of agent skills for evidence-backed implementation planning, senior code review, and bounded iterative remediation.",
     "developerName": "BlizzardBlast",
     "category": "Productivity",
     "capabilities": ["Review", "Write"],
     "websiteURL": "https://github.com/BlizzardBlast/frey-skills",
     "defaultPrompt": [
+      "Plan this change with $implementation-plan before editing.",
       "Review my current changes with $code-review.",
-      "Run iterative self-review on this implementation.",
-      "Help me tighten this plan before I edit."
+      "Run iterative self-review on this implementation."
     ]
   }
 }

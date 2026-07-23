@@ -16,7 +16,7 @@ from typing import Any, Iterator
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 BUILD_SCRIPT = REPOSITORY_ROOT / "scripts" / "build_plugin.py"
 VALIDATE_SCRIPT = REPOSITORY_ROOT / "scripts" / "validate_plugin_bundle.py"
-EXPECTED_SKILLS = ("code-review", "iterative-self-review")
+EXPECTED_SKILLS = ("code-review", "implementation-plan", "iterative-self-review")
 
 
 def load_module(path: Path, name: str) -> Any:
@@ -74,12 +74,15 @@ class PluginBundleTests(unittest.TestCase):
     def create_fake_repository(self) -> Path:
         fake_root = Path(self.temp_dir.name) / "fake-repository"
         fake_code_review = fake_root / "code-review"
+        fake_implementation_plan = fake_root / "implementation-plan"
         fake_iterative = fake_root / "iterative-self-review"
         fake_template = fake_root / "plugin-template" / ".codex-plugin"
         fake_code_review.mkdir(parents=True)
+        fake_implementation_plan.mkdir(parents=True)
         fake_iterative.mkdir(parents=True)
         fake_template.mkdir(parents=True)
         (fake_code_review / "SKILL.md").write_text("code review skill\n", encoding="utf-8")
+        (fake_implementation_plan / "SKILL.md").write_text("implementation plan skill\n", encoding="utf-8")
         (fake_iterative / "SKILL.md").write_text("iterative review skill\n", encoding="utf-8")
         (fake_template / "plugin.json").write_text("{}", encoding="utf-8")
         return fake_root
@@ -90,7 +93,7 @@ class PluginBundleTests(unittest.TestCase):
         manifest_path = self.output / ".codex-plugin" / "plugin.json"
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         self.assertEqual(manifest["name"], "frey-skills")
-        self.assertEqual(manifest["version"], "1.0.0")
+        self.assertEqual(manifest["version"], "1.1.0")
         self.assertEqual(manifest["skills"], "./skills/")
         self.assertNotIn("apps", manifest)
         self.assertNotIn("mcpServers", manifest)

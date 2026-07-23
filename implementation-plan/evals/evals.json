@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "skill_name": "implementation-plan",
+  "evals": [
+    {
+      "id": "ip-feature-change-plan",
+      "prompt": "Plan this profile-field feature before editing. Fixture: evals/fixtures/feature-profile-field.md",
+      "expected_output": "Invokes implementation-plan, uses change plan mode, remains read-only, traces the client/API/persistence/test boundaries, preserves backward compatibility for the optional field, produces ordered repository-anchored steps and verification, marks planning COMPLETE, and returns READY_TO_IMPLEMENT.",
+      "files": ["evals/fixtures/feature-profile-field.md"],
+      "assertions": [
+        "scope mode is change plan",
+        "planning completeness is COMPLETE",
+        "plan is read-only and contains no implementation patch",
+        "current-state findings cover frontend, API, persistence, and existing tests",
+        "requirements preserve existing clients while adding optional preferredName",
+        "implementation steps are ordered and use repository-backed paths or anchors",
+        "verification covers changed behavior across relevant boundaries",
+        "readiness is READY_TO_IMPLEMENT"
+      ]
+    },
+    {
+      "id": "ip-non-trigger-direct-implementation",
+      "prompt": "Implement the requested TODO directly. Fixture: evals/fixtures/non-trigger-direct-implementation.md",
+      "expected_output": "Does not invoke implementation-plan because the user requested direct implementation and explicitly did not request planning.",
+      "files": ["evals/fixtures/non-trigger-direct-implementation.md"],
+      "assertions": [
+        "implementation-plan should not activate",
+        "no planning completeness or readiness status is required"
+      ]
+    },
+    {
+      "id": "ip-non-trigger-code-review",
+      "prompt": "Review this change for merge readiness. Fixture: evals/fixtures/non-trigger-code-review.md",
+      "expected_output": "Does not invoke implementation-plan because this is a code-review and merge-decision request.",
+      "files": ["evals/fixtures/non-trigger-code-review.md"],
+      "assertions": [
+        "implementation-plan should not activate",
+        "no implementation plan is produced in place of the requested review decision"
+      ]
+    },
+    {
+      "id": "ip-partial-context",
+      "prompt": "Plan the timezone settings change from this repository snapshot. Fixture: evals/fixtures/partial-snapshot.md",
+      "expected_output": "Invokes implementation-plan, uses change plan mode, reports PARTIAL completeness, gives a useful frontend-grounded sequence while explicitly identifying the missing backend/client/persistence contract, does not invent exact backend paths or payload fields, and returns READY_WITH_ASSUMPTIONS or NOT_READY according to the materiality it assigns to the missing contract.",
+      "files": ["evals/fixtures/partial-snapshot.md"],
+      "assertions": [
+        "scope mode is change plan",
+        "planning completeness is PARTIAL",
+        "missing accountClient/backend/persistence context is explicit",
+        "no backend path, schema name, or exact API payload is fabricated",
+        "repository-backed frontend steps remain actionable",
+        "readiness is not READY_TO_IMPLEMENT"
+      ]
+    },
+    {
+      "id": "ip-refactor-preserves-contract",
+      "prompt": "Plan this behavior-preserving refactor. Fixture: evals/fixtures/refactor-preserve-contract.md",
+      "expected_output": "Invokes implementation-plan in refactor plan mode, states the existing parseMoney behavior/export as invariants, proposes the smallest deduplication sequence, avoids a new abstraction layer/package, maps verification to the existing tests, and returns READY_TO_IMPLEMENT when completeness is COMPLETE.",
+      "files": ["evals/fixtures/refactor-preserve-contract.md"],
+      "assertions": [
+        "scope mode is refactor plan",
+        "parseMoney public export and accepted/rejected behavior are explicit invariants",
+        "plan removes duplication without unrelated cleanup or speculative abstraction",
+        "verification uses the existing money/order/invoice behavior tests",
+        "readiness is READY_TO_IMPLEMENT when planning completeness is COMPLETE"
+      ]
+    },
+    {
+      "id": "ip-migration-sequencing",
+      "prompt": "Plan the production-safe non-null status migration. Fixture: evals/fixtures/migration-non-null-status.md",
+      "expected_output": "Invokes implementation-plan in migration plan mode, accounts for historical nulls and rolling deployment, sequences data cleanup before the constraint, preserves old/new app compatibility, identifies rollback/irreversibility considerations, and includes migration verification rather than proposing a one-step NOT NULL change.",
+      "files": ["evals/fixtures/migration-non-null-status.md"],
+      "assertions": [
+        "scope mode is migration plan",
+        "historical null rows are addressed before enforcing NOT NULL",
+        "rolling old/new version compatibility is explicitly analyzed",
+        "plan includes backfill/data verification and constraint verification",
+        "rollback and irreversible database-step considerations are explicit",
+        "plan does not recommend an unsafe one-step constraint change"
+      ]
+    },
+    {
+      "id": "ip-plan-refinement-contract",
+      "prompt": "Tighten this proposed implementation plan against the current codebase. Fixture: evals/fixtures/plan-refinement-contract.md",
+      "expected_output": "Invokes implementation-plan in plan refinement mode, rejects the proposed accountNumber-to-acctNo contract change, preserves the external field, keeps deduplication only if it can be done without changing the contract, and produces a corrected ordered plan with verification.",
+      "files": ["evals/fixtures/plan-refinement-contract.md"],
+      "assertions": [
+        "scope mode is plan refinement",
+        "accountNumber external contract is identified as an invariant",
+        "the acctNo rename is removed or explicitly rejected",
+        "deduplication is retained only in a contract-preserving form",
+        "corrected steps include focused verification"
+      ]
+    }
+  ]
+}

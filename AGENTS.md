@@ -25,6 +25,7 @@ Follow this structure for each skill:
 Current skill examples:
 
 - `code-review/SKILL.md`
+- `implementation-plan/SKILL.md`
 - `iterative-self-review/SKILL.md`
 
 ## SKILL.md Requirements

@@ -13,7 +13,7 @@ from typing import Any, Iterable, Optional
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_SKILLS = ("code-review", "iterative-self-review")
+EXPECTED_SKILLS = ("code-review", "implementation-plan", "iterative-self-review")
 EXPECTED_AUTHOR_URL = "https://github.com/BlizzardBlast"
 EXPECTED_REPOSITORY_URL = "https://github.com/BlizzardBlast/frey-skills"
 DISALLOWED_TOP_LEVEL_FIELDS = {"apps", "mcpServers", "hooks", "marketplace"}
@@ -53,7 +53,17 @@ REQUIRED_INTERFACE_FIELDS = {
     "websiteURL",
     "defaultPrompt",
 }
-REQUIRED_KEYWORDS = {"agent-skills", "codex", "code-review", "iterative-review", "review", "self-review", "writing"}
+REQUIRED_KEYWORDS = {
+    "agent-skills",
+    "codex",
+    "code-review",
+    "implementation-plan",
+    "iterative-review",
+    "planning",
+    "review",
+    "self-review",
+    "writing",
+}
 SEMVER_PATTERN = re.compile(
     r"^(0|[1-9]\d*)\."
     r"(0|[1-9]\d*)\."
@@ -150,7 +160,7 @@ def validate_manifest(manifest: dict[str, Any], errors: list[str]) -> None:
         errors.append(f"plugin.json must not declare {field!r}; this plugin ships skills only")
 
     require_exact_string(manifest, "name", "frey-skills", errors)
-    require_exact_string(manifest, "version", "1.0.0", errors)
+    require_exact_string(manifest, "version", "1.1.0", errors)
     version = manifest.get("version")
     if isinstance(version, str) and SEMVER_PATTERN.fullmatch(version) is None:
         errors.append("plugin.json field 'version' must use strict semantic versioning")

@@ -15,7 +15,7 @@ from typing import Iterable, Optional
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = REPOSITORY_ROOT / "dist" / "frey-skills"
 PLUGIN_TEMPLATE = REPOSITORY_ROOT / "plugin-template"
-EXPECTED_SKILLS = ("code-review", "iterative-self-review")
+EXPECTED_SKILLS = ("code-review", "implementation-plan", "iterative-self-review")
 
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:

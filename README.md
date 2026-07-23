@@ -9,6 +9,34 @@ This repository is designed for the
 
 ## Available Skills
 
+### implementation-plan
+
+Produces read-only, evidence-backed implementation plans grounded in the current
+repository. It may activate implicitly when the user asks to plan, scope,
+sequence, or refine a concrete codebase change before editing.
+
+**Scope modes:**
+
+- `change plan` — feature, known bug fix, behavior, configuration, or localized
+  implementation work.
+- `refactor plan` — behavior-preserving structural improvement.
+- `migration plan` — schema, API, dependency, framework, toolchain, CI, or
+  deployment changes that require compatibility-aware sequencing.
+- `plan refinement` — validate and tighten an existing plan against repository
+  evidence.
+
+**What it enforces:**
+
+- A read-only planning boundary; the skill stops before implementation.
+- Evidence-backed current-state findings with no fabricated repository paths or
+  contracts.
+- Explicit requirements and invariants before proposing changes.
+- Ordered implementation steps with repository anchors, dependencies, preserved
+  invariants, and focused verification.
+- Planning completeness: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
+- Readiness semantics: `READY_TO_IMPLEMENT`, `READY_WITH_ASSUMPTIONS`, or
+  `NOT_READY`.
+
 ### code-review
 
 Performs read-only, evidence-backed reviews for pull requests, diffs, targeted
@@ -68,6 +96,14 @@ matches each skill's activation rules.
 **Example prompts:**
 
 ```text
+Plan this feature against the current repository before editing.
+```
+
+```text
+Use implementation-plan to tighten this migration plan and preserve backward compatibility.
+```
+
+```text
 Review this pull request for merge readiness.
 ```
 
@@ -115,6 +151,14 @@ code-review/
 ├── scripts/
 │   ├── collect_review_context.py
 │   └── test_collect_review_context.py
+└── SKILL.md
+implementation-plan/
+├── agents/
+│   └── openai.yaml
+├── evals/
+│   ├── evals.json
+│   └── fixtures/
+├── references/
 └── SKILL.md
 iterative-self-review/
 ├── agents/

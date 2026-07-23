@@ -8,6 +8,7 @@ skills and the small amount of tooling needed to validate and package them.
 The canonical skill sources live in the root skill directories:
 
 - `code-review/`
+- `implementation-plan/`
 - `iterative-self-review/`
 
 Each skill owns its `SKILL.md`, optional `agents/` metadata, helper `scripts/`,
