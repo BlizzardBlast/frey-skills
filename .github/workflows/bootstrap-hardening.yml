@@ -39,3 +39,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "fix: harden review and validation workflows [skip ci]"
           git push origin HEAD:agent/harden-review-and-validation
+
+# Permission refresh trigger.
