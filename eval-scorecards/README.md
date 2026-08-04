@@ -1,24 +1,29 @@
-# Behavioral evaluation scorecards
+# Legacy behavioral evaluation scorecards
 
-Raw model transcripts and temporary work remain under ignored `eval-workspace/`.
-Accepted behavioral evidence must be committed under the relevant skill at:
+Behavioral model evals are not run or required for any skill in this repository.
+The evaluation playbooks, fixtures, and scorecards are retained only as legacy
+reference material. They are not merge gates and must not be presented as
+certification that model behavior was tested.
+
+Existing scorecards may remain under:
 
 ```text
 <skill>/evals/scorecards/<model-and-surface>.json
 ```
 
-A scorecard is accepted only after the exact fresh-context protocol in that
-skill's `references/evaluation-playbook.md` has been completed. Do not create or
-commit a scorecard from inferred, reconstructed, or partial trial results.
+Do not infer, reconstruct, or fabricate missing trials. Do not create a new
+scorecard for an eval run that was not actually performed.
 
-Use `template.json` as the starting shape. Each committed scorecard must:
+`scripts/validate_repository.py` may validate committed scorecards against the
+current `evals/evals.json`. The validator checks JSON structure, eval-ID
+coverage, trial counts, and count relationships. Passing that deterministic
+validation means only that the committed legacy artifact is structurally
+consistent; it does not reproduce, verify, or certify any model run.
 
-- identify the model, product surface, run date, and tested commit;
-- contain one result for every current eval ID;
-- record exactly 10 trials per eval;
-- preserve the activation and assertion counts used by the playbook; and
-- state `pass` or `fail` without hiding regressions in notes.
+`template.json` remains available only to document the historical scorecard
+shape. A legacy scorecard contains:
 
-`scripts/validate_repository.py` validates committed scorecards against the
-current `evals/evals.json`. The validator checks structure and coverage; it does
-not independently reproduce or certify the model runs.
+- the model, product surface, run date, and tested commit;
+- one result for every referenced eval ID;
+- trial, activation, assertion, and automatic-failure counts; and
+- a recorded `pass` or `fail` result.

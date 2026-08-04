@@ -1,17 +1,22 @@
-# Accepted scorecards
+# Legacy scorecards
 
-Commit accepted compact behavioral scorecards for this skill in this directory.
-Keep raw prompts, transcripts, rejected runs, and grading notes under ignored
-`eval-workspace/`; never infer missing trials.
+Behavioral model evals are not run or required for `code-review`. Existing
+scorecards in this directory are legacy reference artifacts. They are not merge
+evidence and must not be presented as certification that model behavior was
+tested.
 
-Each JSON scorecard must contain:
+Do not infer, reconstruct, or fabricate missing trials. Do not add a scorecard
+for an eval run that was not actually performed.
+
+A legacy JSON scorecard contains:
 
 - `version`, fixed at `1`;
-- this skill's `skill_name`;
+- `skill_name`, fixed at `code-review`;
 - `model`, `product_surface`, `run_date`, and tested `skill_commit`; and
-- one result for every current eval ID.
+- one result for every referenced eval ID.
 
-Each result records `case_type`, exactly 10 `trials`, `triggers`,
-`accepted_activation`, `assertion_passes`, `assertion_denominator`,
-`automatic_failures`, `result`, and optional `notes`. The repository validator
-checks coverage and count consistency against `evals/evals.json`.
+Each result records `case_type`, `trials`, `triggers`, `accepted_activation`,
+`assertion_passes`, `assertion_denominator`, `automatic_failures`, `result`, and
+optional `notes`. The repository validator checks structure, eval-ID coverage,
+and count consistency only; passing validation does not prove that any model run
+occurred.

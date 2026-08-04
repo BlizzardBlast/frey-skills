@@ -1,7 +1,7 @@
 {
   "name": "frey-skills",
-  "version": "1.4.0",
-  "description": "Reusable Codex agent skills for root-cause debugging, implementation planning, controlled plan execution, rigorous code review, and iterative remediation workflows.",
+  "version": "1.5.0",
+  "description": "Reusable Codex agent skills for root-cause debugging, implementation planning, risk-based test strategy, controlled plan execution, rigorous code review, and iterative remediation workflows.",
   "author": {
     "name": "BlizzardBlast",
     "url": "https://github.com/BlizzardBlast"
@@ -21,15 +21,18 @@
     "plan-execution",
     "planning",
     "review",
+    "risk-based-testing",
     "root-cause-analysis",
     "self-review",
+    "test-strategy",
+    "testing",
     "writing"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Frey Skills",
-    "shortDescription": "Debug, plan, execute, review, and remediate code changes.",
-    "longDescription": "A curated bundle of agent skills for evidence-backed root-cause investigation, implementation planning, controlled plan execution, senior code review, and bounded iterative remediation.",
+    "shortDescription": "Debug, plan, strategize tests, execute, review, and remediate code changes.",
+    "longDescription": "A curated bundle of agent skills for evidence-backed root-cause investigation, implementation planning, risk-based test strategy, controlled plan execution, senior code review, and bounded iterative remediation.",
     "developerName": "BlizzardBlast",
     "category": "Productivity",
     "capabilities": ["Review", "Write"],
@@ -37,6 +40,7 @@
     "defaultPrompt": [
       "Investigate this failure with $debug before editing.",
       "Plan this change with $implementation-plan before editing.",
+      "Create a risk-based testing strategy with $test-strategy.",
       "Execute this approved plan with $implementation-execution.",
       "Review my current changes with $code-review.",
       "Run iterative self-review on this implementation."

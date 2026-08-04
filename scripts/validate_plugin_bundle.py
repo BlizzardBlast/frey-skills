@@ -67,7 +67,10 @@ REQUIRED_KEYWORDS = {
     "iterative-review",
     "planning",
     "review",
+    "risk-based-testing",
     "self-review",
+    "test-strategy",
+    "testing",
     "writing",
 }
 SEMVER_PATTERN = re.compile(

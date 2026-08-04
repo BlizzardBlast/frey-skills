@@ -65,6 +65,40 @@ sequence, or refine a concrete codebase change before editing.
 - Readiness semantics: `READY_TO_IMPLEMENT`, `READY_WITH_ASSUMPTIONS`, or
   `NOT_READY`.
 
+### test-strategy
+
+Produces a read-only, repository-grounded, risk-based testing strategy for a
+concrete feature, defect, migration, diff, release, or system boundary. It may
+activate implicitly when the user asks for a test strategy, regression plan,
+migration test plan, release test plan, risk-based coverage plan, or testing
+readiness assessment.
+
+**Scope modes:**
+
+- `change test strategy` — focused feature, behavior, defect, configuration, or
+  diff coverage.
+- `regression test strategy` — protect established behavior after a confirmed
+  defect, refactor, incident, or dependency change.
+- `migration test strategy` — compatibility, data transition, rollback, and
+  old/new version coverage.
+- `release test strategy` — testing concerns for a release candidate, staged
+  rollout, or production promotion.
+
+**What it enforces:**
+
+- A read-only strategy boundary; the skill stops before test implementation or
+  execution.
+- A prioritized risk matrix and observable contract inventory.
+- Risk-to-layer and risk-to-scenario traceability.
+- Explicit test data, environment, automation, and execution requirements.
+- Entry and exit criteria plus residual risk.
+- Strategy completeness: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
+- Test readiness: `READY`, `READY_WITH_GAPS`, or `NOT_READY`.
+
+A test strategy is supplementary evidence. It is not an executable
+implementation plan by itself and does not decide merge readiness or broader
+release readiness.
+
 ### implementation-execution
 
 Executes, continues, or resumes an existing approved implementation plan through
@@ -136,6 +170,8 @@ post-review repair, or repeated fix-and-recheck remediation.
 
 ## Workflow
 
+The primary implementation lifecycle remains:
+
 ```text
 symptom or failing test
         ↓
@@ -151,6 +187,10 @@ code-review
         ↓
 iterative-self-review
 ```
+
+`test-strategy` is an optional specialist workflow that can inform planning,
+test implementation, review of test sufficiency, migration confidence, and
+release testing. It is not a mandatory stage for every change.
 
 ## Installation
 
@@ -179,6 +219,22 @@ Plan this feature against the current repository before editing.
 
 ```text
 Use implementation-plan to tighten this migration plan and preserve backward compatibility.
+```
+
+```text
+Create a change test strategy for this feature.
+```
+
+```text
+Design regression coverage for this confirmed defect.
+```
+
+```text
+Create a migration test strategy covering old/new compatibility and rollback.
+```
+
+```text
+Assess whether this release is test-ready from the available evidence.
 ```
 
 ```text
@@ -222,7 +278,7 @@ Each skill directory can include:
 - `scripts/` — optional helper automation
 - `references/` — optional supporting docs
 - `assets/` — optional templates/resources
-- `evals/` — optional behavioral evaluation fixtures and scorecards
+- `evals/` — optional legacy behavioral fixtures and scorecards
 
 Current layout:
 
@@ -230,31 +286,33 @@ Current layout:
 code-review/
 debug/
 implementation-plan/
+test-strategy/
 implementation-execution/
 iterative-self-review/
 ```
 
 Each canonical skill contains a `SKILL.md`; individual skills may additionally
 contain `agents/`, `evals/`, `references/`, or `scripts/` according to their
-workflow.
+workflow. The `test-strategy` skill intentionally ships without an `evals/`
+directory.
 
 ## Quality Gates
 
-The repository combines executable checks with manual behavioral evidence:
+The repository uses deterministic quality gates:
 
-- a project validator for metadata, references, eval schema, scorecards, and
-  source hygiene;
+- a project validator for metadata, references, optional eval schema, scorecard
+  structure, and source hygiene;
 - the official `skills-ref` validator for Agent Skills specification
   compatibility;
-- regression tests for review-context collection and bundle safety;
-- deterministic plugin build and source-parity validation; and
-- committed compact behavioral scorecards when the exact fresh-context protocol
-  has been completed.
+- regression and contract tests;
+- deterministic plugin build and source-parity validation;
+- whitespace validation; and
+- scoped code review.
 
-See `eval-scorecards/README.md` for the durable scorecard format. Raw prompts,
-transcripts, rejected runs, and disposable repositories stay under ignored
-`eval-workspace/`. A missing scorecard must be reported honestly; it must never
-be reconstructed from partial or inferred runs.
+Behavioral model evals are not run or required for any skill. Existing eval
+fixtures and scorecards are legacy reference material only. Passing structural
+validation for those files does not mean behavioral trials were executed, and no
+model-behavior certification is claimed.
 
 ## Generated Codex Plugin Bundle
 
@@ -279,13 +337,13 @@ personal setup outside the repo workflow.
 - Include clear trigger language so agents know when to activate the skill.
 - Use short, actionable steps and explicit stop conditions.
 - Move deep detail to `references/` when instructions become too long.
-- Run mutation-oriented behavioral evals only in disposable repositories.
+- Do not claim behavioral model evals were run.
 - Never fabricate behavioral scorecards.
 - Keep generated plugin output in sync by rebuilding and validating
   `dist/frey-skills`.
 
-See `CONTRIBUTING.md` for setup, validation, manual behavioral evaluation,
-accepted scorecards, and PR expectations.
+See `CONTRIBUTING.md` for setup, deterministic validation, behavioral eval
+policy, and PR expectations.
 
 ## License
 

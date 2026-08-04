@@ -21,11 +21,13 @@ Follow this structure for each skill:
 - `scripts/` (optional): helper scripts used by the skill
 - `references/` (optional): supporting docs/examples
 - `assets/` (optional): templates or static resources
+- `evals/` (optional): legacy behavioral fixtures or scorecards
 
 Current skill examples:
 
 - `debug/SKILL.md`
 - `implementation-plan/SKILL.md`
+- `test-strategy/SKILL.md`
 - `implementation-execution/SKILL.md`
 - `code-review/SKILL.md`
 - `iterative-self-review/SKILL.md`
@@ -68,7 +70,7 @@ For any skill changes:
 3. Ensure `description` is specific enough for discovery.
 4. Confirm examples/prompts still match actual behavior.
 5. Re-read the full `SKILL.md` for contradictions or missing stop conditions.
-6. Verify markdown formatting (including a single trailing newline at end of file).
+6. Verify markdown formatting, including one trailing newline.
 
 Run the validation commands that match the changed artifacts:
 
@@ -79,37 +81,41 @@ python3 scripts/validate_repository.py
 for skill_file in */SKILL.md; do skills-ref validate "$(dirname "${skill_file}")"; done
 python3 -m unittest discover -s code-review/scripts -p 'test_*.py'
 python3 -m unittest scripts.test_validate_repository
-python3 -m unittest scripts.test_build_plugin
+python3 -m unittest scripts.test_build_plugin scripts.test_implementation_execution_contract scripts.test_test_strategy_contract
 python3 scripts/build_plugin.py --force
 python3 scripts/validate_plugin_bundle.py dist/frey-skills
 git diff --check
 ```
 
-When a `SKILL.md` description, activation boundary, output format, workflow, or
-decision rule changes, also run the applicable manual behavioral evals from the
-skill's `evals/evals.json`. Keep raw evidence under ignored `eval-workspace/`
-and commit the accepted compact scorecard under the skill's
-`evals/scorecards/` directory. Never invent missing trials.
+## Behavioral Eval Policy
 
-Mutation-oriented behavioral evals must run in disposable repositories, never
-against a meaningful working tree.
+Behavioral model evals are not run or required for any skill in this repository.
+Do not require fresh-context model trials, provider credentials, token-spending
+workflows, or accepted scorecards as a merge gate. Do not claim that model
+behavior was certified when only deterministic checks were run.
 
-These checks are local repository checks. Do not claim hosted model evals or CI
-unless you have separate evidence for those systems.
+Existing `evals/` files and scorecards may remain as legacy reference material.
+Repository validators may continue checking their schema and source hygiene, but
+that deterministic validation does not mean the behavioral trials were executed.
+New skills may omit `evals/` entirely.
+
+The supported quality gates are deterministic repository validation, Agent
+Skills specification validation, focused contract tests, plugin build/parity
+validation, whitespace checks, and scoped code review.
 
 ## Pull Request Notes
 
 When opening a PR, include:
 
-- What skill(s) changed
-- Why the change is needed
-- Any behavior changes in activation or outputs
-- Before/after examples when workflow behavior changes
+- What skill(s), docs, scripts, or metadata changed.
+- Why the change is needed.
+- Behavior changes in activation or outputs.
+- Exact deterministic validation evidence.
+- Explicit confirmation that behavioral model evals were not run and no model-behavior certification is claimed.
 
 ## Conventions Specific to This Repo
 
-- Keep folder names lowercase kebab-case (for example: `iterative-self-review`).
-- Keep the README skill list in sync when adding/removing skills.
+- Keep folder names lowercase kebab-case.
+- Keep the README skill list in sync when adding or removing skills.
 - Keep skill instructions tool-agnostic unless a tool dependency is essential.
-- Keep product-specific metadata in `agents/` instead of mixing it into the
-  core skill instructions.
+- Keep product-specific metadata in `agents/` instead of the core skill instructions.

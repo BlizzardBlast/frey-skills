@@ -9,12 +9,13 @@ The canonical skill sources live in the root skill directories:
 
 - `debug/`
 - `implementation-plan/`
+- `test-strategy/`
 - `implementation-execution/`
 - `code-review/`
 - `iterative-self-review/`
 
 Each skill owns its `SKILL.md`, optional `agents/` metadata, helper `scripts/`,
-supporting `references/`, optional `assets/`, and behavioral `evals/`.
+supporting `references/`, optional `assets/`, and optional legacy `evals/`.
 
 The generated Codex plugin bundle lives at `dist/frey-skills` and is rebuilt
 from the root skill directories plus `plugin-template/.codex-plugin/plugin.json`.
@@ -49,16 +50,17 @@ python3 scripts/validate_repository.py
 for skill_file in */SKILL.md; do skills-ref validate "$(dirname "${skill_file}")"; done
 python3 -m unittest discover -s code-review/scripts -p 'test_*.py'
 python3 -m unittest scripts.test_validate_repository
-python3 -m unittest scripts.test_build_plugin
+python3 -m unittest scripts.test_build_plugin scripts.test_implementation_execution_contract scripts.test_test_strategy_contract
 python3 scripts/build_plugin.py --force
 python3 scripts/validate_plugin_bundle.py dist/frey-skills
 git diff --check
 ```
 
 The repository validator checks Agent Skills frontmatter fields, local
-references, eval schema and fixture references, committed behavioral scorecards,
-OpenAI agent metadata, and single trailing newlines for recognized text files.
-The separate `skills-ref` command provides an upstream specification check.
+references, optional eval schema and fixture references, committed scorecard
+schema, OpenAI agent metadata, and single trailing newlines for recognized text
+files. The separate `skills-ref` command provides an upstream specification
+check.
 
 ## Generated Plugin Development
 
@@ -81,52 +83,41 @@ release changes the plugin's published behavior or manifest contract, update the
 semantic version in `plugin-template/.codex-plugin/plugin.json` in the same
 change.
 
-## Manual Behavioral Evals
+## Behavioral Eval Policy
 
-Run manual behavioral evals whenever a `SKILL.md` description, activation
-boundary, output format, workflow, stop condition, or decision rule changes.
-A behavior-changing PR is not merge-ready until these required trials pass and
-an accepted scorecard is committed.
+Behavioral model evals are not part of this repository's implementation or merge
+workflow. They are not run or required for any skill, including skills that
+already contain `evals/evals.json` or scorecard files.
 
-Use this procedure:
+Do not require or claim:
 
-1. Snapshot the prior skill text and relevant fixtures before editing.
-2. Read each applicable case in the skill's `evals/evals.json`.
-3. For each applicable eval, run 10 fresh-context attempts against the current
-   skill.
-4. Run mutation-oriented evals only in disposable repositories created from the
-   committed fixture setup; never use a meaningful working tree.
-5. Compare behavior with the prior skill or no-skill baseline, whichever is
-   relevant to the change.
-6. Apply the exact acceptance thresholds from the skill's evaluation
-   playbook:
-   - trigger cases activate in at least 9 of 10 trials;
-   - non-trigger cases activate in no more than 1 of 10 trials;
-   - every required assertion passes in 100% of accepted runs; and
-   - no automatic-failure condition occurs.
-7. Keep prompts, transcripts, working notes, disposable repositories, and
-   rejected runs under ignored `eval-workspace/`.
-8. Commit the accepted compact scorecard under
-   `<skill>/evals/scorecards/<model-and-surface>.json`, using
-   `eval-scorecards/template.json` and the rules in
-   `eval-scorecards/README.md`.
+- fresh-context model trials;
+- provider credentials or paid token execution;
+- accepted activation thresholds from model runs;
+- committed scorecards as merge evidence; or
+- certification that a skill's model behavior was tested.
 
-Do not infer or reconstruct missing trials. Do not present these manual checks
-as hosted model evals or CI. They are local human-reviewed behavioral evidence,
-with only the accepted compact scorecard committed for future regression
-comparison.
+Existing eval fixtures, playbooks, and scorecards may remain as legacy reference
+material. Deterministic validators may continue checking their JSON schema,
+fixture paths, count relationships, and source hygiene. Passing those checks
+means only that the committed artifacts are structurally valid; it does not mean
+any behavioral trials were executed or accepted.
+
+New skills may intentionally omit `evals/`. Skill quality is established through
+repository inspection, Agent Skills specification validation, deterministic
+contract tests, plugin build/parity validation, whitespace checks, and scoped
+code review.
 
 ## Pull Request Checklist
 
 Before opening a PR, include:
 
 - Scope: which skill(s), docs, scripts, or plugin artifacts changed.
-- Evidence: exact validation commands run and their results.
+- Evidence: exact deterministic validation commands run and their results.
 - Behavior changes: activation, output, workflow, decision, or stop-condition
   changes, including before/after examples when useful.
-- The committed accepted eval scorecard for every behavior-changing skill PR.
-- If required behavioral trials have not passed, keep the PR in draft and state
-  the missing evidence explicitly; do not waive the gate or fabricate results.
+- Confirmation that behavioral model evals were not run and no model-behavior
+  certification is claimed.
 - Confirmation that generated plugin output was rebuilt and validated when
   plugin-relevant sources changed.
 - Confirmation that no marketplace or public submission step is part of the
