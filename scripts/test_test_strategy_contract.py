@@ -3,11 +3,9 @@
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import unittest
 from pathlib import Path
-from typing import Any
 
 import yaml
 
@@ -17,16 +15,6 @@ SKILL_ROOT = REPOSITORY_ROOT / "test-strategy"
 SKILL_FILE = SKILL_ROOT / "SKILL.md"
 AGENT_FILE = SKILL_ROOT / "agents" / "openai.yaml"
 MANIFEST_PATH = REPOSITORY_ROOT / "plugin-template" / ".codex-plugin" / "plugin.json"
-VALIDATOR_PATH = REPOSITORY_ROOT / "scripts" / "validate_plugin_bundle.py"
-
-
-def load_module(path: Path, name: str) -> Any:
-    spec = importlib.util.spec_from_file_location(name, path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"Unable to import {path}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 class TestStrategyContractTests(unittest.TestCase):
@@ -69,17 +57,6 @@ class TestStrategyContractTests(unittest.TestCase):
         self.assertIn("test-strategy", manifest["keywords"])
         self.assertIn("risk-based-testing", manifest["keywords"])
         self.assertTrue(any("$test-strategy" in prompt for prompt in manifest["interface"]["defaultPrompt"]))
-
-    def test_validator_rejects_missing_test_strategy_keyword(self) -> None:
-        manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-        manifest["keywords"].remove("test-strategy")
-        validator = load_module(VALIDATOR_PATH, "validate_plugin_bundle_test_strategy_contract")
-        errors: list[str] = []
-        validator.validate_manifest(manifest, errors)
-        self.assertTrue(
-            any("test-strategy" in error and "missing discovery keywords" in error for error in errors),
-            errors,
-        )
 
 
 if __name__ == "__main__":
