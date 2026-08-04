@@ -115,9 +115,9 @@ A step is `completed` only when its objective is implemented and required verifi
 
 Use the original step numbering when available; otherwise assign stable IDs such as `PLAN-01`.
 
-| Step | Plan objective | Status | Changed paths | Verification | Deviation |
-| ---- | -------------- | ------ | ------------- | ------------ | --------- |
-| PLAN-01 | Objective | completed | `path/file` | command and result | none |
+| Step    | Plan objective | Status    | Changed paths | Verification       | Deviation |
+| ------- | -------------- | --------- | ------------- | ------------------ | --------- |
+| PLAN-01 | Objective      | completed | `path/file`   | command and result | none      |
 
 Distinguish:
 

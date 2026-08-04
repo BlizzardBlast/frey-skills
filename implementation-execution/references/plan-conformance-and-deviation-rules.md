@@ -11,9 +11,9 @@
 
 ## Ledger template
 
-| Step | Plan objective | Status | Changed paths | Verification | Deviation |
-| ---- | -------------- | ------ | ------------- | ------------ | --------- |
-| PLAN-01 | Add behavior | completed | `src/file` | focused test passed | none |
+| Step    | Plan objective | Status    | Changed paths | Verification        | Deviation |
+| ------- | -------------- | --------- | ------------- | ------------------- | --------- |
+| PLAN-01 | Add behavior   | completed | `src/file`    | focused test passed | none      |
 
 Keep original plan numbering when possible. Do not hide pre-existing edits inside `Changed paths`; label them as baseline state.
 
