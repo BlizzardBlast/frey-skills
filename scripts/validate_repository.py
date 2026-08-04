@@ -442,6 +442,27 @@ class Validator:
                         scorecard_file,
                         f"{label}.assertion_denominator must equal accepted_activation",
                     )
+                if (
+                    assertion_passes is not None
+                    and assertion_denominator is not None
+                    and assertion_passes > assertion_denominator
+                ):
+                    self.add_error(
+                        scorecard_file,
+                        f"{label}.assertion_passes must not exceed assertion_denominator",
+                    )
+
+                trials = result.get("trials")
+                if (
+                    automatic_failures is not None
+                    and isinstance(trials, int)
+                    and not isinstance(trials, bool)
+                    and automatic_failures > trials
+                ):
+                    self.add_error(
+                        scorecard_file,
+                        f"{label}.automatic_failures must not exceed trials",
+                    )
 
                 recorded_result = result.get("result")
                 if recorded_result not in {"pass", "fail"}:

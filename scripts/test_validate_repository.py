@@ -375,6 +375,77 @@ class RepositoryValidatorTests(unittest.TestCase):
         self.assertIn("missing eval IDs", output)
         self.assertIn("unknown eval IDs", output)
 
+    def test_eval_scorecard_rejects_impossible_count_relationships(self) -> None:
+        self.write_valid_skill("scorecard-skill")
+        self.write(
+            "scorecard-skill/evals/scorecards/gpt.json",
+            json.dumps(
+                {
+                    "version": 1,
+                    "skill_name": "scorecard-skill",
+                    "model": "example-model",
+                    "product_surface": "example-surface",
+                    "run_date": "2026-08-04",
+                    "skill_commit": "abc123",
+                    "results": [
+                        {
+                            "eval_id": "valid-eval",
+                            "case_type": "trigger",
+                            "trials": 9,
+                            "triggers": 9,
+                            "accepted_activation": 9,
+                            "assertion_passes": 10,
+                            "assertion_denominator": 9,
+                            "automatic_failures": 10,
+                            "result": "fail",
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+
+        output = self.assert_validation_fails_with(
+            "assertion_passes must not exceed assertion_denominator"
+        )
+        self.assertIn("automatic_failures must not exceed trials", output)
+
+    def test_eval_scorecard_allows_failure_counts_at_trial_boundary(self) -> None:
+        self.write_valid_skill("scorecard-skill")
+        self.write(
+            "scorecard-skill/evals/scorecards/gpt.json",
+            json.dumps(
+                {
+                    "version": 1,
+                    "skill_name": "scorecard-skill",
+                    "model": "example-model",
+                    "product_surface": "example-surface",
+                    "run_date": "2026-08-04",
+                    "skill_commit": "abc123",
+                    "results": [
+                        {
+                            "eval_id": "valid-eval",
+                            "case_type": "trigger",
+                            "trials": 10,
+                            "triggers": 10,
+                            "accepted_activation": 10,
+                            "assertion_passes": 10,
+                            "assertion_denominator": 10,
+                            "automatic_failures": 10,
+                            "result": "fail",
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+
+        result = run_validator(self.repo)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_missing_eval_skill_name_fails(self) -> None:
         self.write_valid_skill("eval-skill")
         self.write(
