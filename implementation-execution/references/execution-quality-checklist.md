@@ -12,6 +12,9 @@
 
 - [ ] Branch, HEAD, staged, unstaged, and untracked state were captured.
 - [ ] Plan-owned and unrelated dirty paths are distinguished.
+- [ ] Existing hunks in dirty plan-owned files were classified before editing.
+- [ ] Compatible partial work and unrelated same-file user hunks were preserved.
+- [ ] Ambiguous or conflicting dirty target ownership caused execution to stop.
 - [ ] Unrelated work was not overwritten, stashed, reset, or cleaned.
 - [ ] Canonical source ownership was established before editing generated output.
 
@@ -28,6 +31,7 @@
 - [ ] Every completed step has actual verification evidence.
 - [ ] Failed or skipped checks are reported honestly.
 - [ ] Pre-existing failures are distinguished from execution regressions.
+- [ ] A newly introduced failure blocks the affected step and dependent work.
 - [ ] Final integration checks are proportionate to affected boundaries.
 - [ ] `IMPLEMENTED` is not used when required verification failed or was skipped.
 
