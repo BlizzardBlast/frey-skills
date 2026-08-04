@@ -9,6 +9,34 @@ This repository is designed for the
 
 ## Available Skills
 
+### debug
+
+Performs read-only, evidence-backed root-cause investigations for deterministic
+failures, regressions, flaky behavior, and production-only incidents. It may
+activate implicitly when the user asks to investigate, diagnose, troubleshoot,
+reproduce, or determine the root cause of a concrete codebase or system symptom.
+
+**Investigation modes:**
+
+- `failure investigation` — deterministic errors, crashes, incorrect results,
+  or failing tests.
+- `regression investigation` — behavior differences across versions, branches,
+  commits, deployments, or environments.
+- `flaky investigation` — intermittent, timing-dependent, order-dependent, or
+  nondeterministic behavior.
+- `production investigation` — logs, telemetry, incidents, or incomplete
+  reproduction access.
+
+**What it enforces:**
+
+- A read-only investigation boundary; the skill stops before implementation.
+- Explicit symptom, baseline, and reproduction status.
+- A stable hypothesis ledger with supporting, contradicting, and discriminating
+  evidence.
+- Investigation completeness: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
+- Root-cause status: `CONFIRMED`, `LIKELY`, `UNRESOLVED`, or `NOT_A_DEFECT`.
+- Clean handoffs to implementation planning, review, or remediation workflows.
+
 ### implementation-plan
 
 Produces read-only, evidence-backed implementation plans grounded in the current
@@ -82,6 +110,24 @@ post-review repair, or repeated fix-and-recheck remediation.
 - Honest `RESOLVED`, `PARTIAL`, or `BLOCKED` status without whole-repository
   clean claims.
 
+## Workflow
+
+```text
+symptom or failing test
+        ↓
+       debug
+        ↓
+confirmed root cause
+        ↓
+implementation-plan
+        ↓
+implementation
+        ↓
+code-review
+        ↓
+iterative-self-review
+```
+
 ## Installation
 
 ```bash
@@ -94,6 +140,14 @@ Once installed, compatible agents can activate skills when the task context
 matches each skill's activation rules.
 
 **Example prompts:**
+
+```text
+Investigate why this test is flaky before editing anything.
+```
+
+```text
+Find the root cause of this production-only 401 from the available logs.
+```
 
 ```text
 Plan this feature against the current repository before editing.
@@ -152,6 +206,15 @@ code-review/
 │   ├── collect_review_context.py
 │   └── test_collect_review_context.py
 └── SKILL.md
+debug/
+├── agents/
+│   └── openai.yaml
+├── evals/
+│   ├── evals.json
+│   ├── fixtures/
+│   └── scorecards/
+├── references/
+└── SKILL.md
 implementation-plan/
 ├── agents/
 │   └── openai.yaml
@@ -200,7 +263,7 @@ python3 scripts/validate_plugin_bundle.py dist/frey-skills
 Do not hand-edit `dist/frey-skills`; rebuild it from the canonical sources.
 The repository does not commit marketplace metadata or a public marketplace
 submission package. Local marketplace wiring, if you use it, is an optional
-personal setup outside this repo workflow.
+personal setup outside the repo workflow.
 
 ## Notes for Authors
 

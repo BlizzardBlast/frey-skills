@@ -1,0 +1,6 @@
+interface:
+  display_name: 'Debug'
+  short_description: 'Read-only root-cause investigation'
+  default_prompt: 'Use $debug to investigate this failure, test competing hypotheses, and report the most defensible root cause without editing files.'
+policy:
+  allow_implicit_invocation: true
