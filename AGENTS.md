@@ -21,7 +21,7 @@ Follow this structure for each skill:
 - `scripts/` (optional): helper scripts used by the skill
 - `references/` (optional): supporting docs/examples
 - `assets/` (optional): templates or static resources
-- `evals/` (optional): behavioral fixtures and accepted scorecards
+- `evals/` (optional): legacy behavioral fixtures or scorecards
 
 Current skill examples:
 
@@ -87,17 +87,21 @@ python3 scripts/validate_plugin_bundle.py dist/frey-skills
 git diff --check
 ```
 
-Behavioral evals are required only when the affected skill owns an
-`evals/evals.json` suite whose playbook makes those trials a release gate. A new
-skill may intentionally ship without evals. Such a PR must say so explicitly,
-use deterministic contract/specification/package validation, and must not claim
-that model behavior was certified.
+## Behavioral Eval Policy
 
-For an applicable existing suite, keep raw evidence under ignored
-`eval-workspace/`, commit the accepted scorecard, never reconstruct missing
-trials, and run mutation-oriented cases only in disposable repositories.
+Behavioral model evals are not run or required for any skill in this repository.
+Do not require fresh-context model trials, provider credentials, token-spending
+workflows, or accepted scorecards as a merge gate. Do not claim that model
+behavior was certified when only deterministic checks were run.
 
-`test-strategy` intentionally ships without an `evals/` directory.
+Existing `evals/` files and scorecards may remain as legacy reference material.
+Repository validators may continue checking their schema and source hygiene, but
+that deterministic validation does not mean the behavioral trials were executed.
+New skills may omit `evals/` entirely.
+
+The supported quality gates are deterministic repository validation, Agent
+Skills specification validation, focused contract tests, plugin build/parity
+validation, whitespace checks, and scoped code review.
 
 ## Pull Request Notes
 
@@ -107,7 +111,7 @@ When opening a PR, include:
 - Why the change is needed.
 - Behavior changes in activation or outputs.
 - Exact deterministic validation evidence.
-- Applicable behavioral scorecards, or explicit confirmation that the new skill intentionally has no eval suite.
+- Explicit confirmation that behavioral model evals were not run and no model-behavior certification is claimed.
 
 ## Conventions Specific to This Repo
 
