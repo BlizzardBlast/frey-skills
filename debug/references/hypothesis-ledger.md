@@ -4,9 +4,9 @@ Use this reference when several explanations remain plausible or when an investi
 
 ## Ledger format
 
-| ID | Hypothesis | Supporting evidence | Contradicting evidence | Discriminating check | Status |
-| --- | ---------- | ------------------- | ---------------------- | -------------------- | ------ |
-| DBG-H1 | Proposed causal explanation | Concrete observations | Concrete counter-evidence or `none observed` | Smallest safe distinguishing check | OPEN |
+| ID     | Hypothesis                  | Supporting evidence   | Contradicting evidence                       | Discriminating check               | Status |
+| ------ | --------------------------- | --------------------- | -------------------------------------------- | ---------------------------------- | ------ |
+| DBG-H1 | Proposed causal explanation | Concrete observations | Concrete counter-evidence or `none observed` | Smallest safe distinguishing check | OPEN   |
 
 Allowed statuses are `OPEN`, `SUPPORTED`, `CONFIRMED`, `REJECTED`, and `BLOCKED`.
 
