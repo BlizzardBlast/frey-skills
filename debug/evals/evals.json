@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "skill_name": "debug",
+  "evals": [
+    {
+      "id": "dbg-deterministic-failure",
+      "prompt": "Investigate this deterministic failure and determine the root cause without editing. Fixture: evals/fixtures/deterministic-failure.md",
+      "expected_output": "Invokes debug in failure investigation mode, traces the empty-array failure to reduce without an initial value, distinguishes the thrown exception from the causal implementation choice, confirms the root cause, and remains read-only.",
+      "files": ["evals/fixtures/deterministic-failure.md"],
+      "assertions": [
+        "investigation mode is failure investigation",
+        "investigation completeness is COMPLETE",
+        "root cause identifies reduce without an initial accumulator for empty arrays",
+        "hypothesis ledger includes and rejects at least one plausible alternative or explains why none remains material",
+        "root-cause status is CONFIRMED",
+        "no implementation patch or mutation is performed"
+      ]
+    },
+    {
+      "id": "dbg-competing-hypotheses",
+      "prompt": "Debug this login failure and test competing explanations. Fixture: evals/fixtures/competing-hypotheses.md",
+      "expected_output": "Invokes debug, does not anchor on the recently changed cache, uses the evidence to reject the cache hypothesis, confirms the clock-unit mismatch, and preserves the rejected hypothesis in the ledger.",
+      "files": ["evals/fixtures/competing-hypotheses.md"],
+      "assertions": [
+        "recent cache change is not treated as causal from recency alone",
+        "cache hypothesis is explicitly REJECTED",
+        "seconds-versus-milliseconds comparison is CONFIRMED",
+        "root-cause status is CONFIRMED",
+        "hypothesis ledger records supporting and contradicting evidence"
+      ]
+    },
+    {
+      "id": "dbg-production-blocked",
+      "prompt": "Investigate this production-only partner failure. Fixture: evals/fixtures/production-blocked.md",
+      "expected_output": "Invokes debug in production investigation mode, reports missing partner credentials and complete response data, avoids claiming reproduction or confirmation, and returns BLOCKED/UNRESOLVED or PARTIAL/LIKELY only if evidence supports a narrow likelihood.",
+      "files": ["evals/fixtures/production-blocked.md"],
+      "assertions": [
+        "investigation mode is production investigation",
+        "missing partner access and redacted evidence are explicit",
+        "does not claim local reproduction",
+        "root-cause status is not CONFIRMED",
+        "recommended next evidence is concrete"
+      ]
+    },
+    {
+      "id": "dbg-flaky-timing",
+      "prompt": "Investigate why this test is flaky. Fixture: evals/fixtures/flaky-timing.md",
+      "expected_output": "Invokes debug in flaky investigation mode, treats a passing rerun as insufficient, identifies the uncontrolled timer boundary as the likely causal mechanism, and keeps status PARTIAL/LIKELY unless discriminating evidence confirms it.",
+      "files": ["evals/fixtures/flaky-timing.md"],
+      "assertions": [
+        "investigation mode is flaky investigation",
+        "passing rerun is not treated as resolution or confirmation",
+        "timer scheduling and fixed sleep are traced as the likely mechanism",
+        "root-cause status is LIKELY or CONFIRMED only when completeness supports it",
+        "post-fix verification targets deterministic timer control"
+      ]
+    },
+    {
+      "id": "dbg-regression-upgrade",
+      "prompt": "Find the cause of this regression after the dependency upgrade. Fixture: evals/fixtures/regression-upgrade.md",
+      "expected_output": "Invokes debug in regression investigation mode, identifies the changed default rather than recommending an immediate downgrade, traces configuration ownership, and reports the earliest semantic divergence.",
+      "files": ["evals/fixtures/regression-upgrade.md"],
+      "assertions": [
+        "investigation mode is regression investigation",
+        "changed dependency default is identified as the earliest divergence",
+        "does not recommend downgrade as a substitute for diagnosis",
+        "existing explicit configuration path is considered",
+        "root-cause status follows available evidence"
+      ]
+    },
+    {
+      "id": "dbg-not-a-defect",
+      "prompt": "Investigate whether this behavior is a defect. Fixture: evals/fixtures/not-a-defect.md",
+      "expected_output": "Invokes debug, compares behavior with the documented contract, explains why the symptom is expected, and returns COMPLETE with NOT_A_DEFECT without inventing a code change.",
+      "files": ["evals/fixtures/not-a-defect.md"],
+      "assertions": [
+        "documented contract is treated as evidence",
+        "investigation completeness is COMPLETE",
+        "root-cause status is NOT_A_DEFECT",
+        "observed symptom is still explained",
+        "no speculative fix is proposed as required"
+      ]
+    },
+    {
+      "id": "dbg-non-trigger-direct-fix",
+      "prompt": "Implement the requested comparison fix directly. Fixture: evals/fixtures/non-trigger-direct-fix.md",
+      "expected_output": "Does not invoke debug because the user requested a direct known fix and did not request investigation.",
+      "files": ["evals/fixtures/non-trigger-direct-fix.md"],
+      "assertions": [
+        "debug should not activate",
+        "no hypothesis ledger or root-cause status is required"
+      ]
+    },
+    {
+      "id": "dbg-non-trigger-code-review",
+      "prompt": "Review this diff for bugs and merge readiness. Fixture: evals/fixtures/non-trigger-code-review.md",
+      "expected_output": "Does not invoke debug because this is a code-review and merge-decision request.",
+      "files": ["evals/fixtures/non-trigger-code-review.md"],
+      "assertions": [
+        "debug should not activate",
+        "no investigation replaces the requested review decision"
+      ]
+    },
+    {
+      "id": "dbg-non-trigger-known-root-plan",
+      "prompt": "Create an implementation plan for this already-confirmed root cause. Fixture: evals/fixtures/non-trigger-known-root-plan.md",
+      "expected_output": "Does not invoke debug because the root cause is established and the requested artifact is an implementation plan.",
+      "files": ["evals/fixtures/non-trigger-known-root-plan.md"],
+      "assertions": [
+        "debug should not activate",
+        "request routes to implementation-plan",
+        "no redundant hypothesis investigation is produced"
+      ]
+    }
+  ]
+}
