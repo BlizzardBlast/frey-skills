@@ -4,7 +4,7 @@ description: Use when the user asks to execute, continue, or resume an existing 
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: '1.0.0'
+  version: '1.0.1'
   allow_implicit_invocation: 'true'
 ---
 
@@ -70,8 +70,11 @@ Before editing, record:
 - staged, unstaged, and untracked files;
 - plan-owned paths;
 - unrelated dirty paths;
+- dirty plan-owned paths and the ownership of each existing hunk;
 - relevant existing verification failures, or that they were not established; and
 - the comparison base when one is needed.
+
+For dirty plan-owned paths, reconcile existing hunks before editing. Classify them as compatible partial implementation, unrelated user work, or conflict. Preserve compatible and unrelated user changes. Stop when ownership or intent is ambiguous or when continuing would overwrite user work.
 
 Prefer the commands in `references/baseline-and-verification-rules.md`. Never use destructive cleanup, broad checkout restoration, automatic stashing, or reset to make the baseline convenient.
 
@@ -80,7 +83,7 @@ Prefer the commands in `references/baseline-and-verification-rules.md`. Never us
 1. Capture the execution baseline and preserve unrelated work.
 2. Parse the supplied plan into ordered steps, dependencies, invariants, and verification.
 3. Apply the executable plan gate.
-4. Reconcile every plan step against current repository state.
+4. Reconcile every plan step and every dirty plan-owned hunk against current repository state.
 5. In continuation mode, verify completed objectives and do not redo them.
 6. Execute one coherent plan step at a time.
 7. Change canonical source rather than generated output.
@@ -147,6 +150,7 @@ Material deviations must stop execution:
 - Security, privacy, authorization, data-integrity, or rollout assumptions are invalid.
 - Unrelated cleanup is required to continue.
 - Canonical source ownership cannot be established.
+- Dirty plan-owned work has ambiguous ownership or cannot be preserved safely.
 - Required verification cannot run and no equivalent evidence exists.
 - An irreversible or external operation lacks explicit authorization.
 - A continuation step believed complete does not satisfy its objective and fixing it changes the approved design.
@@ -163,6 +167,7 @@ Recommended next action: refine the plan with implementation-plan
 - Run the smallest focused check that proves the changed objective.
 - Distinguish pre-existing failures from failures introduced by the execution.
 - Do not claim a command passed unless it was run and its result was inspected.
+- A newly introduced verification failure is an invalidating failure: mark the affected step `blocked`, stop dependent work, and set `Execution status: BLOCKED`.
 - Do not mark the overall execution `IMPLEMENTED` when required verification failed or was skipped without plan authorization.
 - Stop when a verification failure invalidates the plan assumption or makes subsequent steps unsafe.
 - Final integration checks must be proportionate to the affected boundaries.
@@ -178,8 +183,8 @@ Never self-approve, merge, or make a merge-readiness decision. That belongs to `
 Set `Execution status` to exactly one of:
 
 - `IMPLEMENTED`: Every required step is completed and required verification passed.
-- `PARTIAL`: Safe progress was completed, but remaining work is deferred, unfinished, or limited by non-material verification constraints.
-- `BLOCKED`: A material deviation, unsafe state, missing decision, missing authorization, or invalidating verification failure prevents safe continuation.
+- `PARTIAL`: Safe progress was completed, but remaining work is deferred, unfinished, or limited only by a non-invalidating constraint.
+- `BLOCKED`: A material deviation, unsafe state, missing decision, missing authorization, ambiguous dirty-work ownership, or invalidating verification failure prevents safe continuation.
 
 ## Output format
 
@@ -201,6 +206,7 @@ Use this structure:
 - No opportunistic refactors or nearby defect fixes.
 - No widening scope beyond the approved plan.
 - No overwriting unrelated dirty or untracked work.
+- No overwriting or silently absorbing pre-existing hunks in plan-owned files.
 - No editing generated artifacts instead of their canonical source.
 - No claiming verification passed unless it was run.
 - No continuing after a material plan assumption is disproven.
