@@ -12,101 +12,85 @@ This repository is designed for the
 ### debug
 
 Performs read-only, evidence-backed root-cause investigations for deterministic
-failures, regressions, flaky behavior, and production-only incidents. It may
-activate implicitly when the user asks to investigate, diagnose, troubleshoot,
-reproduce, or determine the root cause of a concrete codebase or system symptom.
+failures, regressions, flaky behavior, and production-only incidents.
 
-**Investigation modes:**
-
-- `failure investigation` — deterministic errors, crashes, incorrect results,
-  or failing tests.
-- `regression investigation` — behavior differences across versions, branches,
-  commits, deployments, or environments.
-- `flaky investigation` — intermittent, timing-dependent, order-dependent, or
-  nondeterministic behavior.
-- `production investigation` — logs, telemetry, incidents, or incomplete
-  reproduction access.
+**Investigation modes:** `failure investigation`, `regression investigation`,
+`flaky investigation`, and `production investigation`.
 
 **What it enforces:**
 
-- A read-only investigation boundary; the skill stops before implementation.
-- Explicit symptom, baseline, and reproduction status.
-- A stable hypothesis ledger with supporting, contradicting, and discriminating
-  evidence.
-- Investigation completeness: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
-- Root-cause status: `CONFIRMED`, `LIKELY`, `UNRESOLVED`, or `NOT_A_DEFECT`.
-- Clean handoffs to implementation planning, review, or remediation workflows.
+- A read-only investigation boundary.
+- Explicit symptom, baseline, reproduction, and evidence.
+- A stable hypothesis ledger.
+- `COMPLETE`, `PARTIAL`, or `BLOCKED` investigation completeness.
+- `CONFIRMED`, `LIKELY`, `UNRESOLVED`, or `NOT_A_DEFECT` root-cause status.
 
 ### implementation-plan
 
 Produces read-only, evidence-backed implementation plans grounded in the current
-repository. It may activate implicitly when the user asks to plan, scope,
-sequence, or refine a concrete codebase change before editing.
+repository.
 
-**Scope modes:**
-
-- `change plan` — feature, known bug fix, behavior, configuration, or localized
-  implementation work.
-- `refactor plan` — behavior-preserving structural improvement.
-- `migration plan` — schema, API, dependency, framework, toolchain, CI, or
-  deployment changes that require compatibility-aware sequencing.
-- `plan refinement` — validate and tighten an existing plan against repository
-  evidence.
+**Scope modes:** `change plan`, `refactor plan`, `migration plan`, and
+`plan refinement`.
 
 **What it enforces:**
 
-- A read-only planning boundary; the skill stops before implementation.
-- Evidence-backed current-state findings with no fabricated repository paths or
-  contracts.
-- Explicit requirements and invariants before proposing changes.
-- Ordered implementation steps with repository anchors, dependencies, preserved
-  invariants, and focused verification.
-- Planning completeness: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
-- Readiness semantics: `READY_TO_IMPLEMENT`, `READY_WITH_ASSUMPTIONS`, or
-  `NOT_READY`.
+- A read-only planning boundary.
+- Evidence-backed current-state findings.
+- Explicit requirements and invariants.
+- Ordered repository-anchored implementation steps and focused verification.
+- `COMPLETE`, `PARTIAL`, or `BLOCKED` planning completeness.
+- `READY_TO_IMPLEMENT`, `READY_WITH_ASSUMPTIONS`, or `NOT_READY` readiness.
+
+### implementation-execution
+
+Executes, continues, or resumes an existing approved implementation plan through
+bounded repository edits and focused verification. It does not activate for
+ordinary direct implementation without an approved plan.
+
+**Execution modes:**
+
+- `plan execution` — execute an approved plan from the beginning.
+- `implementation continuation` — reconcile completed work and continue only
+  remaining steps.
+
+**What it enforces:**
+
+- Baseline capture for branch, HEAD, staged, unstaged, and untracked work.
+- An executable-plan eligibility gate before editing.
+- One coherent plan step at a time.
+- A plan-conformance ledger with changed paths, verification, and deviations.
+- Preservation of unrelated dirty work and canonical generated-source ownership.
+- A material deviation gate that stops rather than inventing design decisions.
+- `IMPLEMENTED`, `PARTIAL`, or `BLOCKED` execution status.
+- Handoff of the completed diff to `code-review`.
 
 ### code-review
 
 Performs read-only, evidence-backed reviews for pull requests, diffs, targeted
-files, repository snapshots, and stale review comments. The skill may be
-activated implicitly when the user asks for code review, PR review, merge
-readiness, repository risk review, targeted audit, or review-comment triage.
+files, repository snapshots, and stale review comments.
 
-**Scope modes:**
-
-- `diff review` — review a PR, branch, commit range, staged changes, or
-  working-tree diff.
-- `targeted audit` — review named files, components, concerns, commands, or
-  comments.
-- `repository audit` — sample a repository or package area for broad risk and
-  report limits.
-- `review-comment triage` — decide whether review comments still apply to the
-  current code.
+**Scope modes:** `diff review`, `targeted audit`, `repository audit`, and
+`review-comment triage`.
 
 **What it enforces:**
 
-- A coverage matrix for every requested or materially applicable concern.
-- Explicit review completeness: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
-- Severity-ranked finding ledger with stable IDs and verification guidance.
-- Decision semantics: `APPROVE`, `COMMENT`, or `REQUEST_CHANGES`.
-- A handoff ledger when the user asks for fixes; remediation is delegated
-  explicitly to `iterative-self-review` instead of performed during review.
+- A coverage matrix for every requested or applicable concern.
+- `COMPLETE`, `PARTIAL`, or `BLOCKED` review completeness.
+- A severity-ranked finding ledger.
+- `APPROVE`, `COMMENT`, or `REQUEST_CHANGES` decisions.
+- Handoff of requested fixes to `iterative-self-review`.
 
 ### iterative-self-review
 
-Runs an explicit-only remediation loop for a provided issue ledger, user-scoped
-defects, failing tests, or review comments. It should not activate for ordinary
-implementation work unless the user explicitly asks for iterative self-review,
-post-review repair, or repeated fix-and-recheck remediation.
+Runs an explicit-only remediation loop for a provided issue ledger, scoped
+defects, failing tests, or review comments.
 
 **What it enforces:**
 
 - Baseline capture before editing.
 - Scoped fixes by issue ID or user instruction.
-- A default maximum of 3 review/fix/verify passes.
-- Early stop when scoped issues are resolved and focused verification is
-  recorded.
-- A required user follow-up before any pass 4 or later pass.
+- A default maximum of three review/fix/verify passes.
 - Honest `RESOLVED`, `PARTIAL`, or `BLOCKED` status without whole-repository
   clean claims.
 
@@ -121,7 +105,7 @@ confirmed root cause
         ↓
 implementation-plan
         ↓
-implementation
+implementation-execution
         ↓
 code-review
         ↓
@@ -146,15 +130,15 @@ Investigate why this test is flaky before editing anything.
 ```
 
 ```text
-Find the root cause of this production-only 401 from the available logs.
-```
-
-```text
 Plan this feature against the current repository before editing.
 ```
 
 ```text
-Use implementation-plan to tighten this migration plan and preserve backward compatibility.
+Execute the approved implementation plan.
+```
+
+```text
+Continue the implementation plan from step 3 without redoing completed work.
 ```
 
 ```text
@@ -162,92 +146,49 @@ Review this pull request for merge readiness.
 ```
 
 ```text
-Targeted audit: review only the build-tooling change.
-```
-
-```text
-Triage these stale review comments against the current code.
-```
-
-```text
-Review this PR, then hand me the finding ledger for fixes.
-```
-
-```text
-Use iterative-self-review to fix CR-P1-001 and CR-P2-002 from the ledger.
-```
-
-```text
-Run iterative-self-review for only the P1 findings; leave P2/P3 items alone.
+Use iterative-self-review to fix CR-P1-001 from the review ledger.
 ```
 
 ## Skill Structure
 
 Each skill directory can include:
 
-- `SKILL.md` — required metadata + instructions
+- `SKILL.md` — required metadata and instructions
 - `agents/` — optional client-specific metadata
 - `scripts/` — optional helper automation
-- `references/` — optional supporting docs
-- `assets/` — optional templates/resources
-- `evals/` — optional behavioral evaluation fixtures
+- `references/` — optional supporting guidance
+- `assets/` — optional templates or static resources
+- `evals/` — optional behavioral evaluation fixtures and scorecards
 
 Current layout:
 
 ```text
 code-review/
-├── agents/
-│   └── openai.yaml
-├── evals/
-│   ├── evals.json
-│   └── fixtures/
-├── references/
-├── scripts/
-│   ├── collect_review_context.py
-│   └── test_collect_review_context.py
-└── SKILL.md
 debug/
-├── agents/
-│   └── openai.yaml
-├── evals/
-│   ├── evals.json
-│   ├── fixtures/
-│   └── scorecards/
-├── references/
-└── SKILL.md
 implementation-plan/
-├── agents/
-│   └── openai.yaml
-├── evals/
-│   ├── evals.json
-│   └── fixtures/
-├── references/
-└── SKILL.md
+implementation-execution/
 iterative-self-review/
-├── agents/
-│   └── openai.yaml
-├── evals/
-│   ├── evals.json
-│   └── fixtures/
-├── references/
-└── SKILL.md
 ```
+
+Every canonical skill contains a `SKILL.md`; individual skills may additionally
+contain `agents/`, `evals/`, `references/`, or `scripts/` according to their
+workflow.
 
 ## Quality Gates
 
 The repository combines executable checks with manual behavioral evidence:
 
-- a project validator for metadata, references, eval schema, scorecards, and
+- project validation for metadata, references, eval schema, scorecards, and
   source hygiene;
-- the official `skills-ref` validator for Agent Skills specification
-  compatibility;
-- regression tests for review-context collection and bundle safety; and
-- committed compact behavioral scorecards, with raw transcripts kept out of
-  version control.
+- the official `skills-ref` validator for Agent Skills compatibility;
+- regression tests for review-context collection and bundle safety;
+- deterministic plugin build and source-parity validation; and
+- compact behavioral scorecards when the exact fresh-context protocol has been
+  completed.
 
-See `eval-scorecards/README.md` for the durable scorecard format. A missing
-scorecard must be reported honestly; it must never be reconstructed from partial
-or inferred model runs.
+Raw behavioral-eval transcripts and disposable repositories remain under ignored
+`eval-workspace/`. Missing trials must be reported honestly and never
+reconstructed or inferred.
 
 ## Generated Codex Plugin Bundle
 
@@ -260,23 +201,20 @@ python3 scripts/build_plugin.py --force
 python3 scripts/validate_plugin_bundle.py dist/frey-skills
 ```
 
-Do not hand-edit `dist/frey-skills`; rebuild it from the canonical sources.
-The repository does not commit marketplace metadata or a public marketplace
-submission package. Local marketplace wiring, if you use it, is an optional
-personal setup outside the repo workflow.
+Do not hand-edit `dist/frey-skills`; rebuild it from canonical sources.
 
 ## Notes for Authors
 
-- Keep `SKILL.md` focused and task-oriented.
-- Include required YAML frontmatter (`name` and `description`) in `SKILL.md`.
-- Include clear trigger language so agents know when to activate the skill.
-- Use short, actionable steps and explicit stop conditions.
-- Move deep detail to `references/` when instructions become too long.
-- Keep generated plugin output in sync by rebuilding and validating
-  `dist/frey-skills`.
+- Keep each `SKILL.md` focused and task-oriented.
+- Include valid YAML frontmatter and explicit activation boundaries.
+- Define stop and completion conditions.
+- Move deep detail to `references/`.
+- Run mutation-oriented evals only in disposable repositories.
+- Never fabricate behavioral scorecards.
+- Keep generated plugin output in sync by rebuilding and validating it.
 
-See `CONTRIBUTING.md` for setup, validation, manual behavioral evaluation,
-accepted scorecards, and PR expectations.
+See `CONTRIBUTING.md` for setup, validation, behavioral evaluation, and PR
+expectations.
 
 ## License
 
