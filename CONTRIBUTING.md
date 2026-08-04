@@ -7,8 +7,10 @@ skills and the small amount of tooling needed to validate and package them.
 
 The canonical skill sources live in the root skill directories:
 
-- `code-review/`
+- `debug/`
 - `implementation-plan/`
+- `implementation-execution/`
+- `code-review/`
 - `iterative-self-review/`
 
 Each skill owns its `SKILL.md`, optional `agents/` metadata, helper `scripts/`,
@@ -90,17 +92,19 @@ Use this procedure:
 2. Read each applicable case in the skill's `evals/evals.json`.
 3. For each applicable eval, run 10 fresh-context attempts against the current
    skill.
-4. Compare behavior with the prior skill or no-skill baseline, whichever is
+4. Run mutation-oriented evals only in disposable repositories; never use a
+   meaningful working tree.
+5. Compare behavior with the prior skill or no-skill baseline, whichever is
    relevant to the change.
-5. Apply the exact acceptance thresholds from the skill's evaluation
+6. Apply the exact acceptance thresholds from the skill's evaluation
    playbook:
    - trigger cases activate in at least 9 of 10 trials;
    - non-trigger cases activate in no more than 1 of 10 trials;
    - every required assertion passes in 100% of accepted runs; and
    - no automatic-failure condition occurs.
-6. Keep prompts, transcripts, working notes, and rejected runs under ignored
-   `eval-workspace/`.
-7. Commit the accepted compact scorecard under
+7. Keep prompts, transcripts, working notes, disposable repositories, and
+   rejected runs under ignored `eval-workspace/`.
+8. Commit the accepted compact scorecard under
    `<skill>/evals/scorecards/<model-and-surface>.json`, using
    `eval-scorecards/template.json` and the rules in
    `eval-scorecards/README.md`.
@@ -118,7 +122,9 @@ Before opening a PR, include:
 - Evidence: exact validation commands run and their results.
 - Behavior changes: activation, output, workflow, decision, or stop-condition
   changes, including before/after examples when useful.
-- The committed accepted eval scorecard when a skill description or workflow changed.
+- The committed accepted eval scorecard when the required trials were run.
+- An explicit note when behavioral trials were not run; never fabricate a
+  scorecard.
 - Confirmation that generated plugin output was rebuilt and validated when
   plugin-relevant sources changed.
 - Confirmation that no marketplace or public submission step is part of the
