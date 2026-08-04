@@ -4,8 +4,8 @@ description: Use only when explicitly invoked for an issue ledger, remediation r
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: "1.1.0"
-  allow_implicit_invocation: "false"
+  version: '1.1.0'
+  allow_implicit_invocation: 'false'
 ---
 
 # Iterative Self-Review

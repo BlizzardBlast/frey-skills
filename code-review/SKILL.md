@@ -4,8 +4,8 @@ description: Use when the user asks to review code, a PR, branch diff, current c
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: "1.1.0"
-  allow_implicit_invocation: "true"
+  version: '1.1.0'
+  allow_implicit_invocation: 'true'
 ---
 
 # Code Review

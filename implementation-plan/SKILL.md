@@ -4,8 +4,8 @@ description: Use when the user asks to create, review, refine, scope, or sequenc
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: "1.0.1"
-  allow_implicit_invocation: "true"
+  version: '1.0.1'
+  allow_implicit_invocation: 'true'
 ---
 
 # Implementation Plan
