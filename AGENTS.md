@@ -24,8 +24,10 @@ Follow this structure for each skill:
 
 Current skill examples:
 
-- `code-review/SKILL.md`
+- `debug/SKILL.md`
 - `implementation-plan/SKILL.md`
+- `implementation-execution/SKILL.md`
+- `code-review/SKILL.md`
 - `iterative-self-review/SKILL.md`
 
 ## SKILL.md Requirements
@@ -88,6 +90,9 @@ decision rule changes, also run the applicable manual behavioral evals from the
 skill's `evals/evals.json`. Keep raw evidence under ignored `eval-workspace/`
 and commit the accepted compact scorecard under the skill's
 `evals/scorecards/` directory. Never invent missing trials.
+
+Mutation-oriented behavioral evals must run in disposable repositories, never
+against a meaningful working tree.
 
 These checks are local repository checks. Do not claim hosted model evals or CI
 unless you have separate evidence for those systems.
