@@ -62,6 +62,7 @@ REQUIRED_KEYWORDS = {
     "agent-skills",
     "codex",
     "code-review",
+    "implementation-execution",
     "implementation-plan",
     "iterative-review",
     "planning",

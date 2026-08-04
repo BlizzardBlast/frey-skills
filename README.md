@@ -35,7 +35,7 @@ reproduce, or determine the root cause of a concrete codebase or system symptom.
   evidence.
 - Investigation completeness: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
 - Root-cause status: `CONFIRMED`, `LIKELY`, `UNRESOLVED`, or `NOT_A_DEFECT`.
-- Clean handoffs to implementation planning, review, or remediation workflows.
+- Clean handoffs to implementation planning, execution, review, or remediation.
 
 ### implementation-plan
 
@@ -64,6 +64,30 @@ sequence, or refine a concrete codebase change before editing.
 - Planning completeness: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
 - Readiness semantics: `READY_TO_IMPLEMENT`, `READY_WITH_ASSUMPTIONS`, or
   `NOT_READY`.
+
+### implementation-execution
+
+Executes, continues, or resumes an existing approved implementation plan through
+bounded repository edits and focused verification. It may activate implicitly
+only when the user references an approved plan or asks to continue named plan
+steps. It does not activate for ordinary direct implementation without a plan.
+
+**Execution modes:**
+
+- `plan execution` — execute an approved plan from the beginning.
+- `implementation continuation` — reconcile completed work and continue only
+  remaining steps.
+
+**What it enforces:**
+
+- Baseline capture for branch, HEAD, staged, unstaged, and untracked work.
+- An executable-plan eligibility gate before editing.
+- One coherent plan step at a time.
+- A plan-conformance ledger with changed paths, verification, and deviations.
+- Preservation of unrelated dirty work and canonical generated-source ownership.
+- A material deviation gate that stops rather than inventing design decisions.
+- Honest `IMPLEMENTED`, `PARTIAL`, or `BLOCKED` execution status.
+- Handoff of the completed diff to `code-review`.
 
 ### code-review
 
@@ -121,7 +145,7 @@ confirmed root cause
         ↓
 implementation-plan
         ↓
-implementation
+implementation-execution
         ↓
 code-review
         ↓
@@ -158,6 +182,14 @@ Use implementation-plan to tighten this migration plan and preserve backward com
 ```
 
 ```text
+Execute the approved implementation plan.
+```
+
+```text
+Continue the implementation plan from step 3 without redoing completed work.
+```
+
+```text
 Review this pull request for merge readiness.
 ```
 
@@ -190,48 +222,21 @@ Each skill directory can include:
 - `scripts/` — optional helper automation
 - `references/` — optional supporting docs
 - `assets/` — optional templates/resources
-- `evals/` — optional behavioral evaluation fixtures
+- `evals/` — optional behavioral evaluation fixtures and scorecards
 
 Current layout:
 
 ```text
 code-review/
-├── agents/
-│   └── openai.yaml
-├── evals/
-│   ├── evals.json
-│   └── fixtures/
-├── references/
-├── scripts/
-│   ├── collect_review_context.py
-│   └── test_collect_review_context.py
-└── SKILL.md
 debug/
-├── agents/
-│   └── openai.yaml
-├── evals/
-│   ├── evals.json
-│   ├── fixtures/
-│   └── scorecards/
-├── references/
-└── SKILL.md
 implementation-plan/
-├── agents/
-│   └── openai.yaml
-├── evals/
-│   ├── evals.json
-│   └── fixtures/
-├── references/
-└── SKILL.md
+implementation-execution/
 iterative-self-review/
-├── agents/
-│   └── openai.yaml
-├── evals/
-│   ├── evals.json
-│   └── fixtures/
-├── references/
-└── SKILL.md
 ```
+
+Each canonical skill contains a `SKILL.md`; individual skills may additionally
+contain `agents/`, `evals/`, `references/`, or `scripts/` according to their
+workflow.
 
 ## Quality Gates
 
@@ -241,13 +246,15 @@ The repository combines executable checks with manual behavioral evidence:
   source hygiene;
 - the official `skills-ref` validator for Agent Skills specification
   compatibility;
-- regression tests for review-context collection and bundle safety; and
-- committed compact behavioral scorecards, with raw transcripts kept out of
-  version control.
+- regression tests for review-context collection and bundle safety;
+- deterministic plugin build and source-parity validation; and
+- committed compact behavioral scorecards when the exact fresh-context protocol
+  has been completed.
 
-See `eval-scorecards/README.md` for the durable scorecard format. A missing
-scorecard must be reported honestly; it must never be reconstructed from partial
-or inferred model runs.
+See `eval-scorecards/README.md` for the durable scorecard format. Raw prompts,
+transcripts, rejected runs, and disposable repositories stay under ignored
+`eval-workspace/`. A missing scorecard must be reported honestly; it must never
+be reconstructed from partial or inferred runs.
 
 ## Generated Codex Plugin Bundle
 
@@ -272,6 +279,8 @@ personal setup outside the repo workflow.
 - Include clear trigger language so agents know when to activate the skill.
 - Use short, actionable steps and explicit stop conditions.
 - Move deep detail to `references/` when instructions become too long.
+- Run mutation-oriented behavioral evals only in disposable repositories.
+- Never fabricate behavioral scorecards.
 - Keep generated plugin output in sync by rebuilding and validating
   `dist/frey-skills`.
 
