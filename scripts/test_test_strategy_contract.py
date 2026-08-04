@@ -7,8 +7,6 @@ import json
 import unittest
 from pathlib import Path
 
-import yaml
-
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 SKILL_ROOT = REPOSITORY_ROOT / "test-strategy"
@@ -45,11 +43,12 @@ class TestStrategyContractTests(unittest.TestCase):
         self.assertIn("A test strategy alone does not satisfy the executable-plan gate", content)
         self.assertIn("Never use `READY` with `PARTIAL` or `BLOCKED`", content)
 
-    def test_agent_metadata_uses_boolean_policy_and_skill_prompt(self) -> None:
-        data = yaml.safe_load(AGENT_FILE.read_text(encoding="utf-8"))
-        self.assertEqual(data["interface"]["display_name"], "Test Strategy")
-        self.assertIn("$test-strategy", data["interface"]["default_prompt"])
-        self.assertIs(data["policy"]["allow_implicit_invocation"], True)
+    def test_agent_metadata_keeps_boolean_policy_and_skill_prompt(self) -> None:
+        content = AGENT_FILE.read_text(encoding="utf-8")
+        self.assertIn("display_name: 'Test Strategy'", content)
+        self.assertIn("$test-strategy", content)
+        self.assertIn("allow_implicit_invocation: true", content)
+        self.assertNotIn("allow_implicit_invocation: 'true'", content)
 
     def test_manifest_keeps_test_strategy_discovery_contract(self) -> None:
         manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
