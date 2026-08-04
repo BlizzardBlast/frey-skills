@@ -111,6 +111,17 @@
         "request routes to implementation-plan",
         "no redundant hypothesis investigation is produced"
       ]
+    },
+    {
+      "id": "dbg-non-trigger-ledger-remediation",
+      "prompt": "Fix this already-triaged issue using iterative self-review. Fixture: evals/fixtures/non-trigger-ledger-remediation.md",
+      "expected_output": "Does not invoke debug because the issue is already diagnosed and the requested artifact is ledger remediation through iterative-self-review.",
+      "files": ["evals/fixtures/non-trigger-ledger-remediation.md"],
+      "assertions": [
+        "debug should not activate",
+        "request routes to iterative-self-review",
+        "no redundant hypothesis investigation is produced"
+      ]
     }
   ]
 }
