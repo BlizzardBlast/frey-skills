@@ -9,6 +9,32 @@ This repository is designed for the
 
 ## Available Skills
 
+### debug
+
+Performs read-only, evidence-backed root-cause investigations for deterministic
+failures, regressions, flaky behavior, and production-only incidents.
+
+**Investigation modes:**
+
+- `failure investigation` — deterministic errors, crashes, incorrect results,
+  or failing tests.
+- `regression investigation` — behavior differences across versions, branches,
+  commits, deployments, or environments.
+- `flaky investigation` — intermittent, timing-dependent, order-dependent, or
+  nondeterministic behavior.
+- `production investigation` — logs, telemetry, incidents, or incomplete
+  reproduction access.
+
+**What it enforces:**
+
+- A read-only investigation boundary; the skill stops before implementation.
+- Explicit symptom, baseline, and reproduction status.
+- A stable hypothesis ledger with supporting, contradicting, and discriminating
+  evidence.
+- Investigation completeness: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
+- Root-cause status: `CONFIRMED`, `LIKELY`, `UNRESOLVED`, or `NOT_A_DEFECT`.
+- Clean handoffs to implementation planning, review, or remediation workflows.
+
 ### implementation-plan
 
 Produces read-only, evidence-backed implementation plans grounded in the current
@@ -40,20 +66,14 @@ sequence, or refine a concrete codebase change before editing.
 ### code-review
 
 Performs read-only, evidence-backed reviews for pull requests, diffs, targeted
-files, repository snapshots, and stale review comments. The skill may be
-activated implicitly when the user asks for code review, PR review, merge
-readiness, repository risk review, targeted audit, or review-comment triage.
+files, repository snapshots, and stale review comments.
 
 **Scope modes:**
 
-- `diff review` — review a PR, branch, commit range, staged changes, or
-  working-tree diff.
-- `targeted audit` — review named files, components, concerns, commands, or
-  comments.
-- `repository audit` — sample a repository or package area for broad risk and
-  report limits.
-- `review-comment triage` — decide whether review comments still apply to the
-  current code.
+- `diff review`
+- `targeted audit`
+- `repository audit`
+- `review-comment triage`
 
 **What it enforces:**
 
@@ -61,15 +81,12 @@ readiness, repository risk review, targeted audit, or review-comment triage.
 - Explicit review completeness: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
 - Severity-ranked finding ledger with stable IDs and verification guidance.
 - Decision semantics: `APPROVE`, `COMMENT`, or `REQUEST_CHANGES`.
-- A handoff ledger when the user asks for fixes; remediation is delegated
-  explicitly to `iterative-self-review` instead of performed during review.
+- A handoff ledger to `iterative-self-review` when fixes are requested.
 
 ### iterative-self-review
 
 Runs an explicit-only remediation loop for a provided issue ledger, user-scoped
-defects, failing tests, or review comments. It should not activate for ordinary
-implementation work unless the user explicitly asks for iterative self-review,
-post-review repair, or repeated fix-and-recheck remediation.
+defects, failing tests, or review comments.
 
 **What it enforces:**
 
@@ -78,9 +95,26 @@ post-review repair, or repeated fix-and-recheck remediation.
 - A default maximum of 3 review/fix/verify passes.
 - Early stop when scoped issues are resolved and focused verification is
   recorded.
-- A required user follow-up before any pass 4 or later pass.
 - Honest `RESOLVED`, `PARTIAL`, or `BLOCKED` status without whole-repository
   clean claims.
+
+## Workflow
+
+```text
+symptom or failing test
+        ↓
+       debug
+        ↓
+confirmed root cause
+        ↓
+implementation-plan
+        ↓
+implementation
+        ↓
+code-review
+        ↓
+iterative-self-review
+```
 
 ## Installation
 
@@ -90,17 +124,16 @@ npx skills add BlizzardBlast/frey-skills
 
 ## Usage
 
-Once installed, compatible agents can activate skills when the task context
-matches each skill's activation rules.
-
-**Example prompts:**
-
 ```text
-Plan this feature against the current repository before editing.
+Investigate why this test is flaky before editing anything.
 ```
 
 ```text
-Use implementation-plan to tighten this migration plan and preserve backward compatibility.
+Find the root cause of this production-only 401 from the available logs.
+```
+
+```text
+Plan this feature against the current repository before editing.
 ```
 
 ```text
@@ -108,66 +141,27 @@ Review this pull request for merge readiness.
 ```
 
 ```text
-Targeted audit: review only the build-tooling change.
-```
-
-```text
-Triage these stale review comments against the current code.
-```
-
-```text
-Review this PR, then hand me the finding ledger for fixes.
-```
-
-```text
 Use iterative-self-review to fix CR-P1-001 and CR-P2-002 from the ledger.
-```
-
-```text
-Run iterative-self-review for only the P1 findings; leave P2/P3 items alone.
 ```
 
 ## Skill Structure
 
 Each skill directory can include:
 
-- `SKILL.md` — required metadata + instructions
+- `SKILL.md` — required metadata and instructions
 - `agents/` — optional client-specific metadata
 - `scripts/` — optional helper automation
 - `references/` — optional supporting docs
 - `assets/` — optional templates/resources
-- `evals/` — optional behavioral evaluation fixtures
+- `evals/` — optional behavioral evaluation fixtures and scorecards
 
-Current layout:
+Current canonical skills:
 
 ```text
-code-review/
-├── agents/
-│   └── openai.yaml
-├── evals/
-│   ├── evals.json
-│   └── fixtures/
-├── references/
-├── scripts/
-│   ├── collect_review_context.py
-│   └── test_collect_review_context.py
-└── SKILL.md
+debug/
 implementation-plan/
-├── agents/
-│   └── openai.yaml
-├── evals/
-│   ├── evals.json
-│   └── fixtures/
-├── references/
-└── SKILL.md
+code-review/
 iterative-self-review/
-├── agents/
-│   └── openai.yaml
-├── evals/
-│   ├── evals.json
-│   └── fixtures/
-├── references/
-└── SKILL.md
 ```
 
 ## Quality Gates
@@ -182,9 +176,8 @@ The repository combines executable checks with manual behavioral evidence:
 - committed compact behavioral scorecards, with raw transcripts kept out of
   version control.
 
-See `eval-scorecards/README.md` for the durable scorecard format. A missing
-scorecard must be reported honestly; it must never be reconstructed from partial
-or inferred model runs.
+A missing scorecard must be reported honestly; it must never be reconstructed
+from partial or inferred model runs.
 
 ## Generated Codex Plugin Bundle
 
@@ -198,22 +191,16 @@ python3 scripts/validate_plugin_bundle.py dist/frey-skills
 ```
 
 Do not hand-edit `dist/frey-skills`; rebuild it from the canonical sources.
-The repository does not commit marketplace metadata or a public marketplace
-submission package. Local marketplace wiring, if you use it, is an optional
-personal setup outside this repo workflow.
 
 ## Notes for Authors
 
 - Keep `SKILL.md` focused and task-oriented.
-- Include required YAML frontmatter (`name` and `description`) in `SKILL.md`.
-- Include clear trigger language so agents know when to activate the skill.
-- Use short, actionable steps and explicit stop conditions.
+- Include clear trigger language and explicit stop conditions.
 - Move deep detail to `references/` when instructions become too long.
-- Keep generated plugin output in sync by rebuilding and validating
-  `dist/frey-skills`.
+- Keep generated plugin output in sync by rebuilding and validating it.
 
-See `CONTRIBUTING.md` for setup, validation, manual behavioral evaluation,
-accepted scorecards, and PR expectations.
+See `CONTRIBUTING.md` for setup, validation, behavioral evaluation, accepted
+scorecards, and PR expectations.
 
 ## License
 
