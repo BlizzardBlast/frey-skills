@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "skill_name": "implementation-execution",
+  "evals": [
+    {
+      "id": "ie-complete-plan-execution",
+      "prompt": "Execute this approved plan. Fixture: evals/fixtures/complete-plan-execution.md",
+      "expected_output": "Activates implementation-execution and follows the approved plan safely.",
+      "files": ["evals/fixtures/complete-plan-execution.md"],
+      "assertions": [
+        "execution mode is plan execution",
+        "plan is ELIGIBLE",
+        "all required steps are represented in the conformance ledger",
+        "focused verification is recorded",
+        "execution status is IMPLEMENTED"
+      ]
+    },
+    {
+      "id": "ie-partial-continuation",
+      "prompt": "Continue the partially completed approved plan. Fixture: evals/fixtures/partial-implementation-continuation.md",
+      "expected_output": "Activates implementation-execution and follows the approved plan safely.",
+      "files": ["evals/fixtures/partial-implementation-continuation.md"],
+      "assertions": [
+        "execution mode is implementation continuation",
+        "step 1 is verified as already completed",
+        "completed work is not redone",
+        "remaining steps are executed and verified",
+        "ledger records reconciliation evidence"
+      ]
+    },
+    {
+      "id": "ie-material-plan-drift",
+      "prompt": "Execute this approved plan and preserve its contract. Fixture: evals/fixtures/material-plan-drift.md",
+      "expected_output": "Activates implementation-execution and follows the approved plan safely.",
+      "files": ["evals/fixtures/material-plan-drift.md"],
+      "assertions": [
+        "material public-contract drift is identified",
+        "execution stops before changing accountNumber",
+        "execution status is BLOCKED",
+        "recommended next action is implementation-plan refinement"
+      ]
+    },
+    {
+      "id": "ie-unrelated-dirty-work",
+      "prompt": "Execute the approved plan while preserving existing work. Fixture: evals/fixtures/unrelated-dirty-work.md",
+      "expected_output": "Activates implementation-execution and follows the approved plan safely.",
+      "files": ["evals/fixtures/unrelated-dirty-work.md"],
+      "assertions": [
+        "baseline records modified and untracked unrelated paths",
+        "notes/private.md and scratch.txt are preserved",
+        "no destructive cleanup or broad staging is performed",
+        "only plan-owned paths are changed"
+      ]
+    },
+    {
+      "id": "ie-generated-source-ownership",
+      "prompt": "Execute this documentation generation plan. Fixture: evals/fixtures/generated-source-ownership.md",
+      "expected_output": "Activates implementation-execution and follows the approved plan safely.",
+      "files": ["evals/fixtures/generated-source-ownership.md"],
+      "assertions": [
+        "canonical source ownership is identified",
+        "schema/commands.yaml is changed",
+        "docs/commands.md is not hand-edited",
+        "generation verification is recorded"
+      ]
+    },
+    {
+      "id": "ie-verification-failure",
+      "prompt": "Execute and verify this approved plan. Fixture: evals/fixtures/verification-failure.md",
+      "expected_output": "Activates implementation-execution and follows the approved plan safely.",
+      "files": ["evals/fixtures/verification-failure.md"],
+      "assertions": [
+        "verification failure is recorded honestly",
+        "tests are not claimed to pass",
+        "execution status is PARTIAL or BLOCKED",
+        "execution status is not IMPLEMENTED"
+      ]
+    },
+    {
+      "id": "ie-non-trigger-planning",
+      "prompt": "Plan this requested change. Fixture: evals/fixtures/non-trigger-planning-request.md",
+      "expected_output": "Does not activate implementation-execution and routes to the appropriate workflow.",
+      "files": ["evals/fixtures/non-trigger-planning-request.md"],
+      "assertions": [
+        "implementation-execution should not activate",
+        "request routes to implementation-plan"
+      ]
+    },
+    {
+      "id": "ie-non-trigger-code-review",
+      "prompt": "Review this change for merge readiness. Fixture: evals/fixtures/non-trigger-code-review.md",
+      "expected_output": "Does not activate implementation-execution and routes to the appropriate workflow.",
+      "files": ["evals/fixtures/non-trigger-code-review.md"],
+      "assertions": [
+        "implementation-execution should not activate",
+        "request routes to code-review"
+      ]
+    },
+    {
+      "id": "ie-non-trigger-ledger-remediation",
+      "prompt": "Fix the supplied issue ledger. Fixture: evals/fixtures/non-trigger-ledger-remediation.md",
+      "expected_output": "Does not activate implementation-execution and routes to the appropriate workflow.",
+      "files": ["evals/fixtures/non-trigger-ledger-remediation.md"],
+      "assertions": [
+        "implementation-execution should not activate",
+        "request routes to iterative-self-review"
+      ]
+    },
+    {
+      "id": "ie-non-trigger-direct-implementation",
+      "prompt": "Implement this TODO directly. Fixture: evals/fixtures/non-trigger-direct-implementation.md",
+      "expected_output": "Does not activate implementation-execution and routes to the appropriate workflow.",
+      "files": ["evals/fixtures/non-trigger-direct-implementation.md"],
+      "assertions": [
+        "implementation-execution should not activate",
+        "no plan-conformance ledger is required"
+      ]
+    }
+  ]
+}
