@@ -17,6 +17,14 @@ Resolve a comparison base only when required, in this order: user-provided base,
 
 Record plan-owned and unrelated dirty paths separately. Do not stash, reset, clean, or broadly restore files to simplify execution.
 
+For every dirty plan-owned path, inspect the existing diff before editing and classify each relevant hunk as:
+
+- compatible partial implementation;
+- unrelated user work that must remain untouched; or
+- conflicting or ambiguous ownership.
+
+Preserve compatible and unrelated user changes. Stop when ownership cannot be established or the planned edit cannot be applied without overwriting existing work.
+
 ## Existing failures
 
 Run only focused baseline checks needed to distinguish existing failures from execution regressions. Record commands and results. When no baseline check was run, say so rather than implying a clean baseline.
@@ -32,6 +40,8 @@ For each step, record:
 - whether a failure existed before the step.
 
 Use an equivalent repository command only when it proves the same objective and record the substitution as a minor deviation.
+
+A newly introduced failure is invalidating evidence. Mark the affected step `blocked`, do not continue dependent steps, and report `Execution status: BLOCKED`.
 
 ## Generated files
 
