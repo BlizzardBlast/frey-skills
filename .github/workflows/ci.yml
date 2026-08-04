@@ -3,7 +3,15 @@ name: CI
 on:
   pull_request:
   push:
+    branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
@@ -16,12 +24,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -31,11 +37,51 @@ jobs:
       - name: Validate repository metadata
         run: python scripts/validate_repository.py
 
-      - name: Run helper test suite
-        run: python -m unittest code-review/scripts/test_collect_review_context.py
+      - name: Run review-context test suite
+        run: python -m unittest discover -s code-review/scripts -p 'test_*.py'
 
       - name: Run repository validator test suite
-        run: python -m unittest scripts/test_validate_repository.py
+        run: python -m unittest scripts.test_validate_repository
+
+  agent-skills-spec:
+    name: Validate Agent Skills specification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install reference validator
+        run: python -m pip install -r requirements-spec.txt
+
+      - name: Validate canonical skills
+        shell: bash
+        run: |
+          set -euo pipefail
+          for skill_file in */SKILL.md; do
+            skills-ref validate "$(dirname "${skill_file}")"
+          done
+
+  plugin-bundle:
+    name: Build and validate plugin bundle
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Run plugin bundle test suite
+        run: python -m unittest scripts.test_build_plugin
 
       - name: Build plugin bundle
         run: python scripts/build_plugin.py --force dist/frey-skills
@@ -43,14 +89,23 @@ jobs:
       - name: Validate plugin bundle
         run: python scripts/validate_plugin_bundle.py dist/frey-skills
 
-      - name: Run plugin bundle test suite
-        run: python -m unittest scripts/test_build_plugin.py
+  whitespace:
+    name: Check whitespace
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Ensure origin/main is available
         run: git fetch --no-tags --prune origin +refs/heads/main:refs/remotes/origin/main
 
       - name: Check whitespace errors
+        shell: bash
         run: |
+          set -euo pipefail
           git diff --check
           merge_base="$(git merge-base HEAD origin/main)"
           git diff --check "${merge_base}"...HEAD

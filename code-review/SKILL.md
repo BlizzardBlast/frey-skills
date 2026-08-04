@@ -3,7 +3,9 @@ name: code-review
 description: Use when the user asks to review code, a PR, branch diff, current changes, merge readiness, repository risks, targeted files, CI/tooling changes, or stale review comments. Produces a read-only, evidence-backed review with coverage matrix, severity-ranked finding ledger, and APPROVE/COMMENT/REQUEST_CHANGES decision. If the user asks for fixes, first emit the ledger, then explicitly hand remediation to iterative-self-review.
 license: MIT
 metadata:
-  { author: BlizzardBlast, version: '1.1.0', allow_implicit_invocation: true }
+  author: BlizzardBlast
+  version: '1.1.0'
+  allow_implicit_invocation: 'true'
 ---
 
 # Code Review

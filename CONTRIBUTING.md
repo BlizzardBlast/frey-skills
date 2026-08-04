@@ -30,6 +30,13 @@ Install the development dependency used by the repository validators:
 python3 -m pip install -r requirements-dev.txt
 ```
 
+The CI specification check uses the official Agent Skills reference validator
+on Python 3.11 or newer:
+
+```bash
+python3 -m pip install -r requirements-spec.txt
+```
+
 ## Validation Commands
 
 Run the checks that match your change. For skill or documentation changes, the
@@ -37,6 +44,7 @@ full local validation set is:
 
 ```bash
 python3 scripts/validate_repository.py
+for skill_file in */SKILL.md; do skills-ref validate "$(dirname "${skill_file}")"; done
 python3 -m unittest discover -s code-review/scripts -p 'test_*.py'
 python3 -m unittest scripts.test_validate_repository
 python3 -m unittest scripts.test_build_plugin
@@ -45,8 +53,10 @@ python3 scripts/validate_plugin_bundle.py dist/frey-skills
 git diff --check
 ```
 
-The repository validator checks skill metadata, local references, eval fixture
-references, OpenAI agent metadata, and single trailing newlines for source files.
+The repository validator checks Agent Skills frontmatter fields, local
+references, eval schema and fixture references, committed behavioral scorecards,
+OpenAI agent metadata, and single trailing newlines for recognized text files.
+The separate `skills-ref` command provides an upstream specification check.
 
 ## Generated Plugin Development
 
@@ -82,15 +92,23 @@ Use this procedure:
    skill.
 4. Compare behavior with the prior skill or no-skill baseline, whichever is
    relevant to the change.
-5. Score accepted runs with this assertion scorecard:
-   - at least 90% of desired assertions are satisfied
-   - no more than 10% of undesired behavior appears
-   - 100% of accepted runs respect safety, scope, and activation boundaries
-6. Record prompts, outputs or summaries, pass/fail decisions, and human notes
-   under ignored `eval-workspace/`.
+5. Apply the exact acceptance thresholds from the skill's evaluation
+   playbook:
+   - trigger cases activate in at least 9 of 10 trials;
+   - non-trigger cases activate in no more than 1 of 10 trials;
+   - every required assertion passes in 100% of accepted runs; and
+   - no automatic-failure condition occurs.
+6. Keep prompts, transcripts, working notes, and rejected runs under ignored
+   `eval-workspace/`.
+7. Commit the accepted compact scorecard under
+   `<skill>/evals/scorecards/<model-and-surface>.json`, using
+   `eval-scorecards/template.json` and the rules in
+   `eval-scorecards/README.md`.
 
-Do not present these manual checks as hosted model evals or CI. They are local
-human-reviewed behavioral evidence.
+Do not infer or reconstruct missing trials. Do not present these manual checks
+as hosted model evals or CI. They are local human-reviewed behavioral evidence,
+with only the accepted compact scorecard committed for future regression
+comparison.
 
 ## Pull Request Checklist
 
@@ -100,7 +118,7 @@ Before opening a PR, include:
 - Evidence: exact validation commands run and their results.
 - Behavior changes: activation, output, workflow, decision, or stop-condition
   changes, including before/after examples when useful.
-- Manual eval evidence when a skill description or workflow changed.
+- The committed accepted eval scorecard when a skill description or workflow changed.
 - Confirmation that generated plugin output was rebuilt and validated when
   plugin-relevant sources changed.
 - Confirmation that no marketplace or public submission step is part of the

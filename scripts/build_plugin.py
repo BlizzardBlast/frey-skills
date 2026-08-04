@@ -11,11 +11,15 @@ import tempfile
 from pathlib import Path
 from typing import Iterable, Optional
 
+try:
+    from scripts.repository_layout import discover_skill_names
+except ModuleNotFoundError:
+    from repository_layout import discover_skill_names
+
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = REPOSITORY_ROOT / "dist" / "frey-skills"
 PLUGIN_TEMPLATE = REPOSITORY_ROOT / "plugin-template"
-EXPECTED_SKILLS = ("code-review", "implementation-plan", "iterative-self-review")
 
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
@@ -79,7 +83,10 @@ def validate_inputs() -> None:
     manifest = PLUGIN_TEMPLATE / ".codex-plugin" / "plugin.json"
     if not manifest.is_file():
         raise BuildError(f"missing template manifest: {manifest}")
-    for skill_name in EXPECTED_SKILLS:
+    skill_names = discover_skill_names(REPOSITORY_ROOT)
+    if not skill_names:
+        raise BuildError(f"no canonical skill trees found below {REPOSITORY_ROOT}")
+    for skill_name in skill_names:
         skill_root = REPOSITORY_ROOT / skill_name
         if not skill_root.is_dir():
             raise BuildError(f"missing canonical skill tree: {skill_root}")
@@ -92,7 +99,10 @@ def validate_output_target(output: Path, *, force: bool) -> None:
     repository_root = REPOSITORY_ROOT.resolve()
     default_output = repository_root / "dist" / "frey-skills"
     protected_sources = [repository_root, PLUGIN_TEMPLATE.resolve()]
-    protected_sources.extend((repository_root / skill_name).resolve() for skill_name in EXPECTED_SKILLS)
+    protected_sources.extend(
+        (repository_root / skill_name).resolve()
+        for skill_name in discover_skill_names(REPOSITORY_ROOT)
+    )
 
     if output in protected_sources:
         raise BuildError("output must not be the repository root")
@@ -124,7 +134,7 @@ def write_bundle(output: Path) -> None:
 
     skills_root = output / "skills"
     skills_root.mkdir()
-    for skill_name in EXPECTED_SKILLS:
+    for skill_name in discover_skill_names(REPOSITORY_ROOT):
         copy_tree_bytes(REPOSITORY_ROOT / skill_name, skills_root / skill_name)
 
     reject_symlinks(output)

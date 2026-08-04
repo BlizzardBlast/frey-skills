@@ -47,6 +47,9 @@ from pathlib import Path
 from typing import Any
 
 
+EMPTY_TREE_SHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+
+
 def run_git(args: list[str]) -> str:
     result = subprocess.run(
         ["git", *args],
@@ -418,8 +421,12 @@ def collect_context(
             numstat = run_git(["diff", "-z", "--numstat", "--find-renames", "HEAD"])
             base_ref = "HEAD"
         else:
-            name_status = ""
-            numstat = ""
+            name_status = run_git(
+                ["diff", "-z", "--name-status", "--find-renames", EMPTY_TREE_SHA]
+            )
+            numstat = run_git(
+                ["diff", "-z", "--numstat", "--find-renames", EMPTY_TREE_SHA]
+            )
             base_ref = "EMPTY_TREE"
         head_ref = "WORKTREE"
 

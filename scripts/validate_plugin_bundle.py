@@ -11,9 +11,14 @@ import sys
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
+try:
+    from scripts.repository_layout import discover_skill_names
+except ModuleNotFoundError:
+    from repository_layout import discover_skill_names
+
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_SKILLS = ("code-review", "implementation-plan", "iterative-self-review")
+PLUGIN_TEMPLATE = REPOSITORY_ROOT / "plugin-template"
 EXPECTED_AUTHOR_URL = "https://github.com/BlizzardBlast"
 EXPECTED_REPOSITORY_URL = "https://github.com/BlizzardBlast/frey-skills"
 DISALLOWED_TOP_LEVEL_FIELDS = {"apps", "mcpServers", "hooks", "marketplace"}
@@ -103,6 +108,7 @@ def validate_bundle(bundle: Path) -> list[str]:
 
     validate_root_layout(bundle, errors)
     validate_no_symlinks(bundle, errors)
+    validate_manifest_parity(bundle, errors)
     manifest = load_manifest(bundle, errors)
     if manifest is not None:
         validate_manifest(manifest, errors)
@@ -130,6 +136,18 @@ def validate_root_layout(bundle: Path, errors: list[str]) -> None:
             ".codex-plugin/ must contain exactly plugin.json; "
             f"found: {', '.join(sorted(actual_plugin_entries)) or '(none)'}"
         )
+
+
+def validate_manifest_parity(bundle: Path, errors: list[str]) -> None:
+    source = PLUGIN_TEMPLATE / ".codex-plugin" / "plugin.json"
+    generated = bundle / ".codex-plugin" / "plugin.json"
+    if not source.is_file():
+        errors.append(f"missing canonical plugin manifest: {source}")
+        return
+    if not generated.is_file():
+        return
+    if not filecmp.cmp(source, generated, shallow=False):
+        errors.append(".codex-plugin/plugin.json differs from canonical template")
 
 
 def load_manifest(bundle: Path, errors: list[str]) -> Optional[dict[str, Any]]:
@@ -160,7 +178,7 @@ def validate_manifest(manifest: dict[str, Any], errors: list[str]) -> None:
         errors.append(f"plugin.json must not declare {field!r}; this plugin ships skills only")
 
     require_exact_string(manifest, "name", "frey-skills", errors)
-    require_exact_string(manifest, "version", "1.1.0", errors)
+    require_non_empty_string(manifest, "version", errors)
     version = manifest.get("version")
     if isinstance(version, str) and SEMVER_PATTERN.fullmatch(version) is None:
         errors.append("plugin.json field 'version' must use strict semantic versioning")
@@ -230,6 +248,7 @@ def validate_interface(interface: Any, errors: list[str]) -> None:
 
 
 def validate_skill_layout(bundle: Path, errors: list[str]) -> None:
+    expected_skills = discover_skill_names(REPOSITORY_ROOT)
     skills_root = bundle / "skills"
     if not skills_root.is_dir():
         errors.append("missing skills/ directory")
@@ -237,29 +256,29 @@ def validate_skill_layout(bundle: Path, errors: list[str]) -> None:
     unexpected_skill_entries = [
         path.name
         for path in skills_root.iterdir()
-        if path.name not in EXPECTED_SKILLS or not path.is_dir() or path.is_symlink()
+        if path.name not in expected_skills or not path.is_dir() or path.is_symlink()
     ]
     if unexpected_skill_entries:
         errors.append(
             "skills/ must contain only these directories: "
-            f"{', '.join(sorted(EXPECTED_SKILLS))}; unexpected entries: {', '.join(sorted(unexpected_skill_entries))}"
+            f"{', '.join(expected_skills)}; unexpected entries: {', '.join(sorted(unexpected_skill_entries))}"
         )
 
     actual_skills = sorted(path.name for path in skills_root.iterdir() if path.is_dir() and not path.is_symlink())
-    expected_skills = sorted(EXPECTED_SKILLS)
-    if actual_skills != expected_skills:
+    expected_skills_sorted = sorted(expected_skills)
+    if actual_skills != expected_skills_sorted:
         errors.append(
             "skills/ must contain exactly these directories: "
-            f"{', '.join(expected_skills)}; found: {', '.join(actual_skills) or '(none)'}"
+            f"{', '.join(expected_skills_sorted)}; found: {', '.join(actual_skills) or '(none)'}"
         )
-    for skill_name in EXPECTED_SKILLS:
+    for skill_name in expected_skills:
         skill_file = skills_root / skill_name / "SKILL.md"
         if not skill_file.is_file():
             errors.append(f"missing expected skill file: skills/{skill_name}/SKILL.md")
 
 
 def validate_skill_parity(bundle: Path, errors: list[str]) -> None:
-    for skill_name in EXPECTED_SKILLS:
+    for skill_name in discover_skill_names(REPOSITORY_ROOT):
         source = REPOSITORY_ROOT / skill_name
         generated = bundle / "skills" / skill_name
         if not generated.is_dir():

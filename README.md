@@ -170,6 +170,22 @@ iterative-self-review/
 └── SKILL.md
 ```
 
+## Quality Gates
+
+The repository combines executable checks with manual behavioral evidence:
+
+- a project validator for metadata, references, eval schema, scorecards, and
+  source hygiene;
+- the official `skills-ref` validator for Agent Skills specification
+  compatibility;
+- regression tests for review-context collection and bundle safety; and
+- committed compact behavioral scorecards, with raw transcripts kept out of
+  version control.
+
+See `eval-scorecards/README.md` for the durable scorecard format. A missing
+scorecard must be reported honestly; it must never be reconstructed from partial
+or inferred model runs.
+
 ## Generated Codex Plugin Bundle
 
 The root skill directories are the canonical source of truth. The generated
@@ -196,8 +212,8 @@ personal setup outside this repo workflow.
 - Keep generated plugin output in sync by rebuilding and validating
   `dist/frey-skills`.
 
-See `CONTRIBUTING.md` for setup, validation, manual behavioral evaluation, and
-PR expectations.
+See `CONTRIBUTING.md` for setup, validation, manual behavioral evaluation,
+accepted scorecards, and PR expectations.
 
 ## License
 

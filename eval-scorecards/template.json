@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "skill_name": "replace-with-skill-name",
+  "model": "replace-with-model",
+  "product_surface": "replace-with-client-or-runtime",
+  "run_date": "YYYY-MM-DD",
+  "skill_commit": "replace-with-tested-commit-sha",
+  "results": [
+    {
+      "eval_id": "replace-with-eval-id",
+      "case_type": "trigger",
+      "trials": 10,
+      "triggers": 10,
+      "accepted_activation": 10,
+      "assertion_passes": 10,
+      "assertion_denominator": 10,
+      "automatic_failures": 0,
+      "result": "pass",
+      "notes": ""
+    }
+  ]
+}

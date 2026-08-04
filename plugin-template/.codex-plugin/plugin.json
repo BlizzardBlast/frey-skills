@@ -1,6 +1,6 @@
 {
   "name": "frey-skills",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Reusable Codex agent skills for implementation planning, rigorous code review, and iterative remediation workflows.",
   "author": {
     "name": "BlizzardBlast",

@@ -72,7 +72,9 @@ Run the validation commands that match the changed artifacts:
 
 ```bash
 python3 -m pip install -r requirements-dev.txt
+python3 -m pip install -r requirements-spec.txt
 python3 scripts/validate_repository.py
+for skill_file in */SKILL.md; do skills-ref validate "$(dirname "${skill_file}")"; done
 python3 -m unittest discover -s code-review/scripts -p 'test_*.py'
 python3 -m unittest scripts.test_validate_repository
 python3 -m unittest scripts.test_build_plugin
@@ -83,8 +85,9 @@ git diff --check
 
 When a `SKILL.md` description, activation boundary, output format, workflow, or
 decision rule changes, also run the applicable manual behavioral evals from the
-skill's `evals/evals.json` and record the evidence under ignored
-`eval-workspace/`.
+skill's `evals/evals.json`. Keep raw evidence under ignored `eval-workspace/`
+and commit the accepted compact scorecard under the skill's
+`evals/scorecards/` directory. Never invent missing trials.
 
 These checks are local repository checks. Do not claim hosted model evals or CI
 unless you have separate evidence for those systems.

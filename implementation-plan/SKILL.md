@@ -1,9 +1,11 @@
 ---
 name: implementation-plan
-description: Use when the user asks to plan, scope, design, review, refine, or sequence an implementation, feature, known bug fix, refactor, migration, dependency/toolchain change, or other codebase change before editing. Produces a read-only, evidence-backed, implementation-ready plan grounded in the current repository, with affected boundaries, ordered file-level steps, verification, risks, and READY_TO_IMPLEMENT/READY_WITH_ASSUMPTIONS/NOT_READY status. Do not use for direct implementation, code review or merge decisions, root-cause-only debugging, or post-review remediation unless the user explicitly asks for a plan.
+description: Use when the user asks to create, review, refine, scope, or sequence an implementation plan for a concrete feature, known bug fix, refactor, migration, dependency/toolchain change, or other codebase change before editing. Produces a read-only, evidence-backed, implementation-ready plan grounded in the current repository, with affected boundaries, ordered file-level steps, verification, risks, and READY_TO_IMPLEMENT/READY_WITH_ASSUMPTIONS/NOT_READY status. Do not use for direct implementation, code review or merge decisions, root-cause-only debugging, or post-review remediation unless the user explicitly asks for a plan.
 license: MIT
 metadata:
-  { author: BlizzardBlast, version: '1.0.0', allow_implicit_invocation: true }
+  author: BlizzardBlast
+  version: '1.0.1'
+  allow_implicit_invocation: 'true'
 ---
 
 # Implementation Plan
