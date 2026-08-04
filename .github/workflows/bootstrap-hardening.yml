@@ -4,7 +4,6 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - .github/bootstrap/**
       - .github/workflows/bootstrap-hardening.yml
   workflow_dispatch:
 
@@ -42,10 +41,15 @@ jobs:
           EOF
           git add .gitignore
 
-          git apply --index --exclude=.gitignore /tmp/frey-hardening.patch
-          git rm .github/bootstrap/part-* .github/workflows/bootstrap-hardening.yml
+          # Workflow files are updated afterward through the GitHub app because
+          # GITHUB_TOKEN cannot modify them without the workflows permission.
+          git apply --index \
+            --exclude=.gitignore \
+            --exclude=.github/workflows/ci.yml \
+            /tmp/frey-hardening.patch
+          git rm .github/bootstrap/part-*
 
-      - name: Commit final changes
+      - name: Commit final source changes
         shell: bash
         run: |
           set -euo pipefail
