@@ -11,12 +11,12 @@ from pathlib import Path
 FIXTURES = {
     "complete-plan-execution": {
         "src/profile.ts": "export interface Profile {\n  firstName: string;\n  lastName: string;\n}\n",
-        "src/profile.test.ts": "from pathlib import Path\n\ntext = Path('src/profile.ts').read_text()\nassert 'firstName: string' in text\nassert 'lastName: string' in text\n",
-        "test_runner.py": "from pathlib import Path\nexec(Path('src/profile.test.ts').read_text())\n",
+        "src/profile.test.ts": "describe('Profile', () => {\n  it('supports required names', () => {});\n});\n",
+        "test_runner.py": "from pathlib import Path\nprofile = Path('src/profile.ts').read_text()\ntests = Path('src/profile.test.ts').read_text()\nassert 'firstName: string' in profile\nassert 'lastName: string' in profile\nassert 'middleName?: string' in profile\nassert 'with middleName' in tests\nassert 'without middleName' in tests\n",
     },
     "partial-implementation-continuation": {
         "src/name.ts": "export function formatName(first: string, last: string) {\n  return `${first} ${last}`;\n}\n",
-        "test_runner.py": "from pathlib import Path\ntext = Path('src/name.test.ts').read_text()\nassert 'formatName' in text\n",
+        "test_runner.py": "from pathlib import Path\nimplementation = Path('src/name.ts').read_text()\ntests = Path('src/name.test.ts').read_text()\nassert 'formatName' in implementation\nassert 'first' in tests and 'last' in tests\n",
     },
     "material-plan-drift": {
         "src/mapper.ts": "export function mapAccount(value: string) {\n  return { accountNumber: value };\n}\n",
