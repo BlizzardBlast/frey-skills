@@ -3,3 +3,5 @@ eval-workspace/
 .superpowers/
 .omo/
 __pycache__/
+.pytest_cache/
+.venv/

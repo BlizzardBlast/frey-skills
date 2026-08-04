@@ -79,6 +79,7 @@ class RepositoryValidatorTests(unittest.TestCase):
             f"{name}/evals/evals.json",
             json.dumps(
                 {
+                    "version": 1,
                     "skill_name": name,
                     "evals": [
                         {
@@ -174,6 +175,36 @@ class RepositoryValidatorTests(unittest.TestCase):
         self.assertIn("missing-description/SKILL.md", output)
         self.assertIn("empty-description/SKILL.md", output)
 
+    def test_unsupported_and_invalid_optional_frontmatter_fields_fail(self) -> None:
+        self.write(
+            "bad-frontmatter/SKILL.md",
+            "---\n"
+            "name: bad-frontmatter\n"
+            "description: Invalid optional field fixture.\n"
+            "compatibility: 123\n"
+            "unknown-field: value\n"
+            "---\n\n# Bad\n",
+        )
+
+        output = self.assert_validation_fails_with("bad-frontmatter/SKILL.md")
+        self.assertIn("compatibility", output)
+        self.assertIn("unsupported fields", output)
+
+    def test_nested_metadata_value_fails(self) -> None:
+        self.write(
+            "bad-metadata/SKILL.md",
+            "---\n"
+            "name: bad-metadata\n"
+            "description: Invalid metadata fixture.\n"
+            "metadata:\n"
+            "  nested:\n"
+            "    value: invalid\n"
+            "---\n\n# Bad\n",
+        )
+
+        output = self.assert_validation_fails_with("bad-metadata/SKILL.md")
+        self.assertIn("must be a scalar", output)
+
     def test_missing_local_reference_fails(self) -> None:
         self.write(
             "referencing-skill/SKILL.md",
@@ -230,6 +261,119 @@ class RepositoryValidatorTests(unittest.TestCase):
         output = self.assert_validation_fails_with("evals/evals.json")
         self.assertIn("skill_name", output)
         self.assertIn("evals/fixtures/missing.md", output)
+
+    def test_eval_version_and_duplicate_ids_fail(self) -> None:
+        self.write_valid_skill("eval-skill")
+        self.write(
+            "eval-skill/evals/evals.json",
+            json.dumps(
+                {
+                    "version": 2,
+                    "skill_name": "eval-skill",
+                    "evals": [
+                        {
+                            "id": "duplicate",
+                            "prompt": "First prompt.",
+                            "expected_output": "First output.",
+                            "files": ["evals/fixtures/example.md"],
+                            "assertions": ["first assertion"],
+                        },
+                        {
+                            "id": "duplicate",
+                            "prompt": "Second prompt.",
+                            "expected_output": "Second output.",
+                            "files": ["evals/fixtures/example.md"],
+                            "assertions": ["second assertion"],
+                        },
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+
+        output = self.assert_validation_fails_with("version must equal 1")
+        self.assertIn("duplicates 'duplicate'", output)
+
+    def test_python_and_extensionless_text_files_require_trailing_newlines(self) -> None:
+        self.write_valid_skill()
+        self.write("scripts/helper.py", "print('missing newline')")
+        self.write("LICENSE", "missing newline")
+
+        output = self.assert_validation_fails_with("trailing newline")
+        self.assertIn("scripts/helper.py", output)
+        self.assertIn("LICENSE", output)
+
+    def test_valid_eval_scorecard_passes(self) -> None:
+        self.write_valid_skill("scorecard-skill")
+        self.write(
+            "scorecard-skill/evals/scorecards/gpt.json",
+            json.dumps(
+                {
+                    "version": 1,
+                    "skill_name": "scorecard-skill",
+                    "model": "example-model",
+                    "product_surface": "example-surface",
+                    "run_date": "2026-08-04",
+                    "skill_commit": "abc123",
+                    "results": [
+                        {
+                            "eval_id": "valid-eval",
+                            "case_type": "trigger",
+                            "trials": 10,
+                            "triggers": 9,
+                            "accepted_activation": 9,
+                            "assertion_passes": 9,
+                            "assertion_denominator": 9,
+                            "automatic_failures": 0,
+                            "result": "pass",
+                            "notes": "Accepted manual run.",
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+
+        result = run_validator(self.repo)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_invalid_eval_scorecard_fails(self) -> None:
+        self.write_valid_skill("scorecard-skill")
+        self.write(
+            "scorecard-skill/evals/scorecards/gpt.json",
+            json.dumps(
+                {
+                    "version": 1,
+                    "skill_name": "scorecard-skill",
+                    "model": "example-model",
+                    "product_surface": "example-surface",
+                    "run_date": "2026-08-04",
+                    "skill_commit": "abc123",
+                    "results": [
+                        {
+                            "eval_id": "wrong-id",
+                            "case_type": "trigger",
+                            "trials": 9,
+                            "triggers": 9,
+                            "accepted_activation": 9,
+                            "assertion_passes": 9,
+                            "assertion_denominator": 9,
+                            "automatic_failures": 0,
+                            "result": "pass",
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+
+        output = self.assert_validation_fails_with("trials must equal 10")
+        self.assertIn("missing eval IDs", output)
+        self.assertIn("unknown eval IDs", output)
 
     def test_missing_eval_skill_name_fails(self) -> None:
         self.write_valid_skill("eval-skill")

@@ -38,6 +38,15 @@ Acceptance criteria:
 
 Reject the change when any acceptance criterion fails.
 
+## Durable evidence
+
+Keep raw prompts, transcripts, rejected runs, and grading notes under ignored
+`eval-workspace/`. After the complete protocol is accepted, commit only the
+compact scorecard under `evals/scorecards/`, using the format in
+`evals/scorecards/README.md`. The committed scorecard must identify the
+model, product surface, run date, tested commit, and one result for every eval
+ID. Never infer or reconstruct missing trials.
+
 ## Targets
 
 - Desired activation rate: >= 90% (at least 9/10 fresh-context runs per trigger case).

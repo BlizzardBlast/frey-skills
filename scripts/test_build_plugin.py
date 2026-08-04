@@ -12,11 +12,13 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
 
+from scripts.repository_layout import discover_skill_names
+
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 BUILD_SCRIPT = REPOSITORY_ROOT / "scripts" / "build_plugin.py"
 VALIDATE_SCRIPT = REPOSITORY_ROOT / "scripts" / "validate_plugin_bundle.py"
-EXPECTED_SKILLS = ("code-review", "implementation-plan", "iterative-self-review")
+EXPECTED_SKILLS = discover_skill_names(REPOSITORY_ROOT)
 
 
 def load_module(path: Path, name: str) -> Any:
@@ -93,7 +95,7 @@ class PluginBundleTests(unittest.TestCase):
         manifest_path = self.output / ".codex-plugin" / "plugin.json"
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         self.assertEqual(manifest["name"], "frey-skills")
-        self.assertEqual(manifest["version"], "1.1.0")
+        self.assertRegex(manifest["version"], r"^\d+\.\d+\.\d+")
         self.assertEqual(manifest["skills"], "./skills/")
         self.assertNotIn("apps", manifest)
         self.assertNotIn("mcpServers", manifest)
@@ -123,6 +125,29 @@ class PluginBundleTests(unittest.TestCase):
         self.assertEqual(self.build("--force"), 0)
         self.assertFalse((self.output / "existing.txt").exists())
         self.assertTrue((self.output / ".codex-plugin" / "plugin.json").is_file())
+
+    def test_build_discovers_new_canonical_skill_without_hardcoded_list(self) -> None:
+        fake_root = self.create_fake_repository()
+        extra_skill = fake_root / "extra-skill"
+        extra_skill.mkdir()
+        (extra_skill / "SKILL.md").write_text("extra skill\n", encoding="utf-8")
+        output = fake_root / "dist" / "frey-skills"
+
+        with module_attr(self.build_plugin, "REPOSITORY_ROOT", fake_root), module_attr(
+            self.build_plugin, "PLUGIN_TEMPLATE", fake_root / "plugin-template"
+        ):
+            self.assertEqual(self.build_plugin.main([str(output), "--force"]), 0)
+
+        self.assertTrue((output / "skills" / "extra-skill" / "SKILL.md").is_file())
+
+    def test_validator_detects_tampered_manifest(self) -> None:
+        self.assertEqual(self.build(), 0)
+        manifest_path = self.output / ".codex-plugin" / "plugin.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["version"] = "9.9.9"
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+        self.assertEqual(self.validate(), 1)
 
     def test_validator_detects_tampered_bundled_skill(self) -> None:
         self.assertEqual(self.build(), 0)

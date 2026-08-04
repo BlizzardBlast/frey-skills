@@ -12,10 +12,25 @@ from typing import Any, Iterable
 
 import yaml
 
+try:
+    from scripts.repository_layout import discover_skill_names
+except ModuleNotFoundError:
+    from repository_layout import discover_skill_names
+
 
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 REFERENCE_PATTERN = re.compile(r"(?<![\w./-])(?:\./)?((?:references|scripts|evals)/[^\s`\"'<>]+)")
-SOURCE_SUFFIXES = {".json", ".md", ".yaml", ".yml"}
+ALLOWED_SKILL_FIELDS = {
+    "name",
+    "description",
+    "license",
+    "compatibility",
+    "allowed-tools",
+    "metadata",
+}
+REFERENCE_SUFFIXES = {".json", ".md", ".yaml", ".yml"}
+TEXT_SUFFIXES = {".cfg", ".ini", ".json", ".md", ".py", ".sh", ".toml", ".txt", ".yaml", ".yml"}
+TEXT_FILENAMES = {".gitattributes", ".gitignore", "LICENSE"}
 EXCLUDED_DIRS = {".git", "dist", "eval-workspace", ".superpowers", ".omo"}
 
 
@@ -61,13 +76,7 @@ class Validator:
         return 0
 
     def discover_skill_dirs(self) -> list[Path]:
-        skill_dirs: list[Path] = []
-        for child in sorted(self.root.iterdir(), key=lambda path: path.name):
-            if not child.is_dir() or child.name in EXCLUDED_DIRS:
-                continue
-            if (child / "SKILL.md").is_file():
-                skill_dirs.append(child)
-        return skill_dirs
+        return [self.root / name for name in discover_skill_names(self.root)]
 
     def validate_skill(self, skill_dir: Path) -> None:
         skill_file = skill_dir / "SKILL.md"
@@ -82,6 +91,7 @@ class Validator:
         self.validate_local_references(skill_dir)
         self.validate_openai_metadata(skill_dir)
         self.validate_evals(skill_dir)
+        self.validate_eval_scorecards(skill_dir)
 
     def read_text(self, path: Path) -> str | None:
         try:
@@ -155,6 +165,42 @@ class Validator:
         elif len(description) > 1024:
             self.add_error(skill_file, "frontmatter description must be 1024 characters or fewer")
 
+        unknown_fields = sorted(set(metadata) - ALLOWED_SKILL_FIELDS)
+        if unknown_fields:
+            self.add_error(
+                skill_file,
+                "frontmatter contains unsupported fields: " + ", ".join(unknown_fields),
+            )
+
+        license_value = metadata.get("license")
+        if license_value is not None and (not isinstance(license_value, str) or not license_value.strip()):
+            self.add_error(skill_file, "frontmatter license must be a non-empty string when provided")
+
+        compatibility = metadata.get("compatibility")
+        if compatibility is not None:
+            if not isinstance(compatibility, str):
+                self.add_error(skill_file, "frontmatter compatibility must be a string")
+            elif len(compatibility) > 500:
+                self.add_error(skill_file, "frontmatter compatibility must be 500 characters or fewer")
+
+        allowed_tools = metadata.get("allowed-tools")
+        if allowed_tools is not None and not isinstance(allowed_tools, str):
+            self.add_error(skill_file, "frontmatter allowed-tools must be a string")
+
+        metadata_value = metadata.get("metadata")
+        if metadata_value is not None:
+            if not isinstance(metadata_value, dict):
+                self.add_error(skill_file, "frontmatter metadata must be an object")
+            else:
+                for key, value in metadata_value.items():
+                    if not isinstance(key, str) or not key.strip():
+                        self.add_error(skill_file, "frontmatter metadata keys must be non-empty strings")
+                    if isinstance(value, (dict, list)) or value is None:
+                        self.add_error(
+                            skill_file,
+                            f"frontmatter metadata value for {key!r} must be a scalar",
+                        )
+
     def validate_local_references(self, skill_dir: Path) -> None:
         for source_file in self.iter_skill_text_files(skill_dir):
             text = self.read_text(source_file)
@@ -170,7 +216,7 @@ class Validator:
 
     def iter_skill_text_files(self, skill_dir: Path) -> Iterable[Path]:
         for path in self.walk_files(skill_dir):
-            if path.suffix in SOURCE_SUFFIXES:
+            if path.suffix in REFERENCE_SUFFIXES:
                 yield path
 
     def extract_local_references(self, text: str) -> set[str]:
@@ -246,6 +292,10 @@ class Validator:
             self.add_error(evals_file, "must parse to an object")
             return
 
+        version = data.get("version")
+        if version != 1:
+            self.add_error(evals_file, "version must equal 1")
+
         skill_name = data.get("skill_name")
         if not isinstance(skill_name, str) or not skill_name.strip():
             self.add_error(evals_file, "skill_name must be a non-empty string")
@@ -257,6 +307,7 @@ class Validator:
             self.add_error(evals_file, "evals must be a non-empty list")
             return
 
+        seen_eval_ids: set[str] = set()
         for index, eval_case in enumerate(evals):
             label = f"evals[{index}]"
             if not isinstance(eval_case, dict):
@@ -266,6 +317,13 @@ class Validator:
                 value = eval_case.get(key)
                 if not isinstance(value, str) or not value.strip():
                     self.add_error(evals_file, f"{label}.{key} must be a non-empty string")
+
+            eval_id = eval_case.get("id")
+            if isinstance(eval_id, str) and eval_id.strip():
+                if eval_id in seen_eval_ids:
+                    self.add_error(evals_file, f"{label}.id duplicates {eval_id!r}")
+                else:
+                    seen_eval_ids.add(eval_id)
             files = eval_case.get("files")
             if not isinstance(files, list):
                 self.add_error(evals_file, f"{label}.files must be a list")
@@ -291,9 +349,138 @@ class Validator:
                             f"{label}.assertions[{assertion_index}] must be a non-empty string",
                         )
 
+    def validate_eval_scorecards(self, skill_dir: Path) -> None:
+        evals_file = skill_dir / "evals" / "evals.json"
+        scorecards_dir = skill_dir / "evals" / "scorecards"
+        if not evals_file.is_file() or not scorecards_dir.is_dir():
+            return
+
+        evals_data = self.read_json(evals_file)
+        if not isinstance(evals_data, dict):
+            return
+        eval_cases = evals_data.get("evals")
+        if not isinstance(eval_cases, list):
+            return
+        expected_ids = {
+            case.get("id")
+            for case in eval_cases
+            if isinstance(case, dict) and isinstance(case.get("id"), str) and case.get("id")
+        }
+
+        for scorecard_file in sorted(scorecards_dir.glob("*.json")):
+            data = self.read_json(scorecard_file)
+            if not isinstance(data, dict):
+                self.add_error(scorecard_file, "must parse to an object")
+                continue
+            if data.get("version") != 1:
+                self.add_error(scorecard_file, "version must equal 1")
+            if data.get("skill_name") != skill_dir.name:
+                self.add_error(scorecard_file, f"skill_name must equal {skill_dir.name!r}")
+            for key in ("model", "product_surface", "run_date", "skill_commit"):
+                value = data.get(key)
+                if not isinstance(value, str) or not value.strip():
+                    self.add_error(scorecard_file, f"{key} must be a non-empty string")
+
+            results = data.get("results")
+            if not isinstance(results, list) or not results:
+                self.add_error(scorecard_file, "results must be a non-empty list")
+                continue
+
+            seen_ids: set[str] = set()
+            for index, result in enumerate(results):
+                label = f"results[{index}]"
+                if not isinstance(result, dict):
+                    self.add_error(scorecard_file, f"{label} must be an object")
+                    continue
+                eval_id = result.get("eval_id")
+                if not isinstance(eval_id, str) or not eval_id.strip():
+                    self.add_error(scorecard_file, f"{label}.eval_id must be a non-empty string")
+                elif eval_id in seen_ids:
+                    self.add_error(scorecard_file, f"{label}.eval_id duplicates {eval_id!r}")
+                else:
+                    seen_ids.add(eval_id)
+
+                if result.get("case_type") not in {"trigger", "non-trigger"}:
+                    self.add_error(scorecard_file, f"{label}.case_type must be trigger or non-trigger")
+                if result.get("trials") != 10:
+                    self.add_error(scorecard_file, f"{label}.trials must equal 10")
+                numeric_fields = (
+                    "triggers",
+                    "accepted_activation",
+                    "assertion_passes",
+                    "assertion_denominator",
+                    "automatic_failures",
+                )
+                numeric_values: dict[str, int] = {}
+                for key in numeric_fields:
+                    value = result.get(key)
+                    if not isinstance(value, int) or isinstance(value, bool) or value < 0 or value > 10:
+                        self.add_error(scorecard_file, f"{label}.{key} must be an integer from 0 to 10")
+                    else:
+                        numeric_values[key] = value
+
+                case_type = result.get("case_type")
+                triggers = numeric_values.get("triggers")
+                accepted_activation = numeric_values.get("accepted_activation")
+                assertion_passes = numeric_values.get("assertion_passes")
+                assertion_denominator = numeric_values.get("assertion_denominator")
+                automatic_failures = numeric_values.get("automatic_failures")
+
+                if case_type in {"trigger", "non-trigger"} and triggers is not None:
+                    expected_accepted = triggers if case_type == "trigger" else 10 - triggers
+                    if accepted_activation is not None and accepted_activation != expected_accepted:
+                        self.add_error(
+                            scorecard_file,
+                            f"{label}.accepted_activation must equal {expected_accepted} for its case type",
+                        )
+                if (
+                    accepted_activation is not None
+                    and assertion_denominator is not None
+                    and assertion_denominator != accepted_activation
+                ):
+                    self.add_error(
+                        scorecard_file,
+                        f"{label}.assertion_denominator must equal accepted_activation",
+                    )
+
+                recorded_result = result.get("result")
+                if recorded_result not in {"pass", "fail"}:
+                    self.add_error(scorecard_file, f"{label}.result must be pass or fail")
+                elif all(
+                    value is not None
+                    for value in (
+                        accepted_activation,
+                        assertion_passes,
+                        assertion_denominator,
+                        automatic_failures,
+                    )
+                ):
+                    computed_pass = (
+                        accepted_activation >= 9
+                        and assertion_passes == assertion_denominator
+                        and automatic_failures == 0
+                    )
+                    expected_result = "pass" if computed_pass else "fail"
+                    if recorded_result != expected_result:
+                        self.add_error(
+                            scorecard_file,
+                            f"{label}.result must be {expected_result!r} for the recorded counts",
+                        )
+
+                notes = result.get("notes")
+                if notes is not None and not isinstance(notes, str):
+                    self.add_error(scorecard_file, f"{label}.notes must be a string when provided")
+
+            missing_ids = sorted(expected_ids - seen_ids)
+            extra_ids = sorted(seen_ids - expected_ids)
+            if missing_ids:
+                self.add_error(scorecard_file, "missing eval IDs: " + ", ".join(missing_ids))
+            if extra_ids:
+                self.add_error(scorecard_file, "unknown eval IDs: " + ", ".join(extra_ids))
+
     def validate_source_trailing_newlines(self) -> None:
         for path in self.walk_files(self.root):
-            if path.suffix not in SOURCE_SUFFIXES:
+            if path.suffix not in TEXT_SUFFIXES and path.name not in TEXT_FILENAMES:
                 continue
             self.validate_exactly_one_trailing_newline(path)
 

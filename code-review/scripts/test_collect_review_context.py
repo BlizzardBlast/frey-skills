@@ -112,6 +112,52 @@ class CollectReviewContextTests(unittest.TestCase):
         self.assertEqual(files["fresh file.txt"]["status"], "?")
         self.assertEqual(files["fresh file.txt"]["added_lines"], 2)
 
+    def test_working_tree_without_commits_includes_staged_files(self) -> None:
+        self.write("staged.txt", "one\n")
+        self.git("add", "staged.txt")
+
+        data = self.collect()
+        files = self.files_by_path(data)
+
+        self.assertEqual(data["mode"], "working-tree")
+        self.assertEqual(data["base"], "EMPTY_TREE")
+        self.assertEqual(files["staged.txt"]["status"], "A")
+        self.assertEqual(files["staged.txt"]["added_lines"], 1)
+
+    def test_working_tree_without_commits_includes_staged_and_unstaged_content(self) -> None:
+        self.write("mixed.txt", "staged\n")
+        self.git("add", "mixed.txt")
+        self.write("mixed.txt", "staged\nunstaged\n")
+
+        data = self.collect()
+        files = self.files_by_path(data)
+
+        self.assertEqual(files["mixed.txt"]["status"], "A")
+        self.assertEqual(files["mixed.txt"]["added_lines"], 2)
+
+    def test_working_tree_without_commits_includes_staged_and_untracked_files(self) -> None:
+        self.write("staged.txt", "staged\n")
+        self.git("add", "staged.txt")
+        self.write("untracked.txt", "untracked\n")
+
+        data = self.collect()
+        files = self.files_by_path(data)
+
+        self.assertEqual(sorted(files), ["staged.txt", "untracked.txt"])
+        self.assertEqual(files["staged.txt"]["status"], "A")
+        self.assertEqual(files["untracked.txt"]["status"], "?")
+
+    def test_working_tree_without_commits_reports_staged_binary_file(self) -> None:
+        self.write("image.bin", b"\x00\x01binary")
+        self.git("add", "image.bin")
+
+        data = self.collect()
+        files = self.files_by_path(data)
+
+        self.assertTrue(files["image.bin"]["binary"])
+        self.assertIsNone(files["image.bin"]["added_lines"])
+        self.assertIsNone(files["image.bin"]["deleted_lines"])
+
     def test_staged_without_commits_labels_empty_tree_to_index(self) -> None:
         self.write("staged.txt", "one\n")
         self.git("add", "staged.txt")

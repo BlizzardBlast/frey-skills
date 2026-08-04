@@ -3,7 +3,9 @@ name: iterative-self-review
 description: Use only when explicitly invoked for an issue ledger, remediation request, repeated fix-and-recheck loop, or post-review repair. Accepts code-review findings or user-specified issues, fixes them in bounded passes, compares against a resolved task/default-branch baseline, and reports scoped verification without claiming the whole repository is clean.
 license: MIT
 metadata:
-  { author: BlizzardBlast, version: '1.1.0', allow_implicit_invocation: false }
+  author: BlizzardBlast
+  version: "1.1.0"
+  allow_implicit_invocation: "false"
 ---
 
 # Iterative Self-Review
