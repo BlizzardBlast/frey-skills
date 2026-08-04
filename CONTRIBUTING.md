@@ -85,6 +85,8 @@ change.
 
 Run manual behavioral evals whenever a `SKILL.md` description, activation
 boundary, output format, workflow, stop condition, or decision rule changes.
+A behavior-changing PR is not merge-ready until these required trials pass and
+an accepted scorecard is committed.
 
 Use this procedure:
 
@@ -92,8 +94,8 @@ Use this procedure:
 2. Read each applicable case in the skill's `evals/evals.json`.
 3. For each applicable eval, run 10 fresh-context attempts against the current
    skill.
-4. Run mutation-oriented evals only in disposable repositories; never use a
-   meaningful working tree.
+4. Run mutation-oriented evals only in disposable repositories created from the
+   committed fixture setup; never use a meaningful working tree.
 5. Compare behavior with the prior skill or no-skill baseline, whichever is
    relevant to the change.
 6. Apply the exact acceptance thresholds from the skill's evaluation
@@ -122,9 +124,9 @@ Before opening a PR, include:
 - Evidence: exact validation commands run and their results.
 - Behavior changes: activation, output, workflow, decision, or stop-condition
   changes, including before/after examples when useful.
-- The committed accepted eval scorecard when the required trials were run.
-- An explicit note when behavioral trials were not run; never fabricate a
-  scorecard.
+- The committed accepted eval scorecard for every behavior-changing skill PR.
+- If required behavioral trials have not passed, keep the PR in draft and state
+  the missing evidence explicitly; do not waive the gate or fabricate results.
 - Confirmation that generated plugin output was rebuilt and validated when
   plugin-relevant sources changed.
 - Confirmation that no marketplace or public submission step is part of the
