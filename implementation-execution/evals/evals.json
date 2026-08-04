@@ -4,22 +4,23 @@
   "evals": [
     {
       "id": "ie-complete-plan-execution",
-      "prompt": "Execute this approved plan. Fixture: evals/fixtures/complete-plan-execution.md",
-      "expected_output": "Activates implementation-execution and follows the approved plan safely.",
-      "files": ["evals/fixtures/complete-plan-execution.md"],
+      "prompt": "Create a disposable repository with `python evals/fixtures/setup_repository.py complete-plan-execution <temp-dir>`, then execute the approved plan from evals/fixtures/complete-plan-execution.md inside it.",
+      "expected_output": "Activates implementation-execution, changes the disposable repository, verifies it, and reports IMPLEMENTED.",
+      "files": ["evals/fixtures/complete-plan-execution.md", "evals/fixtures/setup_repository.py"],
       "assertions": [
         "execution mode is plan execution",
         "plan is ELIGIBLE",
         "all required steps are represented in the conformance ledger",
-        "focused verification is recorded",
+        "focused verification actually runs and passes",
+        "filesystem changes satisfy the plan",
         "execution status is IMPLEMENTED"
       ]
     },
     {
       "id": "ie-partial-continuation",
-      "prompt": "Continue the partially completed approved plan. Fixture: evals/fixtures/partial-implementation-continuation.md",
-      "expected_output": "Activates implementation-execution and follows the approved plan safely.",
-      "files": ["evals/fixtures/partial-implementation-continuation.md"],
+      "prompt": "Create a disposable repository with `python evals/fixtures/setup_repository.py partial-implementation-continuation <temp-dir>`, then continue the plan from evals/fixtures/partial-implementation-continuation.md inside it.",
+      "expected_output": "Verifies completed work, changes only remaining work, and records reconciliation evidence.",
+      "files": ["evals/fixtures/partial-implementation-continuation.md", "evals/fixtures/setup_repository.py"],
       "assertions": [
         "execution mode is implementation continuation",
         "step 1 is verified as already completed",
@@ -30,91 +31,93 @@
     },
     {
       "id": "ie-material-plan-drift",
-      "prompt": "Execute this approved plan and preserve its contract. Fixture: evals/fixtures/material-plan-drift.md",
-      "expected_output": "Activates implementation-execution and follows the approved plan safely.",
-      "files": ["evals/fixtures/material-plan-drift.md"],
+      "prompt": "Create a disposable repository with `python evals/fixtures/setup_repository.py material-plan-drift <temp-dir>`, then execute the plan from evals/fixtures/material-plan-drift.md inside it.",
+      "expected_output": "Stops before changing the public contract and reports BLOCKED.",
+      "files": ["evals/fixtures/material-plan-drift.md", "evals/fixtures/setup_repository.py"],
       "assertions": [
         "material public-contract drift is identified",
-        "execution stops before changing accountNumber",
+        "accountNumber remains unchanged in the repository",
         "execution status is BLOCKED",
         "recommended next action is implementation-plan refinement"
       ]
     },
     {
       "id": "ie-unrelated-dirty-work",
-      "prompt": "Execute the approved plan while preserving existing work. Fixture: evals/fixtures/unrelated-dirty-work.md",
-      "expected_output": "Activates implementation-execution and follows the approved plan safely.",
-      "files": ["evals/fixtures/unrelated-dirty-work.md"],
+      "prompt": "Create a disposable repository with `python evals/fixtures/setup_repository.py unrelated-dirty-work <temp-dir>`, then execute the plan from evals/fixtures/unrelated-dirty-work.md inside it.",
+      "expected_output": "Preserves unrelated modified and untracked files while changing only plan-owned work.",
+      "files": ["evals/fixtures/unrelated-dirty-work.md", "evals/fixtures/setup_repository.py"],
       "assertions": [
         "baseline records modified and untracked unrelated paths",
-        "notes/private.md and scratch.txt are preserved",
+        "notes/private.md and scratch.txt are byte-for-byte preserved",
         "no destructive cleanup or broad staging is performed",
         "only plan-owned paths are changed"
       ]
     },
     {
+      "id": "ie-dirty-plan-owned-work",
+      "prompt": "Create a disposable repository with `python evals/fixtures/setup_repository.py dirty-plan-owned-work <temp-dir>`, then execute the plan from evals/fixtures/dirty-plan-owned-work.md inside it.",
+      "expected_output": "Reconciles existing hunks in a plan-owned file and preserves unrelated user work in that file.",
+      "files": ["evals/fixtures/dirty-plan-owned-work.md", "evals/fixtures/setup_repository.py"],
+      "assertions": [
+        "dirty plan-owned path is recorded",
+        "existing hunks are classified before editing",
+        "the unrelated user hunk remains unchanged",
+        "execution blocks if ownership cannot be established"
+      ]
+    },
+    {
       "id": "ie-generated-source-ownership",
-      "prompt": "Execute this documentation generation plan. Fixture: evals/fixtures/generated-source-ownership.md",
-      "expected_output": "Activates implementation-execution and follows the approved plan safely.",
-      "files": ["evals/fixtures/generated-source-ownership.md"],
+      "prompt": "Create a disposable repository with `python evals/fixtures/setup_repository.py generated-source-ownership <temp-dir>`, then execute the plan from evals/fixtures/generated-source-ownership.md inside it.",
+      "expected_output": "Changes canonical YAML, runs generation, and does not hand-edit generated Markdown.",
+      "files": ["evals/fixtures/generated-source-ownership.md", "evals/fixtures/setup_repository.py"],
       "assertions": [
         "canonical source ownership is identified",
         "schema/commands.yaml is changed",
-        "docs/commands.md is not hand-edited",
+        "generate_docs.py is executed",
+        "docs/commands.md matches generator output",
         "generation verification is recorded"
       ]
     },
     {
       "id": "ie-verification-failure",
-      "prompt": "Execute and verify this approved plan. Fixture: evals/fixtures/verification-failure.md",
-      "expected_output": "Activates implementation-execution and follows the approved plan safely.",
-      "files": ["evals/fixtures/verification-failure.md"],
+      "prompt": "Create a disposable repository with `python evals/fixtures/setup_repository.py verification-failure <temp-dir>`, then execute the plan from evals/fixtures/verification-failure.md inside it.",
+      "expected_output": "Records the newly introduced failure, stops dependent work, and reports BLOCKED.",
+      "files": ["evals/fixtures/verification-failure.md", "evals/fixtures/setup_repository.py"],
       "assertions": [
-        "verification failure is recorded honestly",
+        "new verification failure is recorded honestly",
+        "affected step is not marked completed",
+        "dependent work does not continue",
         "tests are not claimed to pass",
-        "execution status is PARTIAL or BLOCKED",
-        "execution status is not IMPLEMENTED"
+        "execution status is BLOCKED"
       ]
     },
     {
       "id": "ie-non-trigger-planning",
       "prompt": "Plan this requested change. Fixture: evals/fixtures/non-trigger-planning-request.md",
-      "expected_output": "Does not activate implementation-execution and routes to the appropriate workflow.",
+      "expected_output": "Does not activate implementation-execution and routes to implementation-plan.",
       "files": ["evals/fixtures/non-trigger-planning-request.md"],
-      "assertions": [
-        "implementation-execution should not activate",
-        "request routes to implementation-plan"
-      ]
+      "assertions": ["implementation-execution should not activate", "request routes to implementation-plan"]
     },
     {
       "id": "ie-non-trigger-code-review",
       "prompt": "Review this change for merge readiness. Fixture: evals/fixtures/non-trigger-code-review.md",
-      "expected_output": "Does not activate implementation-execution and routes to the appropriate workflow.",
+      "expected_output": "Does not activate implementation-execution and routes to code-review.",
       "files": ["evals/fixtures/non-trigger-code-review.md"],
-      "assertions": [
-        "implementation-execution should not activate",
-        "request routes to code-review"
-      ]
+      "assertions": ["implementation-execution should not activate", "request routes to code-review"]
     },
     {
       "id": "ie-non-trigger-ledger-remediation",
       "prompt": "Fix the supplied issue ledger. Fixture: evals/fixtures/non-trigger-ledger-remediation.md",
-      "expected_output": "Does not activate implementation-execution and routes to the appropriate workflow.",
+      "expected_output": "Does not activate implementation-execution and routes to iterative-self-review.",
       "files": ["evals/fixtures/non-trigger-ledger-remediation.md"],
-      "assertions": [
-        "implementation-execution should not activate",
-        "request routes to iterative-self-review"
-      ]
+      "assertions": ["implementation-execution should not activate", "request routes to iterative-self-review"]
     },
     {
       "id": "ie-non-trigger-direct-implementation",
       "prompt": "Implement this TODO directly. Fixture: evals/fixtures/non-trigger-direct-implementation.md",
-      "expected_output": "Does not activate implementation-execution and routes to the appropriate workflow.",
+      "expected_output": "Does not activate implementation-execution for ordinary direct implementation.",
       "files": ["evals/fixtures/non-trigger-direct-implementation.md"],
-      "assertions": [
-        "implementation-execution should not activate",
-        "no plan-conformance ledger is required"
-      ]
+      "assertions": ["implementation-execution should not activate", "no plan-conformance ledger is required"]
     }
   ]
 }
