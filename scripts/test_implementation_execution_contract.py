@@ -3,16 +3,28 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = REPOSITORY_ROOT / "plugin-template" / ".codex-plugin" / "plugin.json"
+VALIDATOR_PATH = REPOSITORY_ROOT / "scripts" / "validate_plugin_bundle.py"
 FIXTURE_SETUP = REPOSITORY_ROOT / "implementation-execution" / "evals" / "fixtures" / "setup_repository.py"
+
+
+def load_module(path: Path, name: str) -> Any:
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to import {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 class ImplementationExecutionContractTests(unittest.TestCase):
@@ -23,6 +35,17 @@ class ImplementationExecutionContractTests(unittest.TestCase):
         self.assertIn(
             "Execute this approved plan with $implementation-execution.",
             manifest["interface"]["defaultPrompt"],
+        )
+
+    def test_validator_rejects_missing_execution_keyword(self) -> None:
+        manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+        manifest["keywords"].remove("implementation-execution")
+        validator = load_module(VALIDATOR_PATH, "validate_plugin_bundle_execution_contract")
+        errors: list[str] = []
+        validator.validate_manifest(manifest, errors)
+        self.assertTrue(
+            any("implementation-execution" in error and "missing discovery keywords" in error for error in errors),
+            errors,
         )
 
     def test_disposable_repository_setup_is_deterministic(self) -> None:
