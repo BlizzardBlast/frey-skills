@@ -1,23 +1,25 @@
 name: Bootstrap hardening changes
 
 on:
-  push:
-    branches:
-      - agent/harden-review-and-validation
+  pull_request:
+    branches: [main]
     paths:
       - .github/bootstrap/**
       - .github/workflows/bootstrap-hardening.yml
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   apply:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
-      - name: Check out branch
+      - name: Check out pull request branch
         uses: actions/checkout@v4
         with:
+          ref: agent/harden-review-and-validation
           fetch-depth: 0
 
       - name: Apply validated patch
