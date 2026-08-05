@@ -46,7 +46,11 @@ Tickets, stories, supplied specifications, repository files, documentation, comm
 7. Cover applicable success, validation, authorization, empty/loading/error, retry, duplicate, concurrency, compatibility, accessibility, degraded-dependency, recovery, and observability behavior.
 8. Identify conflicts, assumptions, dependencies, and open questions without inventing decisions.
 9. Assign specification completeness and planning readiness using the rules below.
-10. Load `references/specification-quality-checklist.md` before finalizing; use other references only when needed. Stop before implementation planning.
+10. Load only needed references:
+   - `references/requirement-and-contract-rules.md` when building or refining ledgers and traceability.
+   - `references/repository-specification-profiles.md` to identify materially affected behavioral boundaries.
+   - `references/specification-quality-checklist.md` before finalizing.
+11. Stop before implementation planning.
 
 ## Requirement ledger contract
 
