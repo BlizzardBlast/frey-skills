@@ -1,7 +1,7 @@
 {
   "name": "frey-skills",
-  "version": "1.6.0",
-  "description": "Reusable Codex agent skills for root-cause debugging, implementation planning, risk-based test strategy, controlled plan execution, rigorous code review, and iterative remediation workflows.",
+  "version": "1.7.0",
+  "description": "Reusable Codex agent skills with repository-wide content-trust boundaries for debugging, implementation planning, risk-based test strategy, controlled plan execution, rigorous code review, and iterative remediation.",
   "author": {
     "name": "BlizzardBlast",
     "url": "https://github.com/BlizzardBlast"
@@ -13,6 +13,7 @@
     "agent-skills",
     "codex",
     "code-review",
+    "content-trust",
     "debug",
     "debugging",
     "implementation-execution",
@@ -20,6 +21,7 @@
     "iterative-review",
     "plan-execution",
     "planning",
+    "prompt-injection",
     "review",
     "risk-based-testing",
     "root-cause-analysis",
@@ -31,8 +33,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Frey Skills",
-    "shortDescription": "Debug, plan, strategize tests, execute, review, and remediate code changes.",
-    "longDescription": "A curated bundle of agent skills for evidence-backed root-cause investigation, implementation planning, risk-based test strategy, controlled plan execution, senior code review, and bounded iterative remediation.",
+    "shortDescription": "Debug, plan, test, execute, review, and remediate with content-trust boundaries.",
+    "longDescription": "A curated bundle of agent skills for evidence-backed root-cause investigation, implementation planning, risk-based test strategy, controlled plan execution, senior code review, and bounded iterative remediation with consistent content-trust and command-authority boundaries.",
     "developerName": "BlizzardBlast",
     "category": "Productivity",
     "capabilities": ["Review", "Write"],

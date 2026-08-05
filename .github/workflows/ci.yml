@@ -81,7 +81,7 @@ jobs:
           python-version: "3.12"
 
       - name: Run plugin bundle test suite
-        run: python -m unittest scripts.test_build_plugin scripts.test_implementation_execution_contract scripts.test_test_strategy_contract scripts.test_skill_behavior_contracts
+        run: python -m unittest scripts.test_build_plugin scripts.test_implementation_execution_contract scripts.test_test_strategy_contract scripts.test_skill_behavior_contracts scripts.test_content_trust_contracts
 
       - name: Build plugin bundle
         run: python scripts/build_plugin.py --force dist/frey-skills
