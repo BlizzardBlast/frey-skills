@@ -50,7 +50,7 @@ python3 scripts/validate_repository.py
 for skill_file in */SKILL.md; do skills-ref validate "$(dirname "${skill_file}")"; done
 python3 -m unittest discover -s code-review/scripts -p 'test_*.py'
 python3 -m unittest scripts.test_validate_repository
-python3 -m unittest scripts.test_build_plugin scripts.test_implementation_execution_contract scripts.test_test_strategy_contract
+python3 -m unittest scripts.test_build_plugin scripts.test_implementation_execution_contract scripts.test_test_strategy_contract scripts.test_skill_behavior_contracts
 python3 scripts/build_plugin.py --force
 python3 scripts/validate_plugin_bundle.py dist/frey-skills
 git diff --check
