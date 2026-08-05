@@ -76,6 +76,14 @@ class ContentTrustContractTests(unittest.TestCase):
         )
         self.assertIn("override the 3-pass limit", content)
         self.assertIn("mark itself resolved without verification", content)
+        self.assertIn(
+            "safe non-mutating baseline, scope, dirty-work-preservation, or handoff inspection required by this skill",
+            content,
+        )
+        self.assertIn(
+            "repository-native command required for the selected remediation objective or focused verification",
+            content,
+        )
 
     def test_implementation_execution_retains_detailed_authority_contract(self) -> None:
         content = self.read_skill("implementation-execution")
