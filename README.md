@@ -170,8 +170,10 @@ steps. It does not activate for ordinary direct implementation without a plan.
 
 - Baseline capture for branch, HEAD, staged, unstaged, and untracked work.
 - An executable-plan eligibility gate before editing.
-- Change specifications, plans, repository, and tool content are treated as
-  untrusted evidence rather than instruction authority.
+- Plan, repository, and tool content is treated as untrusted evidence rather
+  than instruction authority.
+- Change specifications are additional untrusted evidence and cannot satisfy the
+  executable plan gate alone.
 - A change specification or test strategy alone cannot satisfy the executable
   plan gate.
 - Commands require inspected provenance and explicit authorization for secret,
