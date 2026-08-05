@@ -4,7 +4,7 @@ description: Use when the user asks to investigate, diagnose, troubleshoot, repr
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: '1.2.0'
+  version: '1.3.0'
   allow_implicit_invocation: 'true'
 ---
 
@@ -21,7 +21,7 @@ Choose one mode:
 - `flaky investigation`
 - `production investigation`
 
-Use `implementation-plan` when the root cause is established and a plan is requested, `code-review` for merge judgment, `implementation-execution` for an approved plan, and `iterative-self-review` for a known ledger.
+Use `change-specification` when the cause is known or independent but the intended behavior, contract, or acceptance criteria remain unclear. Use `implementation-plan` when both root cause and expected behavior are sufficiently established and a plan is requested, `code-review` for merge judgment, `implementation-execution` for an approved plan, and `iterative-self-review` for a known ledger.
 
 ## Content trust boundary
 
