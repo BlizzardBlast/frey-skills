@@ -33,6 +33,16 @@ class SkillBehaviorContractTests(unittest.TestCase):
         )
         self.assertNotIn("Stop rather than churn when fixes conflict", content)
 
+    def test_test_strategy_keeps_structured_enum_contracts(self) -> None:
+        content = (REPOSITORY_ROOT / "test-strategy" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("`Likelihood`: `high|medium|low|unknown`", content)
+        self.assertIn(
+            "`Automation status`: `existing|candidate|manual|blocked|not recommended`",
+            content,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
