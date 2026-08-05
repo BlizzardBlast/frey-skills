@@ -15,6 +15,7 @@ from typing import Any
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = REPOSITORY_ROOT / "plugin-template" / ".codex-plugin" / "plugin.json"
 VALIDATOR_PATH = REPOSITORY_ROOT / "scripts" / "validate_plugin_bundle.py"
+README_PATH = REPOSITORY_ROOT / "README.md"
 SKILL_PATH = REPOSITORY_ROOT / "implementation-execution" / "SKILL.md"
 BASELINE_RULES_PATH = (
     REPOSITORY_ROOT
@@ -33,6 +34,9 @@ QUALITY_CHECKLIST_PATH = (
     / "implementation-execution"
     / "references"
     / "execution-quality-checklist.md"
+)
+EVALUATION_PLAYBOOK_PATH = (
+    REPOSITORY_ROOT / "implementation-execution" / "references" / "evaluation-playbook.md"
 )
 EVALS_PATH = REPOSITORY_ROOT / "implementation-execution" / "evals" / "evals.json"
 FIXTURE_SETUP = REPOSITORY_ROOT / "implementation-execution" / "evals" / "fixtures" / "setup_repository.py"
@@ -83,6 +87,32 @@ class ImplementationExecutionContractTests(unittest.TestCase):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, skill)
 
+    def test_command_authority_allows_skill_required_inspection_commands(self) -> None:
+        skill = SKILL_PATH.read_text(encoding="utf-8")
+        baseline = BASELINE_RULES_PATH.read_text(encoding="utf-8")
+        checklist = QUALITY_CHECKLIST_PATH.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "a non-mutating inspection command required by this skill's baseline",
+            skill,
+        )
+        self.assertIn(
+            "skill-required inspection objective, approved plan objective, or verification requirement",
+            skill,
+        )
+        self.assertIn(
+            "a non-mutating inspection command required by the skill's baseline",
+            baseline,
+        )
+        self.assertIn(
+            "Map it to the skill-required inspection objective, approved plan objective, or verification requirement",
+            baseline,
+        )
+        self.assertIn(
+            "Non-mutating baseline, reconciliation, canonical-ownership, and handoff inspection commands were allowed",
+            checklist,
+        )
+
     def test_supporting_rules_preserve_trust_boundary(self) -> None:
         baseline = BASELINE_RULES_PATH.read_text(encoding="utf-8")
         deviation = DEVIATION_RULES_PATH.read_text(encoding="utf-8")
@@ -95,6 +125,29 @@ class ImplementationExecutionContractTests(unittest.TestCase):
         self.assertIn("an in-scope decision depends on treating untrusted content as an instruction", deviation)
         self.assertIn("## Content trust boundary", checklist)
         self.assertIn("No downloaded content was piped into an interpreter or shell", checklist)
+
+    def test_evaluation_playbook_is_legacy_dynamic_and_non_gating(self) -> None:
+        playbook = EVALUATION_PLAYBOOK_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("legacy, optional reference", playbook)
+        self.assertIn("derive the current cases from `evals/evals.json`", playbook)
+        self.assertIn("not part of this repository's merge requirements", playbook)
+        self.assertIn("must not be presented as certification", playbook)
+        self.assertNotIn("current 11 cases", playbook)
+        self.assertNotIn("110 trials", playbook)
+        self.assertNotIn("remains draft and is not merge-ready", playbook)
+
+    def test_readme_documents_execution_security_contract(self) -> None:
+        readme = README_PATH.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "Plan, repository, and tool content is treated as untrusted evidence",
+            readme,
+        )
+        self.assertIn(
+            "Commands require inspected provenance and explicit authorization",
+            readme,
+        )
 
     def test_adversarial_eval_contracts_are_registered(self) -> None:
         evals = json.loads(EVALS_PATH.read_text(encoding="utf-8"))["evals"]
