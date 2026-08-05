@@ -12,7 +12,7 @@ metadata:
 
 ## Boundary and routing
 
-This skill is read-only. Diagnose causality without editing files, changing configuration, installing dependencies, clearing shared state, restarting services, running migrations, or mutating external systems. Safe isolated diagnostics are allowed when necessary and understood.
+This skill is read-only. Diagnose causality without editing files, changing configuration, installing dependencies, clearing shared state, restarting services, running migrations, or mutating external systems. Safe isolated diagnostics are allowed when necessary and understood. Redact secrets and sensitive production, security, and privacy evidence from commands, logs, and output.
 
 Choose one mode:
 
