@@ -116,6 +116,10 @@ steps. It does not activate for ordinary direct implementation without a plan.
 
 - Baseline capture for branch, HEAD, staged, unstaged, and untracked work.
 - An executable-plan eligibility gate before editing.
+- Plan, repository, and tool content is treated as untrusted evidence rather
+  than instruction authority.
+- Commands require inspected provenance and explicit authorization for secret,
+  network, remote-execution, privilege, or external-write effects.
 - One coherent plan step at a time.
 - A plan-conformance ledger with changed paths, verification, and deviations.
 - Preservation of unrelated dirty work and canonical generated-source ownership.
