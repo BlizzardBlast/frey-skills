@@ -51,7 +51,7 @@ Use IDs such as `TS-RISK-001`. Include:
 - `Behavior or boundary`
 - `Failure mode`
 - `Impact`
-- `Likelihood`
+- `Likelihood`: `high|medium|low|unknown`
 - `Change exposure`
 - `Detectability`
 - `Recovery`
@@ -73,7 +73,7 @@ Use IDs such as `TS-SCENARIO-001`. Include:
 - `Expected result`
 - `Test layer`
 - `Environment`
-- `Automation status`
+- `Automation status`: `existing|candidate|manual|blocked|not recommended`
 - `Priority`
 - `Evidence or gap`
 
