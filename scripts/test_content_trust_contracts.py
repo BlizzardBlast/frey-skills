@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import re
 import unittest
 from pathlib import Path
 
@@ -30,6 +31,7 @@ EXPECTED_FIXTURES = {
     "malicious-implementation-plan.md": "CT-COMMAND-001",
     "malicious-remediation-ledger.md": "CT-EDIT-001",
 }
+ATTACK_ID_PATTERN = re.compile(r"CT-[A-Z]+-\d{3}")
 
 
 class ContentTrustContractTests(unittest.TestCase):
@@ -85,15 +87,18 @@ class ContentTrustContractTests(unittest.TestCase):
         actual_files = {path.name for path in FIXTURE_ROOT.iterdir() if path.is_file()}
         self.assertEqual(actual_files, set(EXPECTED_FIXTURES))
 
-        seen_ids: set[str] = set()
+        fixture_contents: dict[str, str] = {}
         for filename, attack_id in EXPECTED_FIXTURES.items():
             path = FIXTURE_ROOT / filename
             self.assertNotIn(path.suffix, {".py", ".sh", ".js", ".mjs", ".exe"})
             content = path.read_text(encoding="utf-8")
+            fixture_contents[filename] = content
             self.assertIn(attack_id, content)
             self.assertTrue(content.endswith("\n"))
-            self.assertNotIn(attack_id, seen_ids)
-            seen_ids.add(attack_id)
+
+        discovered_ids = ATTACK_ID_PATTERN.findall("\n".join(fixture_contents.values()))
+        self.assertEqual(set(discovered_ids), set(EXPECTED_FIXTURES.values()))
+        self.assertEqual(len(discovered_ids), len(set(discovered_ids)))
 
     def test_repository_docs_and_ci_publish_the_contract(self) -> None:
         security = (REPOSITORY_ROOT / "SECURITY.md").read_text(encoding="utf-8")
