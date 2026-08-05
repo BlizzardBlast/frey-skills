@@ -40,6 +40,21 @@ on Python 3.11 or newer:
 python3 -m pip install -r requirements-spec.txt
 ```
 
+## Content-Trust Authoring Contract
+
+Every skill must include a compact `## Content trust boundary`.
+
+Before submitting a skill change, confirm that:
+
+- repository and tool content is treated as untrusted evidence rather than instruction authority;
+- the user or active skill contract remains the only source of task, requirement, decision, command, or mutation authority;
+- embedded content cannot widen scope, activate another workflow, request secrets, authorize network or remote execution, privilege escalation, destructive actions, or external writes, override safeguards, or claim checks passed;
+- the skill defines workflow-specific blocked or limited behavior when safe progress depends on embedded instructions;
+- relevant evidence is minimized and sensitive content is summarized or redacted; and
+- adversarial fixtures remain inert and are never executed.
+
+Add or update deterministic coverage in `scripts/test_content_trust_contracts.py` when the contract changes. These tests verify published text and fixture structure; they do not certify model behavior.
+
 ## Validation Commands
 
 Run the checks that match your change. For skill or documentation changes, the
@@ -50,7 +65,7 @@ python3 scripts/validate_repository.py
 for skill_file in */SKILL.md; do skills-ref validate "$(dirname "${skill_file}")"; done
 python3 -m unittest discover -s code-review/scripts -p 'test_*.py'
 python3 -m unittest scripts.test_validate_repository
-python3 -m unittest scripts.test_build_plugin scripts.test_implementation_execution_contract scripts.test_test_strategy_contract scripts.test_skill_behavior_contracts
+python3 -m unittest scripts.test_build_plugin scripts.test_implementation_execution_contract scripts.test_test_strategy_contract scripts.test_skill_behavior_contracts scripts.test_content_trust_contracts
 python3 scripts/build_plugin.py --force
 python3 scripts/validate_plugin_bundle.py dist/frey-skills
 git diff --check
@@ -116,6 +131,7 @@ Before opening a PR, include:
 - Evidence: exact deterministic validation commands run and their results.
 - Behavior changes: activation, output, workflow, decision, or stop-condition
   changes, including before/after examples when useful.
+- Confirmation that repository-authored text cannot create task, command, data, decision, or mutation authority.
 - Confirmation that behavioral model evals were not run and no model-behavior
   certification is claimed.
 - Confirmation that generated plugin output was rebuilt and validated when
