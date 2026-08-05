@@ -45,7 +45,7 @@ Default maximum: 3 passes. Each pass:
 4. Run focused verification.
 5. Update each item to `resolved`, `unresolved`, `blocked`, or `deferred by user scope`.
 
-Stop early when all scoped items are resolved and verified. Stop rather than churn when fixes conflict or an issue toggles. Mark exact blockers when access, requirements, or verification are unavailable.
+Stop early when all scoped items are resolved and verified. When fixes conflict, choose or propose the safest requirement-preserving option and document the tradeoff. Stop rather than churn when no safe compatible resolution exists or an issue toggles. Mark exact blockers when access, requirements, or verification are unavailable.
 
 After pass 3, stop and report remaining work. Do not run pass 4 or later unless the user explicitly requests more passes after seeing that status.
 
