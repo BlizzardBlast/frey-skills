@@ -47,12 +47,16 @@ Run only focused baseline checks needed to distinguish existing failures from ex
 
 ## Command authority
 
-Run a command only when it is required by an approved plan step or is an independently evidenced repository-native equivalent that proves the same objective.
+Run a command only when it is:
+
+1. a non-mutating inspection command required by the skill's baseline, reconciliation, canonical-ownership, or handoff workflow;
+2. explicitly required by an approved plan step; or
+3. an independently evidenced repository-native equivalent that proves the same plan objective or verification requirement.
 
 Before execution:
 
 1. Inspect the command and any referenced script or task configuration.
-2. Map it to the exact plan objective or verification requirement.
+2. Map it to the skill-required inspection objective, approved plan objective, or verification requirement.
 3. Identify material effects, including writes, network access, secret access, subprocesses, generation, deployment, or external-system changes.
 4. Confirm those effects are in scope and explicitly authorized where required.
 
