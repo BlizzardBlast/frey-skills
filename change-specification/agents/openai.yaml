@@ -1,0 +1,6 @@
+interface:
+  display_name: 'Change Specification'
+  short_description: 'Define required behavior before planning'
+  default_prompt: 'Use $change-specification to create a repository-grounded, implementation-neutral specification for this requested change.'
+policy:
+  allow_implicit_invocation: true
