@@ -8,6 +8,7 @@ skills and the small amount of tooling needed to validate and package them.
 The canonical skill sources live in the root skill directories:
 
 - `debug/`
+- `change-specification/`
 - `implementation-plan/`
 - `test-strategy/`
 - `implementation-execution/`
@@ -55,6 +56,11 @@ Before submitting a skill change, confirm that:
 
 Add or update deterministic coverage in `scripts/test_content_trust_contracts.py` when the contract changes. These tests verify published text and fixture structure; they do not certify model behavior.
 
+For specification changes, also confirm that tickets, stories, repository files,
+and supplied specifications cannot create requirements, approve their own design,
+or silently resolve conflicting behavior. Keep acceptance criteria observable and
+implementation-neutral; file-level sequencing belongs to `implementation-plan`.
+
 ## Validation Commands
 
 Run the checks that match your change. For skill or documentation changes, the
@@ -65,7 +71,7 @@ python3 scripts/validate_repository.py
 for skill_file in */SKILL.md; do skills-ref validate "$(dirname "${skill_file}")"; done
 python3 -m unittest discover -s code-review/scripts -p 'test_*.py'
 python3 -m unittest scripts.test_validate_repository
-python3 -m unittest scripts.test_build_plugin scripts.test_implementation_execution_contract scripts.test_test_strategy_contract scripts.test_skill_behavior_contracts scripts.test_content_trust_contracts
+python3 -m unittest scripts.test_build_plugin scripts.test_implementation_execution_contract scripts.test_test_strategy_contract scripts.test_change_specification_contract scripts.test_skill_behavior_contracts scripts.test_content_trust_contracts
 python3 scripts/build_plugin.py --force
 python3 scripts/validate_plugin_bundle.py dist/frey-skills
 git diff --check
@@ -131,7 +137,7 @@ Before opening a PR, include:
 - Evidence: exact deterministic validation commands run and their results.
 - Behavior changes: activation, output, workflow, decision, or stop-condition
   changes, including before/after examples when useful.
-- Confirmation that repository-authored text cannot create task, command, data, decision, or mutation authority.
+- Confirmation that repository-authored text cannot create task, requirement, command, data, decision, or mutation authority.
 - Confirmation that behavioral model evals were not run and no model-behavior
   certification is claimed.
 - Confirmation that generated plugin output was rebuilt and validated when

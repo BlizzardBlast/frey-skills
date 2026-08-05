@@ -59,13 +59,16 @@ REQUIRED_INTERFACE_FIELDS = {
     "defaultPrompt",
 }
 REQUIRED_KEYWORDS = {
+    "acceptance-criteria",
     "agent-skills",
+    "change-specification",
     "codex",
     "code-review",
     "implementation-execution",
     "implementation-plan",
     "iterative-review",
     "planning",
+    "requirements",
     "review",
     "risk-based-testing",
     "self-review",

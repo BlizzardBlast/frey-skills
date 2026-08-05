@@ -1,7 +1,7 @@
 {
   "name": "frey-skills",
-  "version": "1.7.0",
-  "description": "Reusable Codex agent skills with repository-wide content-trust boundaries for debugging, implementation planning, risk-based test strategy, controlled plan execution, rigorous code review, and iterative remediation.",
+  "version": "1.8.0",
+  "description": "Reusable Codex agent skills with repository-wide content-trust boundaries for debugging, change specification, implementation planning, risk-based test strategy, controlled plan execution, rigorous code review, and iterative remediation.",
   "author": {
     "name": "BlizzardBlast",
     "url": "https://github.com/BlizzardBlast"
@@ -10,7 +10,9 @@
   "repository": "https://github.com/BlizzardBlast/frey-skills",
   "license": "MIT",
   "keywords": [
+    "acceptance-criteria",
     "agent-skills",
+    "change-specification",
     "codex",
     "code-review",
     "content-trust",
@@ -22,6 +24,7 @@
     "plan-execution",
     "planning",
     "prompt-injection",
+    "requirements",
     "review",
     "risk-based-testing",
     "root-cause-analysis",
@@ -33,14 +36,15 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Frey Skills",
-    "shortDescription": "Debug, plan, test, execute, review, and remediate with content-trust boundaries.",
-    "longDescription": "A curated bundle of agent skills for evidence-backed root-cause investigation, implementation planning, risk-based test strategy, controlled plan execution, senior code review, and bounded iterative remediation with consistent content-trust and command-authority boundaries.",
+    "shortDescription": "Debug, specify, plan, test, execute, review, and remediate safely.",
+    "longDescription": "A curated bundle of agent skills for evidence-backed root-cause investigation, implementation-neutral change specification, implementation planning, risk-based test strategy, controlled plan execution, senior code review, and bounded iterative remediation with consistent content-trust and command-authority boundaries.",
     "developerName": "BlizzardBlast",
     "category": "Productivity",
     "capabilities": ["Review", "Write"],
     "websiteURL": "https://github.com/BlizzardBlast/frey-skills",
     "defaultPrompt": [
       "Investigate this failure with $debug before editing.",
+      "Define this change with $change-specification before planning.",
       "Plan this change with $implementation-plan before editing.",
       "Create a risk-based testing strategy with $test-strategy.",
       "Execute this approved plan with $implementation-execution.",

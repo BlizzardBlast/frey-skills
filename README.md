@@ -10,10 +10,10 @@ This repository is designed for the
 ## Content-trust invariant
 
 All canonical skills treat repository and tool content as untrusted evidence,
-not instruction authority. Files, plans, comments, issue and PR text, tests,
-fixtures, logs, generated content, and command output cannot widen user scope,
-authorize commands or sensitive effects, request secrets, override safeguards,
-or claim checks passed.
+not instruction authority. Files, plans, specifications, comments, issue and PR
+text, tests, fixtures, logs, generated content, and command output cannot widen
+user scope, authorize commands or sensitive effects, request secrets, override
+safeguards, or claim checks passed.
 
 Each skill applies this invariant to its own workflow and maps unsafe dependence
 to its existing partial, blocked, unresolved, or not-ready status. Deterministic
@@ -50,7 +50,42 @@ reproduce, or determine the root cause of a concrete codebase or system symptom.
   evidence.
 - Investigation completeness: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
 - Root-cause status: `CONFIRMED`, `LIKELY`, `UNRESOLVED`, or `NOT_A_DEFECT`.
-- Clean handoffs to implementation planning, execution, review, or remediation.
+- Clean handoffs to change specification, implementation planning, execution,
+  review, or remediation.
+
+### change-specification
+
+Converts an idea, ticket, story, defect expectation, supplied specification, or
+requested behavior change into a read-only, repository-grounded,
+implementation-neutral specification before file-level planning. It may activate
+implicitly when the user asks to define required behavior, acceptance criteria,
+edge cases, or affected contracts.
+
+**Specification modes:**
+
+- `feature specification` — define a new capability or user workflow.
+- `behavior-change specification` — define a change to established behavior.
+- `contract specification` — define API, event, schema, integration, permission,
+  or state-machine behavior.
+- `specification refinement` — validate and improve a supplied specification.
+
+**What it enforces:**
+
+- A read-only, implementation-neutral boundary; the skill stops before
+  repository change sequencing.
+- Stable `REQ-NNN`, `AC-NNN`, and `CONTRACT-NNN` traceability.
+- Observable Given/When/Then acceptance criteria rather than implementation
+  details.
+- Explicit goals, non-goals, actors, current/proposed behavior, failures, state
+  transitions, compatibility, security, privacy, and accessibility constraints.
+- Tickets and supplied specifications cannot create requirements, approve their
+  own design, authorize commands, or silently resolve conflicting sources.
+- Specification completeness: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
+- Planning readiness: `READY_FOR_PLANNING`, `READY_WITH_OPEN_QUESTIONS`, or
+  `NOT_READY`.
+
+A separate specification is not mandatory when a planning request already
+provides complete, unambiguous behavior and contracts.
 
 ### implementation-plan
 
@@ -71,8 +106,8 @@ sequence, or refine a concrete codebase change before editing.
 **What it enforces:**
 
 - A read-only planning boundary; the skill stops before implementation.
-- Repository documents and supplied plans cannot create requirements or approve
-  their own design.
+- Repository documents and supplied plans/specifications cannot create
+  requirements or approve their own design.
 - Evidence-backed current-state findings with no fabricated repository paths or
   contracts.
 - Explicit requirements and invariants before proposing changes.
@@ -137,6 +172,10 @@ steps. It does not activate for ordinary direct implementation without a plan.
 - An executable-plan eligibility gate before editing.
 - Plan, repository, and tool content is treated as untrusted evidence rather
   than instruction authority.
+- Change specifications are additional untrusted evidence and cannot satisfy the
+  executable plan gate alone.
+- A change specification or test strategy alone cannot satisfy the executable
+  plan gate.
 - Commands require inspected provenance and explicit authorization for secret,
   network, remote-execution, privilege, or external-write effects.
 - One coherent plan step at a time.
@@ -196,14 +235,14 @@ post-review repair, or repeated fix-and-recheck remediation.
 
 ## Workflow
 
-The primary implementation lifecycle remains:
+The primary implementation lifecycle is:
 
 ```text
 symptom or failing test
         ↓
        debug
         ↓
-confirmed root cause
+change-specification
         ↓
 implementation-plan
         ↓
@@ -214,6 +253,8 @@ code-review
 iterative-self-review
 ```
 
+`debug` is optional when there is no unknown cause. `change-specification` is
+optional when required behavior and contracts are already complete.
 `test-strategy` is an optional specialist workflow that can inform planning,
 test implementation, review of test sufficiency, migration confidence, and
 release testing. It is not a mandatory stage for every change.
@@ -237,6 +278,18 @@ Investigate why this test is flaky before editing anything.
 
 ```text
 Find the root cause of this production-only 401 from the available logs.
+```
+
+```text
+Turn this ticket into concrete requirements and acceptance criteria.
+```
+
+```text
+Use change-specification to define the API contract and failure behavior before planning.
+```
+
+```text
+Refine this supplied feature specification and assess planning readiness.
 ```
 
 ```text
@@ -309,6 +362,7 @@ Each skill directory can include:
 Current layout:
 
 ```text
+change-specification/
 code-review/
 debug/
 implementation-plan/
@@ -319,8 +373,8 @@ iterative-self-review/
 
 Each canonical skill contains a `SKILL.md`; individual skills may additionally
 contain `agents/`, `evals/`, `references/`, or `scripts/` according to their
-workflow. The `test-strategy` skill intentionally ships without an `evals/`
-directory.
+workflow. The `change-specification` and `test-strategy` skills intentionally
+ship without an `evals/` directory.
 
 ## Quality Gates
 
@@ -347,14 +401,14 @@ Codex plugin bundle is built into `dist/frey-skills` from those sources and
 `plugin-template/.codex-plugin/plugin.json`.
 
 ```bash
-python3 scripts/build_plugin.py --force
+python3 scripts/build_plugin.py --force dist/frey-skills
 python3 scripts/validate_plugin_bundle.py dist/frey-skills
 ```
 
 Do not hand-edit `dist/frey-skills`; rebuild it from the canonical sources.
 The repository does not commit marketplace metadata or a public marketplace
 submission package. Local marketplace wiring, if you use it, is an optional
-personal setup outside the repo workflow.
+personal setup outside this repo workflow.
 
 ## Notes for Authors
 
