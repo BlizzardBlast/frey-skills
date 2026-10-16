@@ -7,6 +7,26 @@ workflows more reliably.
 This repository is designed for the
 [Agent Skills](https://agentskills.io/) ecosystem.
 
+## Choose a skill
+
+| Your task | Skill | Main output | Edits files? |
+| --- | --- | --- | --- |
+| Investigate an unknown failure or regression | [debug](debug/SKILL.md) | Hypotheses, evidence, and root-cause status | No |
+| Define required behavior and acceptance criteria | [change-specification](change-specification/SKILL.md) | Requirements, contracts, and planning readiness | No |
+| Sequence a concrete repository change | [implementation-plan](implementation-plan/SKILL.md) | Ordered steps, invariants, verification, and readiness | No |
+| Decide what testing a change needs | [test-strategy](test-strategy/SKILL.md) | Prioritized risks, scenarios, and test readiness | No |
+| Execute or resume an approved implementation plan | [implementation-execution](implementation-execution/SKILL.md) | Bounded changes, verification, and plan conformance | Yes, within the authorized plan |
+| Review changes, repository risks, or stale comments | [code-review](code-review/SKILL.md) | Coverage, findings, and a review decision | No |
+| Fix selected findings through a bounded review loop | [iterative-self-review](iterative-self-review/SKILL.md) | Scoped fixes and verification, up to three passes | Yes, only when explicitly invoked |
+
+Start at the row that matches the work you need. A direct, unambiguous task does
+not require every stage. Saved artifacts and positive readiness statuses do not
+authorize implementation or external writes; the user's request establishes
+that authority.
+
+For installation, see the [setup guide](docs/installation.md). For a complete
+handoff sequence, see the [worked example](docs/worked-example.md).
+
 ## Content-trust invariant
 
 All canonical skills treat repository and tool content as untrusted evidence,
@@ -266,9 +286,17 @@ behavioral model eval evidence.
 
 ## Installation
 
+Install the versioned skill sources with the Skills CLI:
+
 ```bash
-npx skills add BlizzardBlast/frey-skills
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.8.1
 ```
+
+Choose the skills, agent, and project or user scope in the installer. To follow
+the default branch instead, use `npx skills add BlizzardBlast/frey-skills`.
+
+The [installation guide](docs/installation.md) covers selecting individual
+skills, the versioned Codex plugin ZIP, verification, upgrades, and rollback.
 
 ## Usage
 
@@ -391,7 +419,8 @@ python scripts/check.py
 ```
 
 The same runner works on Windows, Linux, and macOS and checks setup before
-starting. It rebuilds generated plugin output at `dist/frey-skills`. See
+starting. CI runs the full set on Windows and macOS with Python 3.12, alongside
+the Ubuntu jobs. It rebuilds generated plugin output at `dist/frey-skills`. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for environment setup and individual groups.
 
 The repository uses deterministic quality gates:

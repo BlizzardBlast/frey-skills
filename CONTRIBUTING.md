@@ -105,7 +105,8 @@ python scripts/check.py --group whitespace --base origin/main
 The whitespace group checks both unstaged changes and the Git index. `--base`
 adds committed whitespace checks from the merge base of an existing
 local Git ref to `HEAD`. Fetch the intended base separately when needed. CI uses
-these same groups on Ubuntu and runs the full set on Windows Python 3.12.
+these same groups on Ubuntu and runs the full set on Windows and macOS with
+Python 3.12.
 
 The plugin group includes `scripts.test_content_trust_contracts`, the focused
 skill contracts, and bundle/release tests. The repository group includes the

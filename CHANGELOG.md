@@ -4,6 +4,14 @@ Entries describe versioned repository changes. The GitHub Releases page records
 which versions have actually been published. Skill activation, structured
 output fields, and trust contracts are unchanged in 1.8.1.
 
+## Unreleased
+
+### Added
+
+- A README skill-selection table and installation guide covering version-pinned
+  skill sources, the Codex plugin archive, verification, upgrades, and rollback.
+- A macOS Python 3.12 CI job running the full deterministic validation set.
+
 ## [1.8.1] - 2026-10-16
 
 ### Added

@@ -16,15 +16,21 @@ class WorkflowContractTests(unittest.TestCase):
     def read_workflow(self, name: str) -> dict:
         return yaml.load((ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
 
-    def test_windows_runs_all_gates_with_read_only_ci_permissions(self) -> None:
+    def test_windows_and_macos_run_all_gates_with_read_only_ci_permissions(self) -> None:
         ci = self.read_workflow("ci.yml")
         self.assertEqual(ci["permissions"], {"contents": "read"})
-        windows = ci["jobs"]["windows"]
-        self.assertEqual(windows["runs-on"], "windows-latest")
-        commands = [step["run"] for step in windows["steps"] if "run" in step]
-        self.assertIn("python scripts/check.py --base origin/main", commands)
-        self.assertTrue(any("requirements-dev.txt" in command and "requirements-spec.txt" in command for command in commands))
-        self.assertNotIn("permissions", windows)
+        for platform in ("windows", "macos"):
+            with self.subTest(platform=platform):
+                job = ci["jobs"][platform]
+                self.assertEqual(job["runs-on"], f"{platform}-latest")
+                self.assertNotIn("permissions", job)
+                commands = [step["run"] for step in job["steps"] if "run" in step]
+                self.assertIn("python scripts/check.py --base origin/main", commands)
+                self.assertTrue(any("requirements-dev.txt" in command and "requirements-spec.txt" in command for command in commands))
+                checkout = next(step for step in job["steps"] if step.get("uses", "").startswith("actions/checkout@"))
+                self.assertEqual(checkout["with"]["fetch-depth"], "0")
+                python_setup = next(step for step in job["steps"] if step.get("uses", "").startswith("actions/setup-python@"))
+                self.assertEqual(python_setup["with"]["python-version"], "3.12")
 
     def test_publication_runs_only_on_version_tags_after_validation(self) -> None:
         workflow = self.read_workflow("release.yml")
