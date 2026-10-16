@@ -30,7 +30,7 @@ def run_validator(root: Path) -> subprocess.CompletedProcess[str]:
 class RepositoryValidatorTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
-        self.repo = Path(self.temp_dir.name)
+        self.repo = Path(self.temp_dir.name).resolve()
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
@@ -117,6 +117,33 @@ class RepositoryValidatorTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_local_environment_and_test_caches_are_not_source(self) -> None:
+        self.write_valid_skill()
+        for relative in (".venv/Lib/third_party.py", "__pycache__/local.txt", ".pytest_cache/README.md"):
+            self.write(relative, "not repository source; no trailing newline")
+        result = run_validator(self.repo)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_source_hygiene_rejects_external_links_and_cycles_without_traversal(self) -> None:
+        self.write_valid_skill()
+        with tempfile.TemporaryDirectory() as external_directory:
+            external = Path(external_directory).resolve()
+            (external / "dummy.txt").write_bytes(b"must not read external bytes")
+            links = ((self.repo / "external-source", external), (self.repo / "cycle", self.repo))
+            for link, target in links:
+                try:
+                    link.symlink_to(target, target_is_directory=True)
+                except (NotImplementedError, OSError) as exc:
+                    self.skipTest(f"symlinks are not supported here: {exc}")
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "--root", str(self.repo)],
+                capture_output=True, encoding="utf-8", check=False, timeout=20,
+            )
+            self.assertEqual(result.returncode, 1, result.stderr)
+            self.assertIn("symlink or junction", result.stderr)
+            self.assertNotIn("must end with exactly one trailing newline", result.stderr)
+            self.assertEqual((external / "dummy.txt").read_bytes(), b"must not read external bytes")
+
     def test_malformed_frontmatter_yaml_fails(self) -> None:
         self.write(
             "broken-skill/SKILL.md",
@@ -153,6 +180,15 @@ class RepositoryValidatorTests(unittest.TestCase):
 
         output = self.assert_validation_fails_with("trailing newline")
         self.assertIn("README.md", output)
+
+    def test_crlf_endings_have_the_same_single_newline_rule(self) -> None:
+        self.write_valid_skill()
+        path = self.repo / "README.md"
+        path.write_bytes(b"# Valid CRLF\r\n")
+        result = run_validator(self.repo)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        path.write_bytes(b"# Extra CRLF\r\n\r\n")
+        self.assert_validation_fails_with("README.md: must end with exactly one trailing newline")
 
     def test_skill_over_500_lines_fails(self) -> None:
         body = "\n".join(f"Line {index}" for index in range(497))

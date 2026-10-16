@@ -13,9 +13,9 @@ from typing import Any, Iterable
 import yaml
 
 try:
-    from scripts.repository_layout import discover_skill_names
+    from scripts.repository_layout import SourcePathError, discover_skill_names, validate_source_path
 except ModuleNotFoundError:
-    from repository_layout import discover_skill_names
+    from repository_layout import SourcePathError, discover_skill_names, validate_source_path
 
 
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -31,7 +31,7 @@ ALLOWED_SKILL_FIELDS = {
 REFERENCE_SUFFIXES = {".json", ".md", ".yaml", ".yml"}
 TEXT_SUFFIXES = {".cfg", ".ini", ".json", ".md", ".py", ".sh", ".toml", ".txt", ".yaml", ".yml"}
 TEXT_FILENAMES = {".gitattributes", ".gitignore", "LICENSE"}
-EXCLUDED_DIRS = {".git", "dist", "eval-workspace", ".superpowers", ".omo"}
+EXCLUDED_DIRS = {".git", ".venv", "__pycache__", ".pytest_cache", "dist", "eval-workspace", ".superpowers", ".omo"}
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -56,16 +56,19 @@ class Validator:
             display_path = path.resolve().relative_to(self.root)
         except ValueError:
             display_path = path
-        self.errors.append(f"{display_path}: {message}")
+        self.errors.append(f"{display_path.as_posix()}: {message}")
 
     def validate(self) -> int:
         if not self.root.exists() or not self.root.is_dir():
             self.add_error(self.root, "root does not exist or is not a directory")
             return 1
 
-        for skill_dir in self.discover_skill_dirs():
-            self.validate_skill(skill_dir)
-        self.validate_source_trailing_newlines()
+        try:
+            for skill_dir in self.discover_skill_dirs():
+                self.validate_skill(skill_dir)
+            self.validate_source_trailing_newlines()
+        except SourcePathError as exc:
+            self.add_error(self.root, str(exc))
 
         if self.errors:
             for error in self.errors:
@@ -95,10 +98,11 @@ class Validator:
 
     def read_text(self, path: Path) -> str | None:
         try:
+            validate_source_path(path, self.root)
             return path.read_text(encoding="utf-8")
         except UnicodeDecodeError as exc:
             self.add_error(path, f"must be valid UTF-8: {exc}")
-        except OSError as exc:
+        except (OSError, SourcePathError) as exc:
             self.add_error(path, f"could not be read: {exc}")
         return None
 
@@ -511,7 +515,8 @@ class Validator:
         except OSError as exc:
             self.add_error(path, f"could not be read: {exc}")
             return
-        if not content.endswith(b"\n") or content.endswith(b"\n\n"):
+        normalized = content.replace(b"\r\n", b"\n")
+        if not normalized.endswith(b"\n") or normalized.endswith(b"\n\n"):
             self.add_error(path, "must end with exactly one trailing newline")
 
     def walk_files(self, root: Path) -> Iterable[Path]:
@@ -524,9 +529,15 @@ class Validator:
                 self.add_error(current, f"could not be listed: {exc}")
                 continue
             for child in children:
+                if child.name in EXCLUDED_DIRS and child.is_dir():
+                    continue
+                try:
+                    validate_source_path(child, self.root)
+                except SourcePathError as exc:
+                    self.add_error(child, str(exc))
+                    continue
                 if child.is_dir():
-                    if child.name not in EXCLUDED_DIRS:
-                        stack.append(child)
+                    stack.append(child)
                 elif child.is_file():
                     yield child
 

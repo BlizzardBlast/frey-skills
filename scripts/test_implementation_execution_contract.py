@@ -6,6 +6,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -186,12 +187,12 @@ class ImplementationExecutionContractTests(unittest.TestCase):
             "untrusted-untracked-content",
         }
         with tempfile.TemporaryDirectory() as temporary_directory:
-            root = Path(temporary_directory)
+            root = Path(temporary_directory).resolve()
             for case in cases:
                 with self.subTest(case=case):
                     destination = root / case
                     subprocess.run(
-                        ["python", str(FIXTURE_SETUP), case, str(destination)],
+                        [sys.executable, str(FIXTURE_SETUP), case, str(destination)],
                         check=True,
                         capture_output=True,
                         text=True,
@@ -211,9 +212,9 @@ class ImplementationExecutionContractTests(unittest.TestCase):
 
     def test_dirty_fixture_contains_same_file_user_hunk(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
-            destination = Path(temporary_directory) / "repo"
+            destination = Path(temporary_directory).resolve() / "repo"
             subprocess.run(
-                ["python", str(FIXTURE_SETUP), "dirty-plan-owned-work", str(destination)],
+                [sys.executable, str(FIXTURE_SETUP), "dirty-plan-owned-work", str(destination)],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -221,11 +222,56 @@ class ImplementationExecutionContractTests(unittest.TestCase):
             profile = (destination / "src" / "profile.ts").read_text(encoding="utf-8")
             self.assertIn("// unrelated user hunk", profile)
 
+    def test_fixture_setup_preserves_existing_files_and_directories(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            for kind in ("file", "empty-directory", "nonempty-directory"):
+                with self.subTest(kind=kind):
+                    destination = root / kind
+                    if kind == "file":
+                        destination.write_bytes(b"preserve existing file\n")
+                    else:
+                        destination.mkdir()
+                        if kind == "nonempty-directory":
+                            (destination / "user-work.txt").write_bytes(b"preserve user work\n")
+                    before = {path.relative_to(root): path.read_bytes() for path in root.rglob("*") if path.is_file()}
+                    result = subprocess.run(
+                        [sys.executable, str(FIXTURE_SETUP), "complete-plan-execution", str(destination)],
+                        capture_output=True, text=True, check=False,
+                    )
+                    self.assertEqual(result.returncode, 2, result.stderr)
+                    self.assertIn("destination must be a new path", result.stderr)
+                    self.assertEqual({path.relative_to(root): path.read_bytes() for path in root.rglob("*") if path.is_file()}, before)
+                    self.assertFalse((destination / ".git").exists())
+
+    def test_fixture_setup_rejects_linked_destinations_and_parents(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            target = root / "owned-target"
+            target.mkdir()
+            sentinel = target / "user-work.txt"
+            sentinel.write_bytes(b"preserve linked target\n")
+            link = root / "link"
+            try:
+                link.symlink_to(target, target_is_directory=True)
+            except (NotImplementedError, OSError) as exc:
+                self.skipTest(f"symlinks are not supported here: {exc}")
+            for destination in (link, link / "new-child"):
+                with self.subTest(destination=destination.name):
+                    result = subprocess.run(
+                        [sys.executable, str(FIXTURE_SETUP), "complete-plan-execution", str(destination)],
+                        capture_output=True, text=True, check=False,
+                    )
+                    self.assertEqual(result.returncode, 2, result.stderr)
+                    self.assertIn("must not traverse a symlink or junction", result.stderr)
+                    self.assertEqual(sentinel.read_bytes(), b"preserve linked target\n")
+                    self.assertEqual({path.name for path in target.iterdir()}, {"user-work.txt"})
+
     def test_untrusted_untracked_fixture_is_untracked_and_adversarial(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
-            destination = Path(temporary_directory) / "repo"
+            destination = Path(temporary_directory).resolve() / "repo"
             subprocess.run(
-                ["python", str(FIXTURE_SETUP), "untrusted-untracked-content", str(destination)],
+                [sys.executable, str(FIXTURE_SETUP), "untrusted-untracked-content", str(destination)],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -244,15 +290,15 @@ class ImplementationExecutionContractTests(unittest.TestCase):
 
     def test_untrusted_command_output_fixture_fails_with_injection_text(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
-            destination = Path(temporary_directory) / "repo"
+            destination = Path(temporary_directory).resolve() / "repo"
             subprocess.run(
-                ["python", str(FIXTURE_SETUP), "untrusted-command-output", str(destination)],
+                [sys.executable, str(FIXTURE_SETUP), "untrusted-command-output", str(destination)],
                 check=True,
                 capture_output=True,
                 text=True,
             )
             result = subprocess.run(
-                ["python", "test_runner.py"],
+                [sys.executable, "test_runner.py"],
                 cwd=destination,
                 check=False,
                 capture_output=True,

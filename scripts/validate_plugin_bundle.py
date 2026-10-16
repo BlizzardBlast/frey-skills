@@ -12,9 +12,9 @@ from pathlib import Path
 from typing import Any, Iterable, Optional
 
 try:
-    from scripts.repository_layout import discover_skill_names
+    from scripts.repository_layout import SourcePathError, discover_skill_names, is_runtime_artifact, validate_source_path
 except ModuleNotFoundError:
-    from repository_layout import discover_skill_names
+    from repository_layout import SourcePathError, discover_skill_names, is_runtime_artifact, validate_source_path
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -108,6 +108,11 @@ def main(argv: Optional[list[str]] = None) -> int:
 
 def validate_bundle(bundle: Path) -> list[str]:
     errors: list[str] = []
+    try:
+        discover_skill_names(REPOSITORY_ROOT)
+        validate_source_path(PLUGIN_TEMPLATE / ".codex-plugin" / "plugin.json", REPOSITORY_ROOT)
+    except SourcePathError as exc:
+        return [str(exc)]
     if bundle.is_symlink():
         return [f"bundle path must not be a symlink: {bundle}"]
     if not bundle.is_dir():
@@ -294,12 +299,12 @@ def validate_skill_parity(bundle: Path, errors: list[str]) -> None:
 
 
 def compare_trees(source: Path, generated: Path, label: str, errors: list[str]) -> None:
-    source_dirs = relative_directories(source)
+    source_dirs = {path for path in relative_directories(source) if not is_runtime_artifact(path)}
     generated_dirs = relative_directories(generated)
     if source_dirs != generated_dirs:
         errors.append(f"{label} directory layout does not match canonical source")
 
-    source_files = relative_files(source)
+    source_files = {path for path in relative_files(source) if not is_runtime_artifact(path)}
     generated_files = relative_files(generated)
     if source_files != generated_files:
         missing = sorted(source_files - generated_files)

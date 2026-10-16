@@ -1,6 +1,6 @@
 {
   "name": "frey-skills",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "Reusable Codex agent skills with repository-wide content-trust boundaries for debugging, change specification, implementation planning, risk-based test strategy, controlled plan execution, rigorous code review, and iterative remediation.",
   "author": {
     "name": "BlizzardBlast",

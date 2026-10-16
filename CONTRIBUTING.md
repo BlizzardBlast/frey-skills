@@ -22,24 +22,41 @@ The generated Codex plugin bundle lives at `dist/frey-skills` and is rebuilt
 from the root skill directories plus `plugin-template/.codex-plugin/plugin.json`.
 Do not hand-edit generated files in `dist/frey-skills`.
 
-This repository does not include marketplace metadata, public submission
+This repository does not include marketplace metadata, marketplace submission
 packaging, or a marketplace publishing workflow. Any local marketplace wiring is
 optional personal setup outside the repo workflow.
 
 ## Local Setup
 
-Install the development dependency used by the repository validators:
+Use Python 3.11 or newer for the full validation set and ensure Git is on PATH.
+The repository-only checks continue to support Python 3.9. Select the intended
+interpreter before creating a local virtual environment:
 
 ```bash
-python3 -m pip install -r requirements-dev.txt
+python -m venv .venv
 ```
 
-The CI specification check uses the official Agent Skills reference validator
-on Python 3.11 or newer:
+On Windows PowerShell, install both pinned dependency sets and run all checks
+without activating the environment:
+
+```powershell
+.venv\Scripts\python.exe -m pip install -r requirements-dev.txt -r requirements-spec.txt
+.venv\Scripts\python.exe scripts/check.py
+```
+
+On Linux or macOS:
 
 ```bash
-python3 -m pip install -r requirements-spec.txt
+.venv/bin/python -m pip install -r requirements-dev.txt -r requirements-spec.txt
+.venv/bin/python scripts/check.py
 ```
+
+The runner checks dependencies in the selected interpreter before starting any
+gate. It does not install packages, fetch Git refs, run behavioral model evals,
+commit changes, or publish anything. Missing setup returns exit code 2. A failed
+gate stops the runner and returns that gate's nonzero exit code. The runner emits
+UTF-8 output and configures Python child processes for UTF-8, including when
+output is redirected and repository paths contain non-ASCII characters.
 
 ## Content-Trust Authoring Contract
 
@@ -63,19 +80,36 @@ implementation-neutral; file-level sequencing belongs to `implementation-plan`.
 
 ## Validation Commands
 
-Run the checks that match your change. For skill or documentation changes, the
-full local validation set is:
+Run the checks that match your change. The single command below runs repository
+validation, Agent Skills specification validation, deterministic tests, plugin
+build/parity validation, and staged and unstaged whitespace checks:
 
 ```bash
-python3 scripts/validate_repository.py
-for skill_file in */SKILL.md; do skills-ref validate "$(dirname "${skill_file}")"; done
-python3 -m unittest discover -s code-review/scripts -p 'test_*.py'
-python3 -m unittest scripts.test_validate_repository
-python3 -m unittest scripts.test_build_plugin scripts.test_implementation_execution_contract scripts.test_test_strategy_contract scripts.test_change_specification_contract scripts.test_skill_behavior_contracts scripts.test_content_trust_contracts
-python3 scripts/build_plugin.py --force
-python3 scripts/validate_plugin_bundle.py dist/frey-skills
-git diff --check
+python scripts/check.py
 ```
+
+Here and below, `python` means the selected environment's interpreter. Use the
+explicit environment path from Local Setup if it is not active. The plugin
+group replaces generated output at `dist/frey-skills`; canonical sources remain
+untouched. Check symlink skips in test output; a skipped check is not a pass.
+
+Select groups with repeatable `--group` arguments:
+
+```bash
+python scripts/check.py --group repository
+python scripts/check.py --group spec
+python scripts/check.py --group plugin
+python scripts/check.py --group whitespace --base origin/main
+```
+
+The whitespace group checks both unstaged changes and the Git index. `--base`
+adds committed whitespace checks from the merge base of an existing
+local Git ref to `HEAD`. Fetch the intended base separately when needed. CI uses
+these same groups on Ubuntu and runs the full set on Windows Python 3.12.
+
+The plugin group includes `scripts.test_content_trust_contracts`, the focused
+skill contracts, and bundle/release tests. The repository group includes the
+validator, review-context helper, runner, and workflow contract tests.
 
 The repository validator checks Agent Skills frontmatter fields, local
 references, optional eval schema and fixture references, committed scorecard
@@ -95,14 +129,23 @@ Edit canonical sources first:
 Then rebuild and validate:
 
 ```bash
-python3 scripts/build_plugin.py --force
-python3 scripts/validate_plugin_bundle.py dist/frey-skills
+python scripts/build_plugin.py --force
+python scripts/validate_plugin_bundle.py dist/frey-skills
 ```
 
-The generated bundle must match canonical skill sources byte-for-byte. If a
-release changes the plugin's published behavior or manifest contract, update the
+The generated bundle must match distributable canonical skill sources
+byte-for-byte. Python bytecode, `__pycache__`, and `.pytest_cache` are local
+runtime artifacts and are excluded; a generated bundle containing them fails
+parity validation. Canonical skill roots and template paths must remain inside
+the repository without symlink or junction traversal; discovery, build, and
+parity checks reject linked source paths. If a release changes the plugin's published behavior or
+manifest contract, update the
 semantic version in `plugin-template/.codex-plugin/plugin.json` in the same
 change.
+
+For versioned GitHub releases, follow `RELEASING.md`. Publication requires an
+authorized matching tag from a reviewed commit on `main`; it remains separate
+from local validation and marketplace submission.
 
 ## Behavioral Eval Policy
 
@@ -142,5 +185,5 @@ Before opening a PR, include:
   certification is claimed.
 - Confirmation that generated plugin output was rebuilt and validated when
   plugin-relevant sources changed.
-- Confirmation that no marketplace or public submission step is part of the
-  repo workflow.
+- Confirmation that no marketplace submission step is part of the repo
+  workflow, and that any GitHub release publication is separately authorized.

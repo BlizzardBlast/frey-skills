@@ -12,9 +12,9 @@ from pathlib import Path
 from typing import Iterable, Optional
 
 try:
-    from scripts.repository_layout import discover_skill_names
+    from scripts.repository_layout import SourcePathError, discover_skill_names, is_runtime_artifact, validate_source_path
 except ModuleNotFoundError:
-    from repository_layout import discover_skill_names
+    from repository_layout import SourcePathError, discover_skill_names, is_runtime_artifact, validate_source_path
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -43,10 +43,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(argv)
 
     try:
-        raw_output = args.output.expanduser()
-        if raw_output.is_symlink():
-            raise BuildError(f"output must not be a symlink: {raw_output}")
-        output = raw_output.resolve()
+        output = validate_output_path(args.output)
         build_bundle(output, force=args.force)
     except BuildError as exc:
         print(f"build_plugin.py: error: {exc}", file=sys.stderr)
@@ -61,26 +58,57 @@ class BuildError(Exception):
 
 
 def build_bundle(output: Path, *, force: bool = False) -> None:
-    validate_inputs()
-    validate_output_target(output, force=force)
+    output = validate_output_path(output)
+    try:
+        validate_inputs()
+        validate_output_target(output, force=force)
+    except SourcePathError as exc:
+        raise BuildError(str(exc)) from exc
     output.parent.mkdir(parents=True, exist_ok=True)
 
     with tempfile.TemporaryDirectory(prefix=f".{output.name}.tmp-", dir=str(output.parent)) as temp_name:
         staged_output = Path(temp_name) / output.name
         write_bundle(staged_output)
 
-        if output.exists():
-            if output.is_symlink():
-                raise BuildError(f"refusing to replace symlink output: {output}")
-            if output.is_dir():
-                shutil.rmtree(output)
+        validate_output_path(output)
+        try:
+            if force:
+                if output.is_dir():
+                    shutil.rmtree(output)
+                elif output.exists():
+                    output.unlink()
             else:
-                output.unlink()
-        staged_output.rename(output)
+                # rmdir refuses populated directories, including files added during staging.
+                try:
+                    output.rmdir()
+                except FileNotFoundError:
+                    pass
+            # A directory rename cannot replace a populated directory or a regular file.
+            staged_output.rename(output)
+        except OSError as exc:
+            raise BuildError(f"could not publish bundle at {output}: {exc}") from exc
+
+
+def validate_output_path(output: Path) -> Path:
+    """Inspect raw components for links before collapsing parent segments."""
+    try:
+        expanded = output.expanduser()
+        tail = expanded.parts[1:] if expanded.anchor else expanded.parts
+        # Normalize only the anchor (or current directory), never the raw tail.
+        absolute = Path(os.path.abspath(expanded.anchor or os.curdir)).joinpath(*tail)
+        candidate = Path()
+        for part in absolute.parts:
+            candidate = candidate.parent if part == ".." else candidate / part
+            if candidate.is_symlink() or candidate.resolve() != candidate:
+                raise BuildError(f"output must not traverse a symlink or junction: {output}")
+    except (OSError, RuntimeError) as exc:
+        raise BuildError(f"output cannot be resolved safely: {output}: {exc}") from exc
+    return candidate
 
 
 def validate_inputs() -> None:
     manifest = PLUGIN_TEMPLATE / ".codex-plugin" / "plugin.json"
+    validate_source_path(manifest, REPOSITORY_ROOT)
     if not manifest.is_file():
         raise BuildError(f"missing template manifest: {manifest}")
     skill_names = discover_skill_names(REPOSITORY_ROOT)
@@ -97,6 +125,7 @@ def validate_inputs() -> None:
 
 def validate_output_target(output: Path, *, force: bool) -> None:
     repository_root = REPOSITORY_ROOT.resolve()
+    resolved_output = output.resolve()
     default_output = repository_root / "dist" / "frey-skills"
     protected_sources = [repository_root, PLUGIN_TEMPLATE.resolve()]
     protected_sources.extend(
@@ -104,9 +133,9 @@ def validate_output_target(output: Path, *, force: bool) -> None:
         for skill_name in discover_skill_names(REPOSITORY_ROOT)
     )
 
-    if output in protected_sources:
-        raise BuildError("output must not be the repository root")
-    if is_relative_to(output, repository_root) and output != default_output:
+    if any(is_relative_to(source, resolved_output) for source in protected_sources):
+        raise BuildError(f"output must not contain the repository or canonical sources: {output}")
+    if is_relative_to(resolved_output, repository_root) and resolved_output != default_output:
         raise BuildError(f"output inside the source root is only allowed at {default_output}: {output}")
     if output.exists():
         if output.is_symlink():
@@ -161,6 +190,7 @@ def copy_file_bytes(source: Path, destination: Path) -> None:
 
 def iter_directories(root: Path) -> Iterable[Path]:
     for current_root, directory_names, file_names in os.walk(root):
+        directory_names[:] = [name for name in directory_names if not is_runtime_artifact((Path(current_root) / name).relative_to(root))]
         directory_names.sort()
         file_names.sort()
         current = Path(current_root)
@@ -173,6 +203,7 @@ def iter_directories(root: Path) -> Iterable[Path]:
 
 def iter_files(root: Path) -> Iterable[Path]:
     for current_root, directory_names, file_names in os.walk(root):
+        directory_names[:] = [name for name in directory_names if not is_runtime_artifact((Path(current_root) / name).relative_to(root))]
         directory_names.sort()
         file_names.sort()
         current = Path(current_root)
@@ -180,12 +211,15 @@ def iter_files(root: Path) -> Iterable[Path]:
             path = current / name
             if path.is_symlink():
                 raise BuildError(f"refusing to copy symlink file: {path}")
-            yield path
+            if not is_runtime_artifact(path.relative_to(root)):
+                yield path
 
 
 def reject_symlinks(root: Path) -> None:
+    if root.is_symlink() or root.resolve() != root.absolute():
+        raise BuildError(f"symlinks and junctions are not allowed in plugin bundles: {root}")
     for path in root.rglob("*"):
-        if path.is_symlink():
+        if path.is_symlink() or path.resolve() != path.absolute():
             raise BuildError(f"symlinks are not allowed in plugin bundles: {path}")
 
 

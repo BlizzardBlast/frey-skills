@@ -25,6 +25,17 @@ Output semantics:
 Range semantics:
         When both `--base` and `--head` are supplied, diff scope uses three-dot
         syntax (`base...head`), i.e. changes from merge-base(base, head) to head.
+        Both refs must resolve to commits; invalid or option-shaped inputs fail.
+
+Repository scope:
+        Every mode inspects the full repository from its root, including when
+        invoked from a nested directory or with diff.relative enabled. An
+        explicitly requested relative --output path uses the invoking directory.
+
+Output publication:
+        Non-forced file output uses an atomic hard link and requires filesystem
+        hard-link support. Failure leaves existing output untouched; JSON is
+        still emitted to stdout with exit code 3.
 
 Examples:
         python3 scripts/collect_review_context.py
@@ -47,12 +58,11 @@ from pathlib import Path
 from typing import Any
 
 
-EMPTY_TREE_SHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
-
-
-def run_git(args: list[str]) -> str:
+def run_git(args: list[str], *, cwd: Path | None = None, input_text: str | None = None) -> str:
     result = subprocess.run(
-        ["git", *args],
+        ["git", "-c", "diff.relative=false", *args],
+        cwd=cwd,
+        input=input_text,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -74,9 +84,9 @@ class ContextParseError(RuntimeError):
     pass
 
 
-def git_has_head() -> bool:
+def git_has_head(*, cwd: Path) -> bool:
     try:
-        run_git(["rev-parse", "--verify", "--quiet", "HEAD"])
+        run_git(["rev-parse", "--verify", "--quiet", "HEAD"], cwd=cwd)
     except RuntimeError:
         return False
     return True
@@ -125,7 +135,7 @@ def stat_untracked_file(path: Path) -> dict[str, Any] | None:
 
 
 def collect_untracked_changes(git_root_path: Path) -> list[dict[str, Any]]:
-    paths = _split_nul(run_git(["ls-files", "--others", "--exclude-standard", "-z"]))
+    paths = _split_nul(run_git(["ls-files", "--others", "--exclude-standard", "--full-name", "-z"], cwd=git_root_path))
     changes: list[dict[str, Any]] = []
 
     for path in paths:
@@ -401,31 +411,35 @@ def collect_context(
 ) -> dict[str, Any]:
     git_root_path = Path(run_git(["rev-parse", "--show-toplevel"]).strip())
     git_root = git_root_path.name
-    has_head = git_has_head()
+    has_head = git_has_head(cwd=git_root_path)
 
     if base and head:
         mode = "range"
-        diff_target = f"{base}...{head}"
-        name_status = run_git(["diff", "-z", "--name-status", "--find-renames", diff_target])
-        numstat = run_git(["diff", "-z", "--numstat", "--find-renames", diff_target])
+        base_commit = run_git(["rev-parse", "--verify", "--end-of-options", f"{base}^{{commit}}"], cwd=git_root_path).strip()
+        head_commit = run_git(["rev-parse", "--verify", "--end-of-options", f"{head}^{{commit}}"], cwd=git_root_path).strip()
+        diff_target = f"{base_commit}...{head_commit}"
+        name_status = run_git(["diff", "-z", "--name-status", "--find-renames", diff_target, "--"], cwd=git_root_path)
+        numstat = run_git(["diff", "-z", "--numstat", "--find-renames", diff_target, "--"], cwd=git_root_path)
         base_ref, head_ref = base, head
     elif staged:
         mode = "staged"
-        name_status = run_git(["diff", "--cached", "-z", "--name-status", "--find-renames"])
-        numstat = run_git(["diff", "--cached", "-z", "--numstat", "--find-renames"])
+        name_status = run_git(["diff", "--cached", "-z", "--name-status", "--find-renames"], cwd=git_root_path)
+        numstat = run_git(["diff", "--cached", "-z", "--numstat", "--find-renames"], cwd=git_root_path)
         base_ref, head_ref = ("HEAD" if has_head else "EMPTY_TREE"), "INDEX"
     else:
         mode = "working-tree"
         if has_head:
-            name_status = run_git(["diff", "-z", "--name-status", "--find-renames", "HEAD"])
-            numstat = run_git(["diff", "-z", "--numstat", "--find-renames", "HEAD"])
+            name_status = run_git(["diff", "-z", "--name-status", "--find-renames", "HEAD"], cwd=git_root_path)
+            numstat = run_git(["diff", "-z", "--numstat", "--find-renames", "HEAD"], cwd=git_root_path)
             base_ref = "HEAD"
         else:
+            # Hash an empty tree using this repository's object format without writing it.
+            empty_tree = run_git(["hash-object", "-t", "tree", "--stdin"], cwd=git_root_path, input_text="").strip()
             name_status = run_git(
-                ["diff", "-z", "--name-status", "--find-renames", EMPTY_TREE_SHA]
+                ["diff", "-z", "--name-status", "--find-renames", empty_tree], cwd=git_root_path
             )
             numstat = run_git(
-                ["diff", "-z", "--numstat", "--find-renames", EMPTY_TREE_SHA]
+                ["diff", "-z", "--numstat", "--find-renames", empty_tree], cwd=git_root_path
             )
             base_ref = "EMPTY_TREE"
         head_ref = "WORKTREE"
@@ -509,14 +523,22 @@ def write_output_file(output: str, out_path: Path, *, force: bool) -> None:
             temp_path = Path(handle.name)
             handle.write(output + "\n")
 
-        os.replace(temp_path, out_path)
+        if force:
+            os.replace(temp_path, out_path)
+        else:
+            # Linking publishes complete bytes and atomically refuses an existing target.
+            try:
+                os.link(temp_path, out_path)
+            except FileExistsError as err:
+                raise OutputWriteError(f"output file already exists: {out_path}. Use --force to overwrite it.") from err
     except OSError as err:
+        raise OutputWriteError(f"failed to write output file {out_path}: {err}") from err
+    finally:
         if temp_path is not None:
             try:
-                temp_path.unlink()
+                temp_path.unlink(missing_ok=True)
             except OSError:
                 pass
-        raise OutputWriteError(f"failed to write output file {out_path}: {err}") from err
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -569,7 +591,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--output",
         help=(
             "Optional output file path for JSON (stdout still receives JSON). "
-            "Refuses to overwrite existing files unless --force is set."
+            "Refuses to overwrite existing files unless --force is set. "
+            "Non-forced writes require filesystem hard-link support."
         ),
     )
     parser.add_argument(
@@ -589,6 +612,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    # JSON and error output use UTF-8 even when redirected on Windows.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     parser = build_parser()
     args = parser.parse_args()
 

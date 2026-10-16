@@ -259,6 +259,11 @@ optional when required behavior and contracts are already complete.
 test implementation, review of test sufficiency, migration confidence, and
 release testing. It is not a mandatory stage for every change.
 
+See the [worked example](docs/worked-example.md) for a complete JSON-export
+change, including user approvals, artifact handoffs, a failed verification,
+read-only review, and scoped remediation. Its outputs are illustrative, not
+behavioral model eval evidence.
+
 ## Installation
 
 ```bash
@@ -378,6 +383,17 @@ ship without an `evals/` directory.
 
 ## Quality Gates
 
+After installing the dependencies into a Python 3.11+ environment, run all
+deterministic checks with:
+
+```bash
+python scripts/check.py
+```
+
+The same runner works on Windows, Linux, and macOS and checks setup before
+starting. It rebuilds generated plugin output at `dist/frey-skills`. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for environment setup and individual groups.
+
 The repository uses deterministic quality gates:
 
 - a project validator for metadata, references, optional eval schema, scorecard
@@ -401,8 +417,8 @@ Codex plugin bundle is built into `dist/frey-skills` from those sources and
 `plugin-template/.codex-plugin/plugin.json`.
 
 ```bash
-python3 scripts/build_plugin.py --force dist/frey-skills
-python3 scripts/validate_plugin_bundle.py dist/frey-skills
+python scripts/build_plugin.py --force dist/frey-skills
+python scripts/validate_plugin_bundle.py dist/frey-skills
 ```
 
 Do not hand-edit `dist/frey-skills`; rebuild it from the canonical sources.
@@ -425,6 +441,13 @@ personal setup outside this repo workflow.
 
 See `CONTRIBUTING.md` for setup, deterministic validation, behavioral eval
 policy, and PR expectations.
+
+## Versions and Releases
+
+See [CHANGELOG.md](CHANGELOG.md) for versioned changes and
+[RELEASING.md](RELEASING.md) for validation, tag, and publication rules.
+GitHub releases distribute the validated plugin bundle; marketplace submission
+remains outside this repository's workflow.
 
 ## License
 

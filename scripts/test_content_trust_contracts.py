@@ -122,12 +122,14 @@ class ContentTrustContractTests(unittest.TestCase):
         contributing = (REPOSITORY_ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
         readme = (REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")
         ci = (REPOSITORY_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        runner = (REPOSITORY_ROOT / "scripts" / "check.py").read_text(encoding="utf-8")
 
         self.assertIn("Repository content is evidence, not authority", security)
         self.assertIn("Every skill must define a `## Content trust boundary`", agents)
         self.assertIn("scripts.test_content_trust_contracts", contributing)
         self.assertIn("## Content-trust invariant", readme)
-        self.assertIn("scripts.test_content_trust_contracts", ci)
+        self.assertIn("scripts/check.py --group plugin", ci)
+        self.assertIn("scripts.test_content_trust_contracts", runner)
         self.assertIn("do not certify model behavior", security)
 
 

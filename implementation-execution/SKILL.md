@@ -4,7 +4,7 @@ description: Use when the user asks to execute, continue, or resume an existing 
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: '1.3.0'
+  version: '1.3.1'
   allow_implicit_invocation: 'true'
 ---
 
