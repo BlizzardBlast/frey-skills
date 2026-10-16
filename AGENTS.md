@@ -93,17 +93,14 @@ For any skill changes:
 Run the validation commands that match the changed artifacts:
 
 ```bash
-python3 -m pip install -r requirements-dev.txt
-python3 -m pip install -r requirements-spec.txt
-python3 scripts/validate_repository.py
-for skill_file in */SKILL.md; do skills-ref validate "$(dirname "${skill_file}")"; done
-python3 -m unittest discover -s code-review/scripts -p 'test_*.py'
-python3 -m unittest scripts.test_validate_repository
-python3 -m unittest scripts.test_build_plugin scripts.test_implementation_execution_contract scripts.test_test_strategy_contract scripts.test_change_specification_contract scripts.test_skill_behavior_contracts scripts.test_content_trust_contracts
-python3 scripts/build_plugin.py --force
-python3 scripts/validate_plugin_bundle.py dist/frey-skills
-git diff --check
+python -m pip install -r requirements-dev.txt -r requirements-spec.txt
+python scripts/check.py
 ```
+
+Use Python 3.11+ for the full set. The runner uses the selected interpreter,
+preflights dependencies, stops on a failed gate, and rebuilds only generated
+plugin output. Select groups with `--group repository|spec|plugin|whitespace`;
+repeat the option when needed. See `CONTRIBUTING.md` for Windows and POSIX setup.
 
 ## Behavioral Eval Policy
 

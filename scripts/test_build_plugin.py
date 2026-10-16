@@ -5,14 +5,18 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
+from unittest import mock
 
-from scripts.repository_layout import discover_skill_names
+from scripts.repository_layout import discover_skill_names, is_runtime_artifact
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -31,7 +35,7 @@ def load_module(path: Path, name: str) -> Any:
 
 
 def relative_files(root: Path) -> list[Path]:
-    return sorted(path.relative_to(root) for path in root.rglob("*") if path.is_file())
+    return sorted(path.relative_to(root) for path in root.rglob("*") if path.is_file() and not is_runtime_artifact(path.relative_to(root)))
 
 
 @contextmanager
@@ -47,7 +51,8 @@ def module_attr(module: Any, name: str, value: Any) -> Iterator[None]:
 class PluginBundleTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
-        self.output = Path(self.temp_dir.name) / "frey-skills"
+        self.temp_root = Path(self.temp_dir.name).resolve()
+        self.output = self.temp_root / "frey-skills"
         self.build_plugin = load_module(BUILD_SCRIPT, "build_plugin")
         self.validate_plugin_bundle = load_module(VALIDATE_SCRIPT, "validate_plugin_bundle")
 
@@ -74,7 +79,7 @@ class PluginBundleTests(unittest.TestCase):
         self.assertEqual(self.validate(), 1)
 
     def create_fake_repository(self) -> Path:
-        fake_root = Path(self.temp_dir.name) / "fake-repository"
+        fake_root = self.temp_root / "fake-repository"
         fake_code_review = fake_root / "code-review"
         fake_implementation_plan = fake_root / "implementation-plan"
         fake_iterative = fake_root / "iterative-self-review"
@@ -88,6 +93,44 @@ class PluginBundleTests(unittest.TestCase):
         (fake_iterative / "SKILL.md").write_text("iterative review skill\n", encoding="utf-8")
         (fake_template / "plugin.json").write_text("{}", encoding="utf-8")
         return fake_root
+
+    def test_owned_fixtures_support_aliased_system_temporary_directory(self) -> None:
+        target = self.temp_root / "temporary-target"
+        target.mkdir()
+        alias = self.temp_root / "temporary-alias"
+        self.make_symlink_or_skip(target, alias, target_is_directory=True)
+        environment = {
+            **os.environ,
+            "TMPDIR": str(alias),
+            "TMP": str(alias),
+            "TEMP": str(alias),
+            "PYTHONUTF8": "1",
+            "PYTHONIOENCODING": "utf-8",
+        }
+        script = (
+            "import os, sys, tempfile, unittest\n"
+            "from pathlib import Path\n"
+            "if Path(tempfile.gettempdir()) != Path(os.environ['TMPDIR']):\n"
+            "    raise SystemExit('child did not use the aliased temporary directory')\n"
+            "suite = unittest.defaultTestLoader.loadTestsFromNames(sys.argv[1:])\n"
+            "result = unittest.TextTestRunner().run(suite)\n"
+            "raise SystemExit(not result.wasSuccessful())\n"
+        )
+        tests = (
+            "scripts.test_build_plugin.PluginBundleTests.test_build_discovers_new_canonical_skill_without_hardcoded_list",
+            "scripts.test_implementation_execution_contract.ImplementationExecutionContractTests.test_dirty_fixture_contains_same_file_user_hunk",
+            "scripts.test_implementation_execution_contract.ImplementationExecutionContractTests.test_fixture_setup_rejects_linked_destinations_and_parents",
+        )
+        result = subprocess.run(
+            [sys.executable, "-B", "-c", script, *tests],
+            cwd=REPOSITORY_ROOT,
+            env=environment,
+            capture_output=True,
+            encoding="utf-8",
+            check=False,
+            timeout=60,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_build_creates_expected_layout_manifest_and_byte_parity(self) -> None:
         self.assertEqual(self.build(), 0)
@@ -126,6 +169,126 @@ class PluginBundleTests(unittest.TestCase):
         self.assertFalse((self.output / "existing.txt").exists())
         self.assertTrue((self.output / ".codex-plugin" / "plugin.json").is_file())
 
+    def test_nonforced_build_preserves_destinations_populated_during_staging(self) -> None:
+        original_write = self.build_plugin.write_bundle
+        for initial, created in (("missing", "directory"), ("empty", "directory"), ("missing", "file")):
+            with self.subTest(initial=initial, created=created):
+                output = self.temp_root / f"race-{initial}-{created}"
+                if initial == "empty":
+                    output.mkdir()
+                sentinel = output / "concurrent.txt" if created == "directory" else output
+
+                def stage_then_write(staging: Path) -> None:
+                    original_write(staging)
+                    if created == "directory":
+                        output.mkdir(exist_ok=True)
+                    sentinel.write_bytes(b"preserve concurrent work\n")
+
+                with mock.patch.object(self.build_plugin, "write_bundle", side_effect=stage_then_write):
+                    with self.assertRaises(self.build_plugin.BuildError):
+                        self.build_plugin.build_bundle(output, force=False)
+                self.assertEqual(sentinel.read_bytes(), b"preserve concurrent work\n")
+                if created == "directory":
+                    self.assertEqual({path.name for path in output.iterdir()}, {"concurrent.txt"})
+                self.assertEqual(list(self.temp_root.glob(f".{output.name}.tmp-*")), [])
+
+    def test_nonforced_build_accepts_empty_output_and_lexical_parent_segments(self) -> None:
+        self.output.mkdir()
+        sibling = self.temp_root / "sibling"
+        sibling.mkdir()
+        requested = sibling / ".." / self.output.name
+        self.assertEqual(self.build_plugin.main([str(requested)]), 0)
+        self.assertEqual(self.validate(), 0)
+        self.build_plugin.build_bundle(requested, force=True)
+        self.assertEqual(self.validate(), 0)
+
+    def test_link_before_parent_segment_preserves_both_candidate_destinations(self) -> None:
+        for case, target_parts in (("same-parent", ("target",)), ("different-parent", ("external", "target"))):
+            case_root = self.temp_root / case
+            target = case_root.joinpath(*target_parts)
+            target.mkdir(parents=True)
+            link = case_root / "link"
+            self.make_symlink_or_skip(target, link, target_is_directory=True)
+            destinations = {case_root / "bundle", target.parent / "bundle"}
+            before = {}
+            for destination in destinations:
+                destination.mkdir()
+                sentinel = destination / "keep.txt"
+                before[sentinel] = f"preserve {destination.relative_to(case_root).as_posix()}\n".encode("utf-8")
+                sentinel.write_bytes(before[sentinel])
+            requested = link / ".." / "bundle"
+            for entrypoint in ("cli", "relative-cli", "api"):
+                with self.subTest(case=case, entrypoint=entrypoint):
+                    if entrypoint == "cli":
+                        self.assertEqual(self.build_plugin.main([str(requested), "--force"]), 1)
+                    elif entrypoint == "relative-cli":
+                        result = subprocess.run(
+                            [sys.executable, str(BUILD_SCRIPT), str(Path("link") / ".." / "bundle"), "--force"],
+                            cwd=case_root, capture_output=True, encoding="utf-8", check=False,
+                        )
+                        self.assertEqual(result.returncode, 1, result.stderr)
+                        self.assertIn("symlink or junction", result.stderr)
+                    else:
+                        with self.assertRaisesRegex(self.build_plugin.BuildError, "symlink or junction"):
+                            self.build_plugin.build_bundle(requested, force=True)
+                    self.assertEqual({path: path.read_bytes() for path in before}, before)
+                    for destination in destinations:
+                        self.assertEqual({path.name for path in destination.iterdir()}, {"keep.txt"})
+
+    def assert_linked_outputs_are_rejected(self, *, junction: bool = False) -> None:
+        target = self.temp_root / "linked-target"
+        child = target / "child"
+        child.mkdir(parents=True)
+        sentinel = child / "keep.txt"
+        sentinel.write_bytes(b"preserve linked target\n")
+        link = self.temp_root / "output-link"
+        if junction:
+            result = subprocess.run(
+                ["cmd", "/c", "mklink", "/J", str(link), str(target)],
+                capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+        else:
+            self.make_symlink_or_skip(target, link, target_is_directory=True)
+        for destination in (link, link / "child", link / ".." / "bundle"):
+            with self.subTest(destination=destination):
+                self.assertEqual(self.build_plugin.main([str(destination), "--force"]), 1)
+                with self.assertRaisesRegex(self.build_plugin.BuildError, "symlink or junction"):
+                    self.build_plugin.build_bundle(destination, force=True)
+                self.assertEqual(sentinel.read_bytes(), b"preserve linked target\n")
+                self.assertEqual({path.name for path in target.iterdir()}, {"child"})
+                self.assertEqual({path.name for path in child.iterdir()}, {"keep.txt"})
+
+    def test_linked_output_and_parent_are_rejected_by_cli_and_api(self) -> None:
+        self.assert_linked_outputs_are_rejected()
+
+    @unittest.skipUnless(os.name == "nt", "directory junctions are Windows-specific")
+    def test_junction_output_and_parent_are_rejected_by_cli_and_api(self) -> None:
+        self.assert_linked_outputs_are_rejected(junction=True)
+
+    def test_runtime_caches_are_excluded_and_cannot_be_added_to_bundle(self) -> None:
+        fake_root = self.create_fake_repository()
+        skill = fake_root / "code-review"
+        for relative in ("scripts/__pycache__/helper.pyc", ".pytest_cache/README.md", "scripts/helper.pyc"):
+            path = skill / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"local runtime cache")
+        output = fake_root / "dist" / "frey-skills"
+        with module_attr(self.build_plugin, "REPOSITORY_ROOT", fake_root), module_attr(
+            self.build_plugin, "PLUGIN_TEMPLATE", fake_root / "plugin-template"
+        ):
+            self.assertEqual(self.build_plugin.main([str(output)]), 0)
+        generated = output / "skills" / "code-review"
+        self.assertFalse((generated / "scripts" / "__pycache__").exists())
+        self.assertFalse((generated / ".pytest_cache").exists())
+        self.assertFalse((generated / "scripts" / "helper.pyc").exists())
+        errors: list[str] = []
+        self.validate_plugin_bundle.compare_trees(skill, generated, "code-review", errors)
+        self.assertEqual(errors, [])
+        (generated / "scripts" / "helper.pyc").write_bytes(b"unexpected cache")
+        self.validate_plugin_bundle.compare_trees(skill, generated, "code-review", errors)
+        self.assertTrue(any("extra files" in error for error in errors))
+
     def test_build_discovers_new_canonical_skill_without_hardcoded_list(self) -> None:
         fake_root = self.create_fake_repository()
         extra_skill = fake_root / "extra-skill"
@@ -158,13 +321,13 @@ class PluginBundleTests(unittest.TestCase):
 
     def test_validator_rejects_symlink_bundle_root_before_resolving_it(self) -> None:
         self.assertEqual(self.build(), 0)
-        symlink_root = Path(self.temp_dir.name) / "bundle-link"
+        symlink_root = self.temp_root / "bundle-link"
         self.make_symlink_or_skip(self.output, symlink_root, target_is_directory=True)
 
         self.assertEqual(self.validate_plugin_bundle.main([str(symlink_root)]), 1)
 
     def test_build_rejects_symlink_output_before_resolving_or_replacing_it(self) -> None:
-        target = Path(self.temp_dir.name) / "real-output"
+        target = self.temp_root / "real-output"
         target.mkdir()
         (target / "keep.txt").write_text("keep me\n", encoding="utf-8")
         self.make_symlink_or_skip(target, self.output, target_is_directory=True)
@@ -211,6 +374,25 @@ class PluginBundleTests(unittest.TestCase):
         self.assertTrue((fake_code_review / "SKILL.md").is_file())
         self.assertEqual((fake_code_review / "SKILL.md").read_text(encoding="utf-8"), "code review skill\n")
 
+    def test_build_rejects_repository_ancestor_and_preserves_sources_and_siblings(self) -> None:
+        fake_root = self.create_fake_repository()
+        output = fake_root.parent
+        sentinel = output / "sibling.txt"
+        sentinel.write_bytes(b"preserve sibling\n")
+        original = {path: (fake_root / path).read_bytes() for path in relative_files(fake_root)}
+
+        with module_attr(self.build_plugin, "REPOSITORY_ROOT", fake_root), module_attr(
+            self.build_plugin, "PLUGIN_TEMPLATE", fake_root / "plugin-template"
+        ):
+            for force in (False, True):
+                with self.subTest(force=force), self.assertRaisesRegex(self.build_plugin.BuildError, "must not contain"):
+                    self.build_plugin.build_bundle(output, force=force)
+            self.assertEqual(self.build_plugin.main([str(output), "--force"]), 1)
+
+        self.assertEqual(sentinel.read_bytes(), b"preserve sibling\n")
+        self.assertEqual({path: (fake_root / path).read_bytes() for path in relative_files(fake_root)}, original)
+        self.assertEqual({path.name for path in output.iterdir()}, {"fake-repository", "sibling.txt"})
+
     def test_build_rejects_force_output_inside_source_root_unless_it_is_dist(self) -> None:
         fake_root = self.create_fake_repository()
 
@@ -224,7 +406,7 @@ class PluginBundleTests(unittest.TestCase):
             self.assertEqual(self.build_plugin.main([str(default_dist_output), "--force"]), 0)
             self.assertTrue((default_dist_output / ".codex-plugin" / "plugin.json").is_file())
 
-            outside_source = Path(self.temp_dir.name) / "outside-source-output"
+            outside_source = self.temp_root / "outside-source-output"
             self.assertEqual(self.build_plugin.main([str(outside_source), "--force"]), 0)
         self.assertTrue((outside_source / ".codex-plugin" / "plugin.json").is_file())
 

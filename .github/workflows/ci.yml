@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.12"]
+        python-version: ['3.9', '3.12']
 
     steps:
       - name: Check out repository
@@ -34,14 +34,8 @@ jobs:
       - name: Install development dependencies
         run: python -m pip install -r requirements-dev.txt
 
-      - name: Validate repository metadata
-        run: python scripts/validate_repository.py
-
-      - name: Run review-context test suite
-        run: python -m unittest discover -s code-review/scripts -p 'test_*.py'
-
-      - name: Run repository validator test suite
-        run: python -m unittest scripts.test_validate_repository
+      - name: Run repository checks
+        run: python scripts/check.py --group repository
 
   agent-skills-spec:
     name: Validate Agent Skills specification
@@ -54,18 +48,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: '3.12'
 
       - name: Install reference validator
         run: python -m pip install -r requirements-spec.txt
 
       - name: Validate canonical skills
-        shell: bash
-        run: |
-          set -euo pipefail
-          for skill_file in */SKILL.md; do
-            skills-ref validate "$(dirname "${skill_file}")"
-          done
+        run: python scripts/check.py --group spec
 
   plugin-bundle:
     name: Build and validate plugin bundle
@@ -78,16 +67,31 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: '3.12'
 
-      - name: Run plugin bundle test suite
-        run: python -m unittest scripts.test_build_plugin scripts.test_implementation_execution_contract scripts.test_test_strategy_contract scripts.test_change_specification_contract scripts.test_skill_behavior_contracts scripts.test_content_trust_contracts
+      - name: Run plugin bundle checks
+        run: python scripts/check.py --group plugin
 
-      - name: Build plugin bundle
-        run: python scripts/build_plugin.py --force dist/frey-skills
+  windows:
+    name: Validate Windows (Python 3.12)
+    runs-on: windows-latest
 
-      - name: Validate plugin bundle
-        run: python scripts/validate_plugin_bundle.py dist/frey-skills
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install validation dependencies
+        run: python -m pip install -r requirements-dev.txt -r requirements-spec.txt
+
+      - name: Run all deterministic checks
+        run: python scripts/check.py --base origin/main
 
   whitespace:
     name: Check whitespace
@@ -103,9 +107,4 @@ jobs:
         run: git fetch --no-tags --prune origin +refs/heads/main:refs/remotes/origin/main
 
       - name: Check whitespace errors
-        shell: bash
-        run: |
-          set -euo pipefail
-          git diff --check
-          merge_base="$(git merge-base HEAD origin/main)"
-          git diff --check "${merge_base}"...HEAD
+        run: python scripts/check.py --group whitespace --base origin/main

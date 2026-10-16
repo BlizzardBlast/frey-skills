@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Create deterministic disposable repositories for implementation-execution evals."""
+"""Create deterministic disposable repositories at new, unlinked destinations."""
 
 from __future__ import annotations
 
 import argparse
-import shutil
 import subprocess
 from pathlib import Path
 
@@ -62,10 +61,14 @@ def main() -> int:
     parser.add_argument("destination", type=Path)
     args = parser.parse_args()
 
-    destination = args.destination.resolve()
-    if destination.exists():
-        shutil.rmtree(destination)
-    destination.mkdir(parents=True)
+    requested = args.destination.expanduser().absolute()
+    destination = requested.resolve()
+    if requested.is_symlink() or destination != requested:
+        parser.error("destination must not traverse a symlink or junction")
+    try:
+        destination.mkdir(parents=True)
+    except FileExistsError:
+        parser.error("destination must be a new path; existing files and directories are preserved")
 
     for relative, content in FIXTURES[args.case].items():
         path = destination / relative

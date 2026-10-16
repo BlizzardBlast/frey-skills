@@ -1,0 +1,82 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    name: Validate release on Windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out tagged commit
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install validation dependencies
+        run: python -m pip install -r requirements-dev.txt -r requirements-spec.txt
+
+      - name: Run all deterministic checks on Windows
+        run: python scripts/check.py --base origin/main
+
+  publish:
+    name: Validate and publish versioned plugin
+    needs: windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out tagged commit
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Require a commit on main
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          git merge-base --is-ancestor HEAD origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install validation dependencies
+        run: python -m pip install -r requirements-dev.txt -r requirements-spec.txt
+
+      - name: Run all deterministic checks
+        run: python scripts/check.py --base origin/main
+
+      - name: Prepare version-matched release artifacts
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python scripts/prepare_release.py "$RELEASE_TAG"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+            "dist/releases/frey-skills-${RELEASE_TAG#v}.zip" \
+            dist/releases/SHA256SUMS \
+            --verify-tag \
+            --title "Frey Skills $RELEASE_TAG" \
+            --notes-file dist/releases/notes.md

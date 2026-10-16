@@ -9,7 +9,7 @@ When voluntarily evaluating behavior, derive the current cases from `evals/evals
 For each mutation-oriented case:
 
 1. Create a new temporary directory.
-2. Run the exact `evals/fixtures/setup_repository.py` command named in the eval prompt.
+2. Run the exact `evals/fixtures/setup_repository.py` command named in the eval prompt with an unused child path inside that temporary directory. Existing destinations and paths through symlinks or junctions are rejected; the helper never resets or deletes them.
 3. Confirm the repository baseline with `git status --short`.
 4. Run the model against that disposable repository only.
 5. Grade both the response and the resulting filesystem, Git diff, command evidence, preserved dirty work, and content-trust behavior.
