@@ -5,8 +5,11 @@ from __future__ import annotations
 
 import io
 import os
+import signal
 import subprocess
+import sys
 import tempfile
+import time
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
@@ -73,17 +76,161 @@ class InstallationSmokeTests(unittest.TestCase):
         self.assertEqual(isolated["DO_NOT_TRACK"], "1")
         self.assertEqual(isolated["GIT_CONFIG_GLOBAL"], os.devnull)
 
-    def test_installer_failure_is_reported_with_a_timeout_and_no_shell_or_stdin(self) -> None:
-        with mock.patch.object(smoke_install.subprocess, "run", return_value=subprocess.CompletedProcess([], 9, "partial", "failure")) as run:
-            with self.assertRaisesRegex(smoke_install.SmokeError, "command failed \\(9\\)"):
-                smoke_install.run(["node", "cli.mjs"], self.root, {})
-        self.assertEqual(run.call_args.kwargs["stdin"], subprocess.DEVNULL)
-        self.assertEqual(run.call_args.kwargs["timeout"], 180)
-        self.assertFalse(run.call_args.kwargs.get("shell", False))
+    def test_command_failure_includes_exit_code_and_output(self) -> None:
+        with self.assertRaisesRegex(smoke_install.SmokeError, "(?s)command failed \\(9\\).*failure"):
+            smoke_install.run(
+                [sys.executable, "-c", "import sys; print('failure'); sys.exit(9)"],
+                self.root, dict(os.environ), timeout=10,
+            )
+
+    def test_command_output_is_utf8_and_arguments_are_not_shell_code(self) -> None:
+        argument = "caf\u00e9;$()&literal"
+        output = smoke_install.run(
+            [sys.executable, "-X", "utf8", "-c",
+             "import sys; assert sys.stdin.read() == ''; print(sys.argv[1])", argument],
+            self.root, dict(os.environ), timeout=10,
+        )
+        self.assertEqual(output, argument)
+
+    def assert_process_stopped(self, pid: int) -> None:
+        if os.name == "nt":
+            import ctypes
+            from ctypes import wintypes
+
+            kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+            kernel.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+            kernel.OpenProcess.restype = wintypes.HANDLE
+            kernel.WaitForSingleObject.argtypes = (wintypes.HANDLE, wintypes.DWORD)
+            kernel.WaitForSingleObject.restype = wintypes.DWORD
+            kernel.CloseHandle.argtypes = (wintypes.HANDLE,)
+            kernel.CloseHandle.restype = wintypes.BOOL
+            handle = kernel.OpenProcess(0x00100000, False, pid)  # SYNCHRONIZE
+            if handle:
+                try:
+                    self.assertEqual(kernel.WaitForSingleObject(handle, 3000), 0)
+                finally:
+                    kernel.CloseHandle(handle)
+            else:
+                self.assertEqual(ctypes.get_last_error(), 87)  # No such PID.
+        else:
+            # A killed orphan may remain a zombie briefly; it cannot run or hold output.
+            deadline = time.monotonic() + 3
+            while True:
+                result = subprocess.run(
+                    ["ps", "-o", "stat=", "-p", str(pid)], capture_output=True,
+                    text=True, timeout=5, check=False,
+                )
+                self.assertIn(result.returncode, (0, 1), result.stderr)
+                self.assertFalse(result.stderr.strip(), result.stderr)
+                if not result.stdout.strip() or result.stdout.strip().startswith("Z"):
+                    return
+                if time.monotonic() >= deadline:
+                    self.fail(f"owned process {pid} still runs: {result.stdout}")
+                time.sleep(0.05)
+
+    def test_real_timeout_stops_descendants_without_waiting_for_inherited_output(self) -> None:
+        parent_marker = self.root / "parent.pid"
+        child_marker = self.root / "child.pid"
+        child = "import time; print('child output', flush=True); time.sleep(30)"
+        parent = (
+            "import os,subprocess,sys,time; from pathlib import Path; "
+            f"Path({str(parent_marker)!r}).write_text(str(os.getpid())); "
+            f"child = subprocess.Popen([sys.executable, '-c', {child!r}]); "
+            f"Path({str(child_marker)!r}).write_text(str(child.pid)); time.sleep(30)"
+        )
+        started = time.monotonic()
+        stopped = set()
+        try:
+            with self.assertRaises(subprocess.TimeoutExpired):
+                smoke_install.run([sys.executable, "-c", parent], self.root, dict(os.environ), timeout=3)
+            self.assertLess(time.monotonic() - started, 12)
+            for marker in (parent_marker, child_marker):
+                self.assertTrue(marker.is_file(), "nested-process fixture did not start")
+                pid = int(marker.read_text())
+                self.assert_process_stopped(pid)
+                stopped.add(pid)
+        finally:
+            # Keep the fixture bounded even if a future implementation regresses.
+            for marker in (parent_marker, child_marker):
+                if marker.is_file():
+                    pid = int(marker.read_text())
+                    if pid in stopped:
+                        continue
+                    if os.name == "nt":
+                        taskkill = Path(os.environ["SystemRoot"]) / "System32" / "taskkill.exe"
+                        subprocess.run([str(taskkill), "/PID", str(pid), "/T", "/F"],
+                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5, check=False)
+                    else:
+                        try:
+                            os.kill(pid, signal.SIGKILL)
+                        except ProcessLookupError:
+                            pass
 
     def test_zero_exit_without_installed_files_cannot_pass(self) -> None:
-        with mock.patch.object(smoke_install, "run", return_value=""), self.assertRaisesRegex(smoke_install.SmokeError, "skill set differs"):
+        def no_install(command: list[str], cwd: Path, environment: dict[str, str]) -> str:
+            return self.listing() if "--list" in command else ""
+
+        with mock.patch.object(smoke_install, "run", side_effect=no_install), self.assertRaisesRegex(smoke_install.SmokeError, "skill set differs"):
             smoke_install.smoke_source(["node", "cli.mjs"], "source", self.expected, self.root / "case")
+
+    def listing(self, names: tuple[str, ...] = ("code-review", "debug")) -> str:
+        return "o  Available Skills\n|\n" + "\n".join(
+            f"|    {name}\n|\n|      Description mentioning code-review and debug.\n" for name in names
+        ) + "\n\u2014  Use --skill <name> to install specific skills\n"
+
+    def install_files(self, command: list[str], cwd: Path, environment: dict[str, str]) -> str:
+        if "--list" in command:
+            return self.listing()
+        selection = command[command.index("--skill") + 1]
+        for path, data in self.expected.items():
+            if selection == "*" or path.startswith(f"{selection}/"):
+                destination = cwd / ".agents" / "skills" / path
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(data)
+        return ""
+
+    def test_wildcard_must_install_the_previously_selected_skill_from_scratch(self) -> None:
+        def omit_code_review_from_wildcard(command: list[str], cwd: Path, environment: dict[str, str]) -> str:
+            if "--skill" in command and command[command.index("--skill") + 1] == "*":
+                target = cwd / ".agents" / "skills" / "debug" / "SKILL.md"
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(self.expected["debug/SKILL.md"])
+                return ""
+            return self.install_files(command, cwd, environment)
+
+        with mock.patch.object(smoke_install, "run", side_effect=omit_code_review_from_wildcard):
+            with self.assertRaisesRegex(smoke_install.SmokeError, "skill set differs"):
+                smoke_install.smoke_source(["unused-cli"], "source", self.expected, self.root / "case")
+
+    def test_listing_rejects_empty_missing_extra_and_duplicate_skill_names(self) -> None:
+        outputs = ("", "No skills found", self.listing(("debug",)),
+                   self.listing(("debug", "code-review", "extra")),
+                   self.listing(("debug", "code-review", "invalid_name")),
+                   self.listing(("debug", "code-review", "invalid name")),
+                   self.listing(("debug", "code-review", "debug")))
+        for index, output in enumerate(outputs):
+            with self.subTest(output=output), mock.patch.object(smoke_install, "run", return_value=output) as run:
+                with self.assertRaisesRegex(smoke_install.SmokeError, "discovery differs"):
+                    smoke_install.smoke_source(["unused-cli"], "source", self.expected, self.root / f"case-{index}")
+                self.assertEqual(run.call_count, 1)
+
+    def test_listing_accepts_framing_color_and_description_mentions(self) -> None:
+        for frame in ("|", "\u2502"):
+            output = self.listing().replace("|", frame).replace("code-review\n", "\x1b[36mcode-review\x1b[0m\n")
+            smoke_install.verify_listing(output, {"code-review", "debug"})
+
+    def test_each_selection_and_mode_starts_with_an_empty_project(self) -> None:
+        projects = []
+
+        def check_fresh_project(command: list[str], cwd: Path, environment: dict[str, str]) -> str:
+            if "--skill" in command:
+                self.assertFalse(any(cwd.iterdir()))
+                projects.append(cwd)
+            return self.install_files(command, cwd, environment)
+
+        with mock.patch.object(smoke_install, "run", side_effect=check_fresh_project):
+            smoke_install.smoke_source(["unused-cli"], "source", self.expected, self.root / "case")
+        self.assertEqual(len(set(projects)), 4)
 
     def test_listing_must_not_install_any_files(self) -> None:
         def write_during_listing(command: list[str], cwd: Path, environment: dict[str, str]) -> str:
@@ -107,7 +254,7 @@ class InstallationSmokeTests(unittest.TestCase):
     def test_project_installation_must_not_change_user_files(self) -> None:
         def install_and_change_home(command: list[str], cwd: Path, environment: dict[str, str]) -> str:
             if "--list" in command:
-                return ""
+                return self.listing()
             selection = command[command.index("--skill") + 1]
             for path, data in self.expected.items():
                 if selection == "*" or path.startswith(f"{selection}/"):

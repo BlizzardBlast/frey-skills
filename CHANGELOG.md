@@ -17,6 +17,16 @@ output fields, and trust contracts are unchanged in 1.8.1.
   default and copy modes. Offline assertion tests cover incomplete installs,
   altered resources, installer failures, version mismatches, and timeouts.
 
+### Fixed
+
+- Selected and complete installation smoke checks use independent empty projects
+  so an earlier install cannot hide an omitted wildcard skill.
+- Discovery checks verify the exact listed skill names, including missing,
+  extra, and duplicate results, against the pinned CLI's output format.
+- Timed-out smoke commands terminate their owned process trees and collect
+  output through temporary files with bounded cleanup waits. A real nested
+  subprocess test covers inherited output handles and descendant termination.
+
 ## [1.8.1] - 2026-10-16
 
 ### Added

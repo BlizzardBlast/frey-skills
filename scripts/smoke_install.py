@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -31,16 +33,52 @@ class SmokeError(ValueError):
     """An installer command or installed-file assertion failed."""
 
 
-def run(command: list[str], cwd: Path, environment: dict[str, str]) -> str:
+def stop_process_tree(process: subprocess.Popen[bytes]) -> None:
+    """Stop only this command's owned tree, with bounded cleanup waits."""
+    try:
+        if os.name == "nt":
+            taskkill = Path(os.environ["SystemRoot"]) / "System32" / "taskkill.exe"
+            result = subprocess.run(
+                [str(taskkill), "/PID", str(process.pid), "/T", "/F"],
+                stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                timeout=5, check=False,
+            )
+            if result.returncode:
+                raise SmokeError(f"could not confirm process-tree cleanup for PID {process.pid}")
+        else:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+    finally:
+        # Reap the immediate child even if tree cleanup itself reports failure.
+        if process.poll() is None:
+            process.kill()
+        process.wait(timeout=5)
+
+
+def run(command: list[str], cwd: Path, environment: dict[str, str], *, timeout: float = 180) -> str:
     print(f"Running: {subprocess.list2cmdline(command)}", flush=True)
-    result = subprocess.run(
-        command, cwd=cwd, env=environment, stdin=subprocess.DEVNULL,
-        capture_output=True, text=True, encoding="utf-8", errors="replace",
-        timeout=180, check=False,
-    )
-    if result.returncode:
-        raise SmokeError(f"command failed ({result.returncode}):\n{(result.stdout + result.stderr)[-8000:]}")
-    return result.stdout.strip()
+    # Regular files avoid pipe readers waiting for descendants to close handles.
+    with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
+        process = subprocess.Popen(
+            command, cwd=cwd, env=environment, stdin=subprocess.DEVNULL,
+            stdout=stdout, stderr=stderr, start_new_session=os.name != "nt",
+        )
+        try:
+            returncode = process.wait(timeout=timeout)
+        except BaseException:
+            stop_process_tree(process)
+            raise
+        if returncode:
+            tails = []
+            for stream in (stdout, stderr):
+                end = stream.seek(0, os.SEEK_END)
+                stream.seek(max(0, end - 8000))
+                tails.append(stream.read().decode("utf-8", errors="replace"))
+            raise SmokeError(f"command failed ({returncode}):\n{''.join(tails)[-8000:]}")
+        stdout.seek(0)
+        return stdout.read().decode("utf-8", errors="replace").strip()
 
 
 def isolated_environment(home_dir: Path) -> dict[str, str]:
@@ -90,33 +128,43 @@ def verify_install(project: Path, expected: dict[str, bytes]) -> None:
         raise SmokeError(f"installed files differ: missing={missing}, extra={extra}, changed={changed}")
 
 
+def verify_listing(output: str, expected: set[str]) -> None:
+    # CLI 1.7.2 rejects --list --json. Its name rows have four spaces after
+    # the frame; description rows have six. Strip ANSI cursor/color controls.
+    plain = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", output).replace("\r", "")
+    listing = plain.partition("Available Skills")[2]
+    names = re.findall(r"^[|\u2502] {4}(\S[^\r\n]*?)[ \t]*$", listing, re.MULTILINE)
+    if set(names) != expected or len(names) != len(expected):
+        raise SmokeError(f"discovery differs: expected {sorted(expected)}, got {sorted(names)}")
+
+
 def smoke_source(cli: list[str], source: str, expected: dict[str, bytes], workspace: Path) -> None:
+    selected = {path: data for path, data in expected.items() if path.startswith("code-review/")}
+    if not selected:
+        raise SmokeError("the documented code-review selection is absent from the source")
+    names = {path.split("/", 1)[0] for path in expected}
     for mode in ("default", "copy"):
-        case = workspace / mode
-        project = case / "project with spaces"
-        home_dir = case / "home"
-        project.mkdir(parents=True)
-        sentinel = home_dir / ".agents" / "skills" / "preserve" / "SKILL.md"
-        sentinel.parent.mkdir(parents=True)
-        sentinel.write_bytes(b"Disposable user skill must survive project installation.\n")
-        home_before = {path.relative_to(home_dir): path.read_bytes() for path in home_dir.rglob("*") if path.is_file()}
-        environment = isolated_environment(home_dir)
         options = ["--agent", "codex", "--yes"] + (["--copy"] if mode == "copy" else [])
-        # --list must discover the source without creating project installation files.
-        run([*cli, "add", source, "--list"], project, environment)
-        if any(project.iterdir()):
-            raise SmokeError("listing skills wrote to the disposable project")
-        selected = {path: data for path, data in expected.items() if path.startswith("code-review/")}
-        if not selected:
-            raise SmokeError("the documented code-review selection is absent from the source")
-        run([*cli, "add", source, "--skill", "code-review", *options], project, environment)
-        verify_install(project, selected)
-        run([*cli, "add", source, "--skill", "*", *options], project, environment)
-        verify_install(project, expected)
-        reject_symlinks(home_dir)
-        home_after = {path.relative_to(home_dir): path.read_bytes() for path in home_dir.rglob("*") if path.is_file()}
-        if home_before != home_after:
-            raise SmokeError("project installation changed the disposable user's files")
+        for label, selection, wanted in (("selected", "code-review", selected), ("complete", "*", expected)):
+            case = workspace / mode / label
+            project = case / "project with spaces"
+            home_dir = case / "home"
+            project.mkdir(parents=True)
+            sentinel = home_dir / ".agents" / "skills" / "preserve" / "SKILL.md"
+            sentinel.parent.mkdir(parents=True)
+            sentinel.write_bytes(b"Disposable user skill must survive project installation.\n")
+            home_before = {path.relative_to(home_dir): path.read_bytes() for path in home_dir.rglob("*") if path.is_file()}
+            environment = isolated_environment(home_dir)
+            output = run([*cli, "add", source, "--list"], project, environment)
+            if any(project.iterdir()):
+                raise SmokeError("listing skills wrote to the disposable project")
+            verify_listing(output, names)
+            run([*cli, "add", source, "--skill", selection, *options], project, environment)
+            verify_install(project, wanted)
+            reject_symlinks(home_dir)
+            home_after = {path.relative_to(home_dir): path.read_bytes() for path in home_dir.rglob("*") if path.is_file()}
+            if home_before != home_after:
+                raise SmokeError("project installation changed the disposable user's files")
         print(f"Verified {mode} installation: {len(expected)} files; selected skill and complete skill set.", flush=True)
 
 

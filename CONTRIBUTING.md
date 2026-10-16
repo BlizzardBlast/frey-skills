@@ -135,16 +135,22 @@ Use Node.js 24 and Python 3.11+ for this command. The runner verifies the CLI
 version, stages the checkout's canonical skills without local runtime caches,
 and separately installs the documented `v1.8.1` GitHub source pin. That tag must
 still resolve to its recorded commit. Each source is checked with default and
-explicit `--copy` installation, first selecting only `code-review`, then all
-skills. `--list` must leave the project empty. Installed skill names, file sets,
+explicit `--copy` installation, selecting only `code-review` and all skills in
+separate empty projects. `--list` must report exactly the expected skill names
+without duplicates and leave the project empty. CLI 1.7.2 rejects `--list --json`,
+so the runner checks its pinned listing format. Installed skill names, file sets,
 and bytes must match the selected source, including supporting resources.
 
 All installations use owned temporary directories with spaces and Unicode in
 their paths, disposable child-process homes, disabled installer telemetry, and
 no persisted checkout credentials. Existing files in the disposable user's home
 must remain unchanged. No real agent installation is modified, and skill helper
-scripts are inspected as bytes rather than executed. Commands have a timeout;
-nonzero exits, file mismatches, and unavailable network access fail the job.
+scripts are inspected as bytes rather than executed. Command output uses
+temporary files so inherited output handles cannot hold pipe readers open.
+Timeouts terminate the owned process tree with bounded cleanup waits; nonzero
+exits, cleanup failures, file mismatches, and unavailable network access fail
+the job. A real nested-process regression test checks timeout cleanup on each
+platform.
 
 After installing the CLI, use `--source checkout` to check only the current
 checkout without fetching GitHub sources. Use `--source pinned` to select only
