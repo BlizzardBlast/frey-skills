@@ -29,6 +29,12 @@ optional personal setup outside the repo workflow.
 ## Local Setup
 
 Use Python 3.11 or newer for the full validation set and ensure Git is on PATH.
+On Linux and macOS, the repository group also requires `ps` on PATH to inspect
+the owned processes in its timeout regression test. Install `ps` through your
+operating system's package manager if it is missing; preflight reports this as
+missing setup before running any checks. Windows and the other gate groups do
+not require `ps`.
+
 The repository-only checks continue to support Python 3.9. Select the intended
 interpreter before creating a local virtual environment:
 

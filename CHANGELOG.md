@@ -19,6 +19,8 @@ output fields, and trust contracts are unchanged in 1.8.1.
 
 ### Fixed
 
+- POSIX repository validation preflights its `ps` prerequisite and reports
+  missing setup before running checks; contributor setup documents the utility.
 - Selected and complete installation smoke checks use independent empty projects
   so an earlier install cannot hide an omitted wildcard skill.
 - Discovery checks verify the exact listed skill names, including missing,
