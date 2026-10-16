@@ -52,7 +52,7 @@ def group_commands(group: str) -> list[list[str]]:
         return [
             [python, "scripts/validate_repository.py"],
             [python, "-m", "unittest", "discover", "-s", "code-review/scripts", "-p", "test_*.py"],
-            [python, "-m", "unittest", "scripts.test_validate_repository", "scripts.test_check", "scripts.test_workflow_contracts"],
+            [python, "-m", "unittest", "scripts.test_validate_repository", "scripts.test_check", "scripts.test_workflow_contracts", "scripts.test_smoke_install"],
         ]
     if group == "spec":
         return [

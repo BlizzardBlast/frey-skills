@@ -11,6 +11,11 @@ output fields, and trust contracts are unchanged in 1.8.1.
 - A README skill-selection table and installation guide covering version-pinned
   skill sources, the Codex plugin archive, verification, upgrades, and rollback.
 - A macOS Python 3.12 CI job running the full deterministic validation set.
+- Installation smoke checks on Windows, Linux, and macOS using the pinned Skills
+  CLI, isolated project/user directories, and byte parity for selected and
+  complete skill installations from the checkout and documented release tag in
+  default and copy modes. Offline assertion tests cover incomplete installs,
+  altered resources, installer failures, version mismatches, and timeouts.
 
 ## [1.8.1] - 2026-10-16
 

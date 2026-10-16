@@ -114,6 +114,37 @@ jobs:
       - name: Run all deterministic checks
         run: python scripts/check.py --base origin/main
 
+  installation:
+    name: Smoke installation (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Install the pinned Skills CLI without lifecycle scripts
+        run: npm install --prefix "${{ runner.temp }}/frey-smoke-cli" --no-save --ignore-scripts --no-audit --no-fund skills@1.7.2
+
+      - name: Check checkout and documented release installations
+        run: python scripts/smoke_install.py --cli "${{ runner.temp }}/frey-smoke-cli/node_modules/skills/bin/cli.mjs"
+
   whitespace:
     name: Check whitespace
     runs-on: ubuntu-latest

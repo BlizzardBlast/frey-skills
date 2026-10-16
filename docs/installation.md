@@ -13,6 +13,12 @@ documents its supported agents, installation scopes, and options.
 To pin the installer as well, replace `npx skills` with `npx skills@1.7.2`,
 the CLI version used to verify these examples.
 
+CI exercises this pinned CLI against the documented source tag and the current
+checkout on Windows, Linux, and macOS. It checks selected and complete skill
+installations in default and copy modes, including supporting-file byte parity.
+See [Contributing](../CONTRIBUTING.md#installation-smoke-checks) to run the checks.
+This coverage does not test agent discovery, activation, or model behavior.
+
 List the seven skills at the versioned source without installing them:
 
 ```bash

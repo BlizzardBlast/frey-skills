@@ -423,6 +423,11 @@ starting. CI runs the full set on Windows and macOS with Python 3.12, alongside
 the Ubuntu jobs. It rebuilds generated plugin output at `dist/frey-skills`. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for environment setup and individual groups.
 
+Separate installation smoke jobs exercise the pinned Skills CLI on Windows,
+Linux, and macOS, checking selected and complete skill installations against the
+checkout and documented release in default and copy modes. These checks compare
+installed files and resources; they do not certify agent activation or behavior.
+
 The repository uses deterministic quality gates:
 
 - a project validator for metadata, references, optional eval schema, scorecard

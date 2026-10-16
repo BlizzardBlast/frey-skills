@@ -110,13 +110,47 @@ Python 3.12.
 
 The plugin group includes `scripts.test_content_trust_contracts`, the focused
 skill contracts, and bundle/release tests. The repository group includes the
-validator, review-context helper, runner, and workflow contract tests.
+validator, review-context helper, runner, workflow contracts, and offline
+installation smoke assertion tests.
 
 The repository validator checks Agent Skills frontmatter fields, local
 references, optional eval schema and fixture references, committed scorecard
 schema, OpenAI agent metadata, and single trailing newlines for recognized text
 files. The separate `skills-ref` command provides an upstream specification
 check.
+
+## Installation Smoke Checks
+
+CI also runs real Skills CLI installations on Windows, Linux, and macOS. These
+checks are separate from `check.py` because they need Node.js, npm, Git, and
+public network access. Install the exact CLI version without lifecycle scripts,
+then invoke the smoke runner with its JavaScript entry point:
+
+```bash
+npm install --prefix dist/smoke-tools --no-save --ignore-scripts --no-audit --no-fund skills@1.7.2
+python scripts/smoke_install.py --cli dist/smoke-tools/node_modules/skills/bin/cli.mjs
+```
+
+Use Node.js 24 and Python 3.11+ for this command. The runner verifies the CLI
+version, stages the checkout's canonical skills without local runtime caches,
+and separately installs the documented `v1.8.1` GitHub source pin. That tag must
+still resolve to its recorded commit. Each source is checked with default and
+explicit `--copy` installation, first selecting only `code-review`, then all
+skills. `--list` must leave the project empty. Installed skill names, file sets,
+and bytes must match the selected source, including supporting resources.
+
+All installations use owned temporary directories with spaces and Unicode in
+their paths, disposable child-process homes, disabled installer telemetry, and
+no persisted checkout credentials. Existing files in the disposable user's home
+must remain unchanged. No real agent installation is modified, and skill helper
+scripts are inspected as bytes rather than executed. Commands have a timeout;
+nonzero exits, file mismatches, and unavailable network access fail the job.
+
+After installing the CLI, use `--source checkout` to check only the current
+checkout without fetching GitHub sources. Use `--source pinned` to select only
+the documented release. Offline assertion tests remain part of `check.py` and
+do not invoke Node.js, npm, or the real installer. These are installation/file
+checks; they do not test agent discovery, activation, or model behavior.
 
 ## Generated Plugin Development
 
