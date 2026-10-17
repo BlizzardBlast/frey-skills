@@ -22,26 +22,26 @@ This coverage does not test agent discovery, activation, or model behavior.
 List the seven skills at the versioned source without installing them:
 
 ```bash
-npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.8.1 --list
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.8.2 --list
 ```
 
 Install interactively, choosing the skills, target agent, and scope:
 
 ```bash
-npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.8.1
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.8.2
 ```
 
 For example, install only `code-review` for Codex in the current project:
 
 ```bash
-npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.8.1 --skill code-review --agent codex
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.8.2 --skill code-review --agent codex
 ```
 
 Add `--global` for user scope. Use `--copy` if your environment cannot create
 the installer's symlinks. Other agents can be selected in the interactive
 installer or with their upstream agent identifier.
 
-The `tree/v1.8.1` URL selects that Git tag. For a commit pin, replace `v1.8.1`
+The `tree/v1.8.2` URL selects that Git tag. For a commit pin, replace `v1.8.2`
 with the full commit SHA. The shorthand `BlizzardBlast/frey-skills` follows the
 default branch. `owner/repo@name` selects a skill in the Skills CLI; it is not
 the version-pin syntax.
@@ -69,14 +69,14 @@ Discovery and file checks do not certify model activation or behavior.
 4. Verify the installed files and discovery again.
 
 Rollback uses the same process with the previously recorded tag or commit.
-Reinstalling the example version explicitly looks like this:
+For example, roll back from v1.8.2 to v1.8.1 with:
 
 ```bash
 npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.8.1 --skill code-review --agent codex
 ```
 
-Choose a different target tag for an upgrade. For the first release, 1.8.1,
-rollback means restoring the setup recorded before installation.
+Choose a different target tag for an upgrade. If no previous release was
+installed, restore the setup recorded before installation instead.
 Use an explicit target rather than a bulk update command when you need to
 control the Frey Skills version. To uninstall only this example's project
 skill, use `npx skills remove code-review --agent codex`; add `--global` if
@@ -91,24 +91,24 @@ sources. To repeat this file check in a repository checkout, run
 directories and does not install the plugin. Agent discovery and rollback remain
 a separate manual compatibility check below.
 
-Download `frey-skills-1.8.1.zip` and `SHA256SUMS` from the
-[v1.8.1 release](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.8.1).
+Download `frey-skills-1.8.2.zip` and `SHA256SUMS` from the
+[v1.8.2 release](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.8.2).
 Compare the archive's SHA-256 digest with its filename's entry in `SHA256SUMS`:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 -LiteralPath ./frey-skills-1.8.1.zip
+Get-FileHash -Algorithm SHA256 -LiteralPath ./frey-skills-1.8.2.zip
 ```
 
 On macOS or Linux, use:
 
 ```bash
-shasum -a 256 frey-skills-1.8.1.zip
+shasum -a 256 frey-skills-1.8.2.zip
 ```
 
 Stop if the checksum differs. Extract the archive to a new version-specific
 directory. It contains `LICENSE` and a `frey-skills/` folder with
 `.codex-plugin/plugin.json` and `skills/`. Confirm the manifest version is
-`1.8.1` and `skills/` contains these seven directories:
+`1.8.2` and `skills/` contains these seven directories:
 
 ```text
 change-specification
@@ -122,7 +122,7 @@ test-strategy
 
 Keep the extracted folder in a stable location. Local Codex plugins are
 installed through a marketplace source. For example, in your consuming
-project, extract under `plugins/frey-skills-1.8.1/`, then add this entry to
+project, extract under `plugins/frey-skills-1.8.2/`, then add this entry to
 that project's `.agents/plugins/marketplace.json`:
 
 ```json
@@ -134,7 +134,7 @@ that project's `.agents/plugins/marketplace.json`:
       "name": "frey-skills",
       "source": {
         "source": "local",
-        "path": "./plugins/frey-skills-1.8.1/frey-skills"
+        "path": "./plugins/frey-skills-1.8.2/frey-skills"
       },
       "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
       "category": "Productivity"
@@ -162,6 +162,9 @@ previous path and restart again, as described in the official local-plugin
 instructions above. Do not edit Codex's installed plugin cache directly.
 
 ### Manual plugin compatibility check
+
+See the [recorded client results](compatibility.md) for the tested release pair,
+client version, archive digests, and remaining coverage limits.
 
 Use a disposable consuming project and your normal local-plugin installation
 flow above. This is an optional client compatibility check, separate from the
