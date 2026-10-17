@@ -26,6 +26,9 @@ output fields, and trust contracts are unchanged in 1.8.1.
 
 ### Fixed
 
+- Published archive downloads enforce their total deadline outside blocking
+  network I/O, terminate and reap timed-out workers, and discard partial files.
+  Real slow-stream and blocked-connection regression tests cover this boundary.
 - POSIX repository validation preflights its `ps` prerequisite and reports
   missing setup before running checks; contributor setup documents the utility.
 - Selected and complete installation smoke checks use independent empty projects

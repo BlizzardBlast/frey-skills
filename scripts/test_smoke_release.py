@@ -4,21 +4,82 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import io
 import json
+import multiprocessing
+import os
 import shutil
+import socket
 import stat
 import subprocess
 import tempfile
+import threading
+import time
 import unittest
 import urllib.error
 import warnings
 import zipfile
 from contextlib import redirect_stderr, redirect_stdout
+from multiprocessing.connection import Connection
 from pathlib import Path
 from unittest import mock
 
 from scripts import check, smoke_release
+
+
+def _slow_body_worker(marker: str, destination: Path, limit: int, result: Connection) -> None:
+    """Use a real HTTP body whose bytes keep the socket inactivity timer alive."""
+    client, sender = socket.socketpair()
+    client.settimeout(1)
+
+    def serve() -> None:
+        try:
+            sender.sendall(b"HTTP/1.1 200 OK\r\nContent-Length: 200\r\n\r\n")
+            for _ in range(200):
+                sender.sendall(b"x")
+                time.sleep(0.05)
+        except OSError:
+            pass
+        finally:
+            sender.close()
+
+    threading.Thread(target=serve, daemon=True).start()
+    response = http.client.HTTPResponse(client)
+    response.begin()
+    response.url = "https://example.invalid/asset"
+    Path(marker).write_text(str(os.getpid()), encoding="utf-8")
+    try:
+        with mock.patch.object(smoke_release.urllib.request, "urlopen", return_value=response):
+            smoke_release._download_worker(response.url, destination, limit, result)
+    finally:
+        client.close()
+
+
+def _blocked_connect_worker(marker: str, destination: Path, limit: int, result: Connection) -> None:
+    def connect(*args: object, **kwargs: object) -> None:
+        Path(marker).write_text(str(os.getpid()), encoding="utf-8")
+        time.sleep(30)
+        raise OSError("fixture connection never completed")
+
+    with mock.patch.object(smoke_release.urllib.request, "urlopen", side_effect=connect):
+        smoke_release._download_worker("https://example.invalid/asset", destination, limit, result)
+
+
+def _bytes_worker(url: str, destination: Path, limit: int, result: Connection) -> None:
+    response = mock.MagicMock(wraps=io.BytesIO(b"archive bytes"))
+    response.__enter__.return_value = response
+    response.geturl = mock.Mock(return_value="https://example.invalid/asset")
+    with mock.patch.object(smoke_release.urllib.request, "urlopen", return_value=response):
+        smoke_release._download_worker(url, destination, limit, result)
+
+
+def _missing_result_worker(url: str, destination: Path, limit: int, result: Connection) -> None:
+    result.close()
+
+
+def _crashed_worker(url: str, destination: Path, limit: int, result: Connection) -> None:
+    os._exit(3)
 
 
 class ReleaseArchiveTests(unittest.TestCase):
@@ -216,29 +277,26 @@ class ReleaseArchiveTests(unittest.TestCase):
 
 
 class DownloadAndRunnerTests(unittest.TestCase):
-    def test_download_limits_time_size_and_https_without_overwriting_existing_files(self) -> None:
+    def test_transport_limits_size_and_https_without_overwriting_existing_files(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             destination = Path(temporary) / "asset"
-            for payload, limit, times, url, error in (
-                (b"too large", 2, [0, 0], "https://example.invalid/asset", "size limit"),
-                (b"slow", 100, [0, 61], "https://example.invalid/asset", "time limit"),
-                (b"plain", 100, [0], "http://example.invalid/asset", "HTTPS"),
+            for payload, limit, url, error in (
+                (b"too large", 2, "https://example.invalid/asset", "size limit"),
+                (b"plain", 100, "http://example.invalid/asset", "HTTPS"),
             ):
                 with self.subTest(error=error):
                     response = mock.MagicMock(wraps=io.BytesIO(payload))
                     response.__enter__.return_value = response
                     response.geturl = mock.Mock(return_value=url)
-                    with mock.patch.object(smoke_release.urllib.request, "urlopen", return_value=response) as opened, mock.patch.object(
-                        smoke_release.time, "monotonic", side_effect=times
-                    ):
+                    with mock.patch.object(smoke_release.urllib.request, "urlopen", return_value=response) as opened:
                         with self.assertRaisesRegex(smoke_release.ReleaseSmokeError, error):
-                            smoke_release.download("https://example.invalid/asset", destination, limit)
+                            smoke_release._download_file("https://example.invalid/asset", destination, limit)
                     self.assertEqual(opened.call_args.kwargs["timeout"], 30)
                     destination.unlink()
             destination.write_bytes(b"keep")
             with mock.patch.object(smoke_release.urllib.request, "urlopen"):
                 with self.assertRaises(FileExistsError):
-                    smoke_release.download("https://example.invalid/asset", destination, 100)
+                    smoke_release._download_file("https://example.invalid/asset", destination, 100)
             self.assertEqual(destination.read_bytes(), b"keep")
 
     def test_successful_download_retains_exact_bytes(self) -> None:
@@ -248,8 +306,58 @@ class DownloadAndRunnerTests(unittest.TestCase):
             response.__enter__.return_value = response
             response.geturl = mock.Mock(return_value="https://example.invalid/asset")
             with mock.patch.object(smoke_release.urllib.request, "urlopen", return_value=response):
-                smoke_release.download("https://example.invalid/asset", destination, 13)
+                smoke_release._download_file("https://example.invalid/asset", destination, 13)
             self.assertEqual(destination.read_bytes(), b"archive bytes")
+
+    def test_deadline_stops_slow_body_and_blocked_connection_and_reaps_workers(self) -> None:
+        for worker in (_slow_body_worker, _blocked_connect_worker):
+            with self.subTest(worker=worker.__name__), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve()
+                marker, destination = root / "started.pid", root / "asset"
+                started = time.monotonic()
+                with mock.patch.object(smoke_release, "_download_worker", worker):
+                    with self.assertRaisesRegex(smoke_release.ReleaseSmokeError, "time limit"):
+                        smoke_release.download(str(marker), destination, 1024, timeout=3)
+                self.assertLess(time.monotonic() - started, 6)
+                self.assertTrue(marker.is_file(), "worker must reach the blocking operation before timeout")
+                pid = int(marker.read_text(encoding="utf-8"))
+                self.assertNotIn(pid, [child.pid for child in multiprocessing.active_children()])
+                self.assertFalse(destination.exists())
+                self.assertEqual(list(root.iterdir()), [marker])
+
+    def test_supervised_download_publishes_success_and_cleans_failed_staging(self) -> None:
+        for limit in (13, 2):
+            with self.subTest(limit=limit), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve()
+                destination = root / "asset"
+                with mock.patch.object(smoke_release, "_download_worker", _bytes_worker):
+                    if limit == 13:
+                        smoke_release.download("https://example.invalid/asset", destination, limit, timeout=5)
+                        self.assertEqual(destination.read_bytes(), b"archive bytes")
+                        self.assertEqual(list(root.iterdir()), [destination])
+                    else:
+                        with self.assertRaisesRegex(smoke_release.ReleaseSmokeError, "size limit"):
+                            smoke_release.download("https://example.invalid/asset", destination, limit, timeout=5)
+                        self.assertEqual(list(root.iterdir()), [])
+
+    def test_failed_workers_cannot_publish_or_claim_success(self) -> None:
+        for worker in (_missing_result_worker, _crashed_worker):
+            with self.subTest(worker=worker.__name__), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve()
+                with mock.patch.object(smoke_release, "_download_worker", worker):
+                    with self.assertRaisesRegex(smoke_release.ReleaseSmokeError, "without a result"):
+                        smoke_release.download("https://example.invalid/asset", root / "asset", 100, timeout=5)
+                self.assertEqual(list(root.iterdir()), [])
+
+    def test_existing_download_destination_is_preserved_without_starting_worker(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = Path(temporary) / "asset"
+            destination.write_bytes(b"keep")
+            with mock.patch.object(smoke_release.multiprocessing, "get_context") as context:
+                with self.assertRaises(FileExistsError):
+                    smoke_release.download("https://example.invalid/asset", destination, 100)
+            context.assert_not_called()
+            self.assertEqual(destination.read_bytes(), b"keep")
 
     def test_tag_mismatch_stops_before_download_and_never_claims_success(self) -> None:
         with mock.patch.object(smoke_release.shutil, "which", return_value="git"), mock.patch.object(

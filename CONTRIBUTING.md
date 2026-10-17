@@ -180,8 +180,13 @@ bytes must match that release's canonical sources, even when the current
 checkout has changed. The release pin is shared with `smoke_install.py`; update
 the documented tag and recorded commit together when intentionally changing it.
 
-The checker reads downloaded helpers as bytes and never executes them. Downloads
-have size and time limits; unavailable assets, network failures, moved tags,
+The checker reads downloaded helpers as bytes and never executes them. Each
+download runs in an owned spawned process with a 60-second total deadline
+covering connection setup and body reads. On expiry, the parent kills and reaps
+that worker with a bounded five-second cleanup wait. Only completed downloads
+are copied to a new destination; temporary partial files are removed. Offline
+tests exercise real slow body reads, blocked connections, and worker cleanup.
+Downloads also have size limits; unavailable assets, network failures, moved tags,
 malformed checksums, and mismatches fail the command. Extraction requires a new
 owned temporary directory and happens only after verifying the complete archive.
 Unexpected paths, duplicates, links, encrypted entries, and extra caches fail

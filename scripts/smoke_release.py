@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import multiprocessing
 import re
 import shutil
 import stat
@@ -17,6 +18,7 @@ import urllib.parse
 import urllib.request
 import zipfile
 import zlib
+from multiprocessing.connection import Connection
 from pathlib import Path
 
 try:
@@ -41,24 +43,75 @@ class ReleaseSmokeError(ValueError):
     """The downloaded release differs from its pinned canonical sources."""
 
 
-def download(url: str, destination: Path, limit: int) -> None:
-    """Bound each public download by size, socket timeout, and elapsed time."""
+def _download_file(url: str, destination: Path, limit: int) -> None:
+    """Stream one asset; the supervising parent owns the total deadline."""
     request = urllib.request.Request(url, headers={"User-Agent": "frey-skills-release-smoke"})
-    deadline = time.monotonic() + 60
     with urllib.request.urlopen(request, timeout=30) as response, destination.open("xb") as output:
         if urllib.parse.urlsplit(response.geturl()).scheme != "https":
             raise ReleaseSmokeError("release downloads must remain on HTTPS")
         size = 0
         while True:
             chunk = response.read(min(64 * 1024, limit - size + 1))
-            if time.monotonic() > deadline:
-                raise ReleaseSmokeError("release download exceeded its time limit")
             if not chunk:
                 break
             size += len(chunk)
             if size > limit:
                 raise ReleaseSmokeError("release download exceeded its size limit")
             output.write(chunk)
+
+
+def _download_worker(url: str, destination: Path, limit: int, result: Connection) -> None:
+    try:
+        _download_file(url, destination, limit)
+    except Exception as exc:
+        # Keep the status smaller than a pipe buffer so join cannot wait on send.
+        # Transport failures cross this process boundary as bounded diagnostic data.
+        result.send(f"{type(exc).__name__}: {exc}"[:512])
+    else:
+        result.send(None)
+    finally:
+        result.close()
+
+
+def download(url: str, destination: Path, limit: int, *, timeout: float = 60) -> None:
+    """Enforce a total network deadline, then publish only a completed asset."""
+    if destination.exists() or destination.is_symlink():
+        raise FileExistsError(f"download destination already exists: {destination}")
+    # Spawn is portable and avoids forking a process that uses macOS proxy APIs.
+    context = multiprocessing.get_context("spawn")
+    deadline = time.monotonic() + timeout
+    with tempfile.TemporaryDirectory(prefix=".release-download-", dir=destination.parent) as temporary:
+        staged = Path(temporary) / "asset"
+        receiver, sender = context.Pipe(duplex=False)
+        process = context.Process(target=_download_worker, args=(url, staged, limit, sender))
+        try:
+            process.start()
+            sender.close()
+            process.join(timeout=max(0, deadline - time.monotonic()))
+            if process.is_alive() or time.monotonic() > deadline:
+                raise ReleaseSmokeError("release download exceeded its time limit")
+            if process.exitcode != 0:
+                raise ReleaseSmokeError("release download worker failed without a result")
+            try:
+                if not receiver.poll():
+                    raise ReleaseSmokeError("release download worker failed without a result")
+                error = receiver.recv()
+            except (EOFError, OSError) as exc:
+                raise ReleaseSmokeError("release download worker failed without a result") from exc
+            if error is not None:
+                raise ReleaseSmokeError(error)
+            with staged.open("rb") as source, destination.open("xb") as output:
+                shutil.copyfileobj(source, output)
+        finally:
+            sender.close()
+            receiver.close()
+            if process.pid is not None:
+                if process.is_alive():
+                    process.kill()
+                process.join(timeout=5)
+                if process.is_alive():
+                    raise ReleaseSmokeError("release download worker cleanup did not complete")
+                process.close()
 
 
 def expected_files(source: Path) -> dict[str, bytes]:
