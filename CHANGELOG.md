@@ -6,6 +6,13 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+### Changed
+
+- Installation examples and cross-platform smoke checks now pin the published
+  v1.8.2 tag and commit. Recorded Windows Codex CLI discovery and rollback
+  results identify the verified archives and leave desktop UI and other client
+  surfaces explicitly untested.
+
 ## [1.8.2] - 2026-10-17
 
 ### Added

@@ -289,7 +289,7 @@ behavioral model eval evidence.
 Install the versioned skill sources with the Skills CLI:
 
 ```bash
-npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.8.1
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.8.2
 ```
 
 Choose the skills, agent, and project or user scope in the installer. To follow
