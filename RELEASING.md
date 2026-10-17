@@ -63,6 +63,15 @@ directory for the plugin; the archive also includes the MIT license. Check its
 manifest version and expected seven canonical skills, or the current discovered
 skill set after intentional additions/removals.
 
+The separate `python scripts/smoke_release.py` network check verifies the
+documented published release against its recorded tag/commit, checks the ZIP's
+checksum and canonical bytes, and extracts verified regular files in disposable
+storage. CI runs it on Windows, Linux, and macOS. It checks the shared source pin
+in `scripts/smoke_install.py`, not an unpublished checkout or an arbitrary new
+tag; update that pin and installation documentation together after an authorized
+release. Agent discovery and rollback are a separate optional
+[manual compatibility check](docs/installation.md#manual-plugin-compatibility-check).
+
 If validation or publication fails, stop and report the failed step. Inspect
 whether a release or any assets were created before retrying; do not assume an
 external write was atomic. Resolve the cause through the normal review process.

@@ -164,6 +164,40 @@ the documented release. Offline assertion tests remain part of `check.py` and
 do not invoke Node.js, npm, or the real installer. These are installation/file
 checks; they do not test agent discovery, activation, or model behavior.
 
+### Published plugin archive smoke check
+
+Run the separate network check with Python 3.11+ and Git:
+
+```bash
+python scripts/smoke_release.py
+```
+
+CI runs this after the Skills CLI installation checks on Windows, Linux, and
+macOS. It downloads the documented release's plugin ZIP and `SHA256SUMS`, checks
+the digest, and compares every archive entry with the recorded Git tag/commit.
+The manifest version and schema, license, complete skill set, and supporting-file
+bytes must match that release's canonical sources, even when the current
+checkout has changed. The release pin is shared with `smoke_install.py`; update
+the documented tag and recorded commit together when intentionally changing it.
+
+The checker reads downloaded helpers as bytes and never executes them. Each
+download runs in an owned spawned process with a 60-second total deadline
+covering connection setup and body reads. On expiry, the parent kills and reaps
+that worker with a bounded five-second cleanup wait. Only completed downloads
+are copied to a new destination; temporary partial files are removed. Offline
+tests exercise real slow body reads, blocked connections, and worker cleanup.
+Downloads also have size limits; unavailable assets, network failures, moved tags,
+malformed checksums, and mismatches fail the command. Extraction requires a new
+owned temporary directory and happens only after verifying the complete archive.
+Unexpected paths, duplicates, links, encrypted entries, and extra caches fail
+before extraction. All downloaded, cloned, and extracted files are temporary;
+the command does not install a plugin or modify the user's agent configuration.
+
+Offline regression tests run through `check.py` without network access. This
+checks published file integrity and extraction, not Codex discovery, activation,
+or model behavior. Follow the [manual compatibility check](docs/installation.md#manual-plugin-compatibility-check)
+for discovery and rollback; keep its client-specific result separate from CI.
+
 ## Generated Plugin Development
 
 Edit canonical sources first:

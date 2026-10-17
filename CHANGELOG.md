@@ -8,6 +8,13 @@ output fields, and trust contracts are unchanged in 1.8.1.
 
 ### Added
 
+- Published Codex plugin archive smoke checks on Windows, Linux, and macOS,
+  verifying the pinned tag/commit, checksum, manifest, license, skill set, and
+  supporting-file bytes before extraction in disposable storage. Offline tests
+  cover altered, missing, extra, duplicate, unsafe, and oversized artifacts,
+  network failures, and preservation of existing extraction destinations.
+- A separate manual plugin discovery and rollback compatibility checklist that
+  records client-specific results without claiming behavioral certification.
 - A README skill-selection table and installation guide covering version-pinned
   skill sources, the Codex plugin archive, verification, upgrades, and rollback.
 - A macOS Python 3.12 CI job running the full deterministic validation set.
@@ -19,6 +26,9 @@ output fields, and trust contracts are unchanged in 1.8.1.
 
 ### Fixed
 
+- Published archive downloads enforce their total deadline outside blocking
+  network I/O, terminate and reap timed-out workers, and discard partial files.
+  Real slow-stream and blocked-connection regression tests cover this boundary.
 - POSIX repository validation preflights its `ps` prerequisite and reports
   missing setup before running checks; contributor setup documents the utility.
 - Selected and complete installation smoke checks use independent empty projects

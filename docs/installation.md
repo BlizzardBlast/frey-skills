@@ -84,6 +84,13 @@ that was its installation scope.
 
 ## Install the Codex plugin ZIP
 
+CI checks the published ZIP on Windows, Linux, and macOS, including its checksum,
+manifest, license, complete skill set, and byte parity with the pinned release's
+sources. To repeat this file check in a repository checkout, run
+`python scripts/smoke_release.py` with Python 3.11+ and Git. It uses disposable
+directories and does not install the plugin. Agent discovery and rollback remain
+a separate manual compatibility check below.
+
 Download `frey-skills-1.8.1.zip` and `SHA256SUMS` from the
 [v1.8.1 release](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.8.1).
 Compare the archive's SHA-256 digest with its filename's entry in `SHA256SUMS`:
@@ -153,3 +160,29 @@ folder. Retain the previous directory for rollback. Restart the desktop app
 and verify the plugin's skills are discoverable. To roll back, restore the
 previous path and restart again, as described in the official local-plugin
 instructions above. Do not edit Codex's installed plugin cache directly.
+
+### Manual plugin compatibility check
+
+Use a disposable consuming project and your normal local-plugin installation
+flow above. This is an optional client compatibility check, separate from the
+automated archive checks and deterministic merge gates. It requires no model
+prompts, provider credentials, paid tokens, or behavioral evals.
+
+1. Record the operating system, Codex client version, target release tag and
+   commit, verified ZIP digest, and the previous plugin path/version if one
+   exists. Keep the previous extracted directory for rollback.
+2. Install the verified archive through that project's local marketplace entry,
+   then restart the client as described above. Confirm **Frey Skills** appears
+   and its skill selector lists each of the seven packaged skills once. Use one
+   installation route to avoid duplicate skill names. Inspect discovery only;
+   do not invoke a skill to establish this result.
+3. If upgrading from an older installed release, change only the Frey Skills
+   entry's `source.path` back to its recorded previous directory, restart, and
+   confirm the previous manifest version and skill list are restored. Preserve
+   unrelated marketplace entries and user skills. With only the first release
+   available, mark cross-version rollback **NOT_TESTED**; restoring the recorded
+   pre-install setup is a separate check.
+4. Record discovery and rollback independently as **PASS**, **FAIL**, or
+   **NOT_TESTED**, with the observed client/version and any limitation. A passing
+   archive check cannot substitute for either manual result, and neither result
+   certifies skill activation or model behavior.

@@ -145,6 +145,9 @@ jobs:
       - name: Check checkout and documented release installations
         run: python scripts/smoke_install.py --cli "${{ runner.temp }}/frey-smoke-cli/node_modules/skills/bin/cli.mjs"
 
+      - name: Check the published plugin archive
+        run: python scripts/smoke_release.py
+
   whitespace:
     name: Check whitespace
     runs-on: ubuntu-latest
