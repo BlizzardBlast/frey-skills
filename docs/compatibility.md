@@ -16,7 +16,7 @@ skill set, and supporting-file bytes. The client checks use the downloaded
 published archives. A locally prepared Windows archive had different line
 endings and a different digest; it is excluded from the results below.
 
-## Results
+## Original manual CLI results
 
 | Check | Result | Observation |
 | --- | --- | --- |
@@ -25,7 +25,7 @@ endings and a different digest; it is excluded from the results below.
 | v1.8.2 starter prompts | PASS | All three prompts survive manifest parsing; the earlier prompt-limit warning is absent. |
 | Roll back v1.8.2 to v1.8.1 | PASS | Installed version and all seven plugin skill paths return to 1.8.1. |
 | Windows desktop plugin directory and skill selector | NOT_TESTED | Native desktop UI interaction and restart were unavailable in this run. |
-| macOS and Linux client discovery and rollback | NOT_TESTED | No matching local clients were exercised. |
+| macOS and Linux manual client discovery and rollback | NOT_TESTED | No matching local clients were exercised in the original manual check; see automated results below. |
 
 The seven names returned by `skills/list` are `frey-skills:change-specification`,
 `frey-skills:code-review`, `frey-skills:debug`,
@@ -65,3 +65,24 @@ These observations do not certify model behavior. Cross-platform CI installation
 and archive smoke checks remain separate file-integrity evidence; repeat the
 [manual desktop check](installation.md#manual-plugin-compatibility-check) for
 the client surface you use.
+
+## Automated CLI compatibility
+
+`scripts/smoke_codex.py` repeats installation, upgrade, and rollback with the
+same published release pair and pinned Codex CLI 0.150.1. It verifies each archive
+before installation and compares installed bytes, enabled skill ownership,
+unique names, versioned cache paths, and v1.8.2 starter prompts. Every phase uses
+a fresh metadata-only app-server in the same disposable client home. Inherited
+credentials and Codex settings are excluded. The unrelated user-skill fixture
+must survive, and the owned server tree is stopped after success or failure.
+
+| Surface | Result | Evidence |
+| --- | --- | --- |
+| Windows CLI 0.150.1 | PASS | Local automated install, upgrade, and rollback on 2026-10-17; both published ZIP digests above matched and all seven installed skills retained byte parity. |
+| Linux CLI 0.150.1 | PASS | [Hosted Ubuntu check](https://github.com/BlizzardBlast/frey-skills/actions/runs/39034359545/job/117401091810) on 2026-10-17; install, upgrade, rollback, and all seven skills passed. |
+| macOS CLI 0.150.1 | PASS | [Hosted macOS check](https://github.com/BlizzardBlast/frey-skills/actions/runs/39034359545/job/117401091797) on 2026-10-17; install, upgrade, rollback, and all seven skills passed. |
+| Desktop UI | NOT_TESTED | Native desktop controls and restart remain unavailable in this session. |
+
+See [Contributing](../CONTRIBUTING.md#codex-client-compatibility-smoke-check) for
+the exact command and isolation/deadline details. CLI evidence does not establish
+desktop UI compatibility or certify model activation or behavior.

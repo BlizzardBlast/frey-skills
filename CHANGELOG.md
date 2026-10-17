@@ -6,6 +6,16 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+### Added
+
+- Pinned Codex CLI metadata compatibility checks on Windows, Linux, and macOS
+  for verified published v1.8.1 installation, v1.8.2 upgrade, and v1.8.1 rollback.
+  Checks require enabled, uniquely named plugin skills, correct ownership and
+  versioned cache paths, installed byte parity, and current starter prompts.
+  Disposable client homes exclude inherited credentials. Offline regressions
+  cover false-positive metadata, resource drift, RPC failures, deadlines, and
+  owned descendant cleanup without model turns or behavioral evals.
+
 ### Changed
 
 - Installation examples and cross-platform smoke checks now pin the published

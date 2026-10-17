@@ -69,7 +69,9 @@ checksum and canonical bytes, and extracts verified regular files in disposable
 storage. CI runs it on Windows, Linux, and macOS. It checks the shared source pin
 in `scripts/smoke_install.py`, not an unpublished checkout or an arbitrary new
 tag; update that pin and installation documentation together after an authorized
-release. Agent discovery and rollback are a separate optional
+release. The separate [Codex client smoke check](CONTRIBUTING.md#codex-client-compatibility-smoke-check)
+checks CLI discovery, upgrade, and rollback against its pinned release pair.
+Desktop discovery and rollback remain a separate optional
 [manual compatibility check](docs/installation.md#manual-plugin-compatibility-check).
 
 If validation or publication fails, stop and report the failed step. Inspect

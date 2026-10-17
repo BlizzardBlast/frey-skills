@@ -8,7 +8,7 @@ from pathlib import Path
 
 import yaml
 
-from scripts import smoke_install, smoke_release
+from scripts import smoke_codex, smoke_install, smoke_release
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -60,6 +60,23 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertIn(f"npx skills add {smoke_install.SOURCE_URL} --skill code-review --agent codex", guide)
         self.assertIn(f"{smoke_release.ARCHIVE_NAME}", guide)
         self.assertIn(f"{smoke_release.RELEASE_URL.rsplit('/download/', 1)[0]}/tag/{smoke_install.SOURCE_TAG}", guide)
+
+    def test_codex_client_matrix_is_pinned_and_has_no_credentials(self) -> None:
+        job = self.read_workflow("ci.yml")["jobs"]["codex-client"]
+        self.assertEqual(job["runs-on"], "${{ matrix.os }}")
+        self.assertEqual(set(job["strategy"]["matrix"]["os"]), {"ubuntu-latest", "windows-latest", "macos-latest"})
+        self.assertEqual(job["timeout-minutes"], "15")
+        self.assertNotIn("permissions", job)
+        steps = job["steps"]
+        checkout = next(step for step in steps if step.get("uses", "").startswith("actions/checkout@"))
+        self.assertEqual(checkout["with"]["persist-credentials"], "false")
+        commands = [step["run"] for step in steps if "run" in step]
+        self.assertEqual(len(commands), 2)
+        self.assertIn(f"@openai/codex@{smoke_codex.CLI_VERSION}", commands[0])
+        self.assertIn("--ignore-scripts", commands[0])
+        self.assertEqual(commands[1], 'python scripts/smoke_codex.py --cli "${{ runner.temp }}/frey-codex-cli/node_modules/@openai/codex/bin/codex.js"')
+        for step in steps:
+            self.assertNotIn("env", step)
 
     def test_publication_runs_only_on_version_tags_after_validation(self) -> None:
         workflow = self.read_workflow("release.yml")
