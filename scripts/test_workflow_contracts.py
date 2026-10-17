@@ -8,7 +8,7 @@ from pathlib import Path
 
 import yaml
 
-from scripts import smoke_install
+from scripts import smoke_install, smoke_release
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,16 +47,19 @@ class WorkflowContractTests(unittest.TestCase):
         node_setup = next(step for step in steps if step.get("uses", "").startswith("actions/setup-node@"))
         self.assertEqual(node_setup["with"]["node-version"], "24")
         commands = [step["run"] for step in steps if "run" in step]
-        self.assertEqual(len(commands), 2)
+        self.assertEqual(len(commands), 3)
         self.assertIn(f"skills@{smoke_install.CLI_VERSION}", commands[0])
         self.assertIn("--ignore-scripts", commands[0])
         self.assertEqual(commands[1], 'python scripts/smoke_install.py --cli "${{ runner.temp }}/frey-smoke-cli/node_modules/skills/bin/cli.mjs"')
+        self.assertEqual(commands[2], "python scripts/smoke_release.py")
 
     def test_installation_guide_matches_the_smoke_test_pins(self) -> None:
         guide = (ROOT / "docs" / "installation.md").read_text(encoding="utf-8")
         self.assertIn(f"npx skills@{smoke_install.CLI_VERSION}", guide)
         self.assertIn(f"npx skills add {smoke_install.SOURCE_URL} --list", guide)
         self.assertIn(f"npx skills add {smoke_install.SOURCE_URL} --skill code-review --agent codex", guide)
+        self.assertIn(f"{smoke_release.ARCHIVE_NAME}", guide)
+        self.assertIn(f"{smoke_release.RELEASE_URL.rsplit('/download/', 1)[0]}/tag/{smoke_install.SOURCE_TAG}", guide)
 
     def test_publication_runs_only_on_version_tags_after_validation(self) -> None:
         workflow = self.read_workflow("release.yml")

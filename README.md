@@ -427,6 +427,9 @@ Separate installation smoke jobs exercise the pinned Skills CLI on Windows,
 Linux, and macOS, checking selected and complete skill installations against the
 checkout and documented release in default and copy modes. These checks compare
 installed files and resources; they do not certify agent activation or behavior.
+The same platform jobs also download the published Codex plugin ZIP, verify its
+checksum, and compare its manifest, license, skills, and supporting files with
+the pinned release sources before extracting it in disposable storage.
 
 The repository uses deterministic quality gates:
 
