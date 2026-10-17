@@ -114,7 +114,7 @@ def download(url: str, destination: Path, limit: int, *, timeout: float = 60) ->
                 process.close()
 
 
-def expected_files(source: Path) -> dict[str, bytes]:
+def expected_files(source: Path, *, tag: str | None = None) -> dict[str, bytes]:
     """Read the pinned sources as data; never execute downloaded helpers."""
     manifest_path = source / "plugin-template" / ".codex-plugin" / "plugin.json"
     license_path = source / "LICENSE"
@@ -124,7 +124,7 @@ def expected_files(source: Path) -> dict[str, bytes]:
             raise ReleaseSmokeError(f"missing regular source file: {path.name}")
     manifest_bytes = manifest_path.read_bytes()
     manifest = json.loads(manifest_bytes)
-    if not isinstance(manifest, dict) or manifest.get("version") != SOURCE_TAG.removeprefix("v"):
+    if not isinstance(manifest, dict) or manifest.get("version") != (tag or SOURCE_TAG).removeprefix("v"):
         raise ReleaseSmokeError("source manifest version does not match the pinned release")
     errors: list[str] = []
     validate_manifest(manifest, errors)
@@ -145,30 +145,31 @@ def expected_files(source: Path) -> dict[str, bytes]:
     return expected
 
 
-def clone_source(workspace: Path, environment: dict[str, str]) -> Path:
+def clone_source(workspace: Path, environment: dict[str, str], *, tag: str | None = None, commit: str | None = None) -> Path:
     source = workspace / "source"
     # text=auto otherwise uses native CRLF on Windows even with autocrlf=false.
     run([
-        "git", "-c", "core.autocrlf=false", "-c", "core.eol=lf", "clone", "--depth", "1", "--branch", SOURCE_TAG,
+        "git", "-c", "core.autocrlf=false", "-c", "core.eol=lf", "clone", "--depth", "1", "--branch", tag or SOURCE_TAG,
         REPOSITORY_URL, str(source),
     ], workspace, environment)
-    if run(["git", "rev-parse", "HEAD"], source, environment) != SOURCE_COMMIT:
+    if run(["git", "rev-parse", "HEAD"], source, environment) != (commit or SOURCE_COMMIT):
         raise ReleaseSmokeError("release tag no longer matches its pinned commit")
     return source
 
 
-def verify_archive(archive: Path, checksums: Path, source: Path, destination: Path) -> str:
+def verify_archive(archive: Path, checksums: Path, source: Path, destination: Path, *, tag: str | None = None) -> str:
     """Validate all entries before writing only expected regular files."""
     if archive.stat().st_size > MAX_ARCHIVE_BYTES or checksums.stat().st_size > MAX_CHECKSUM_BYTES:
         raise ReleaseSmokeError("release assets exceeded their size limits")
+    archive_name = f"frey-skills-{tag.removeprefix('v')}.zip" if tag else ARCHIVE_NAME
     checksum = re.fullmatch(
-        rf"([0-9a-fA-F]{{64}})  {re.escape(ARCHIVE_NAME)}\r?\n?",
+        rf"([0-9a-fA-F]{{64}})  {re.escape(archive_name)}\r?\n?",
         checksums.read_bytes().decode("utf-8"),
     )
     digest = hashlib.sha256(archive.read_bytes()).hexdigest()
     if checksum is None or checksum.group(1).lower() != digest:
         raise ReleaseSmokeError("SHA256SUMS does not match the pinned archive")
-    expected = expected_files(source)
+    expected = expected_files(source, tag=tag)
     contents = {}
     with zipfile.ZipFile(archive) as packaged:
         entries = packaged.infolist()

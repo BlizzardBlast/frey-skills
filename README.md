@@ -431,6 +431,11 @@ The same platform jobs also download the published Codex plugin ZIP, verify its
 checksum, and compare its manifest, license, skills, and supporting files with
 the pinned release sources before extracting it in disposable storage.
 
+A separate Codex CLI matrix checks plugin installation, metadata discovery,
+upgrade, and rollback on Windows, Linux, and macOS using verified published
+archives and disposable client homes. See the [compatibility record](docs/compatibility.md)
+for observed results and desktop UI coverage limits.
+
 The repository uses deterministic quality gates:
 
 - a project validator for metadata, references, optional eval schema, scorecard

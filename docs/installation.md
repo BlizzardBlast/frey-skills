@@ -166,6 +166,10 @@ instructions above. Do not edit Codex's installed plugin cache directly.
 See the [recorded client results](compatibility.md) for the tested release pair,
 client version, archive digests, and remaining coverage limits.
 
+The separate [Codex CLI smoke check](../CONTRIBUTING.md#codex-client-compatibility-smoke-check)
+automates metadata discovery, upgrade, and rollback in disposable client homes
+on Windows, Linux, and macOS. Its results do not replace the desktop checks below.
+
 Use a disposable consuming project and your normal local-plugin installation
 flow above. This is an optional client compatibility check, separate from the
 automated archive checks and deterministic merge gates. It requires no model

@@ -148,6 +148,37 @@ jobs:
       - name: Check the published plugin archive
         run: python scripts/smoke_release.py
 
+  codex-client:
+    name: Codex client compatibility (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Install the pinned Codex CLI without lifecycle scripts
+        run: npm install --prefix "${{ runner.temp }}/frey-codex-cli" --no-save --ignore-scripts --no-audit --no-fund @openai/codex@0.150.1
+
+      - name: Check plugin discovery, upgrade, and rollback
+        run: python scripts/smoke_codex.py --cli "${{ runner.temp }}/frey-codex-cli/node_modules/@openai/codex/bin/codex.js"
+
   whitespace:
     name: Check whitespace
     runs-on: ubuntu-latest

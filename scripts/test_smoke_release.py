@@ -139,6 +139,23 @@ class ReleaseArchiveTests(unittest.TestCase):
         self.assertEqual(digest, hashlib.sha256(self.archive.read_bytes()).hexdigest())
         self.assertEqual(sentinel.read_bytes(), b"preserve")
 
+    def test_explicit_older_release_pin_requires_its_own_manifest_and_checksum_name(self) -> None:
+        older = "v1.8.1"
+        with self.assertRaisesRegex(smoke_release.ReleaseSmokeError, "manifest version"):
+            smoke_release.expected_files(self.source, tag=older)
+        manifest_name = "frey-skills/.codex-plugin/plugin.json"
+        manifest = json.loads(self.files[manifest_name])
+        manifest["version"] = older.removeprefix("v")
+        self.files[manifest_name] = json.dumps(manifest).encode("utf-8")
+        (self.source / "plugin-template" / ".codex-plugin" / "plugin.json").write_bytes(self.files[manifest_name])
+        self.write_archive()
+        with self.assertRaisesRegex(smoke_release.ReleaseSmokeError, "SHA256SUMS"):
+            smoke_release.verify_archive(self.archive, self.checksums, self.source, self.destination, tag=older)
+        name = f"frey-skills-{older.removeprefix('v')}.zip"
+        digest = hashlib.sha256(self.archive.read_bytes()).hexdigest()
+        self.checksums.write_text(f"{digest}  {name}\n", encoding="utf-8")
+        smoke_release.verify_archive(self.archive, self.checksums, self.source, self.destination, tag=older)
+
     def test_checksum_mismatch_wrong_filename_and_ambiguous_records_fail_before_extraction(self) -> None:
         valid = self.checksums.read_bytes()
         for checksum in (b"0" * 64 + b"  " + self.archive.name.encode() + b"\n", valid.replace(b".zip", b".other"), valid + valid, b"", b"\xff"):

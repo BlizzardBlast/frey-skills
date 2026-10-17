@@ -195,8 +195,43 @@ the command does not install a plugin or modify the user's agent configuration.
 
 Offline regression tests run through `check.py` without network access. This
 checks published file integrity and extraction, not Codex discovery, activation,
-or model behavior. Follow the [manual compatibility check](docs/installation.md#manual-plugin-compatibility-check)
-for discovery and rollback; keep its client-specific result separate from CI.
+or model behavior. Client discovery and rollback have a separate check below.
+
+### Codex client compatibility smoke check
+
+The separate `codex-client` CI matrix checks Codex CLI metadata discovery on
+Windows, Linux, and macOS. Use Python 3.11+, Git, Node.js, npm, and public network
+access to reproduce it:
+
+```bash
+npm install --prefix ./dist/codex-smoke-cli --no-save --ignore-scripts --no-audit --no-fund @openai/codex@0.150.1
+python scripts/smoke_codex.py --cli ./dist/codex-smoke-cli/node_modules/@openai/codex/bin/codex.js
+```
+
+The checker verifies the npm package and native executable version, then directly
+supervises that executable. It downloads v1.8.1 and v1.8.2, checks each tag/commit,
+checksum, and canonical archive bytes through the release checker, and installs
+only those verified plugins into a disposable marketplace. It checks initial
+installation, upgrade, and rollback with a fresh app-server for each phase.
+Plugin ownership, enabled state, exact unique skill names, version-specific
+cache paths, and all installed bytes must match. The current release must retain
+its three starter prompts; the older release's known prompt-limit defect is not
+a rollback failure. Update both release pins and the compatibility record when
+intentionally changing the tested release pair.
+
+Only `initialize`, `initialized`, `plugin/read`, and `skills/list` are sent. No
+thread, turn, skill invocation, or behavioral model eval is started. Child homes,
+config, and caches are disposable; credentials and inherited Codex settings are
+excluded from their environment. An unrelated user-skill fixture must survive.
+Each metadata session has a 60-second total deadline and bounded output. Windows
+assigns the suspended server to a Job Object before it can spawn descendants;
+POSIX uses a new process group. Both paths terminate the owned tree after success
+or failure and bound cleanup waits. Offline assertion and real subprocess tests
+run through `check.py` without installing Codex or accessing the network.
+
+These CLI results do not establish desktop plugin directory, selector, or restart
+compatibility. Keep those results separate using the
+[manual compatibility check](docs/installation.md#manual-plugin-compatibility-check).
 
 ## Generated Plugin Development
 
