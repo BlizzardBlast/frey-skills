@@ -43,6 +43,8 @@ def preflight(groups: tuple[str, ...]) -> list[str]:
             errors.append("Missing skills-ref. Install requirements-spec.txt into this interpreter.")
     if any(group != "spec" for group in groups) and shutil.which("git") is None:
         errors.append("Git must be available on PATH.")
+    if "repository" in groups and os.name == "posix" and shutil.which("ps") is None:
+        errors.append("ps must be available on PATH for POSIX repository checks. Install your platform's process-status utility.")
     return errors
 
 
@@ -52,7 +54,7 @@ def group_commands(group: str) -> list[list[str]]:
         return [
             [python, "scripts/validate_repository.py"],
             [python, "-m", "unittest", "discover", "-s", "code-review/scripts", "-p", "test_*.py"],
-            [python, "-m", "unittest", "scripts.test_validate_repository", "scripts.test_check", "scripts.test_workflow_contracts"],
+            [python, "-m", "unittest", "scripts.test_validate_repository", "scripts.test_check", "scripts.test_workflow_contracts", "scripts.test_smoke_install"],
         ]
     if group == "spec":
         return [

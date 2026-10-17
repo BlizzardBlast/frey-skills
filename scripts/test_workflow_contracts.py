@@ -8,6 +8,8 @@ from pathlib import Path
 
 import yaml
 
+from scripts import smoke_install
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -31,6 +33,30 @@ class WorkflowContractTests(unittest.TestCase):
                 self.assertEqual(checkout["with"]["fetch-depth"], "0")
                 python_setup = next(step for step in job["steps"] if step.get("uses", "").startswith("actions/setup-python@"))
                 self.assertEqual(python_setup["with"]["python-version"], "3.12")
+
+    def test_installation_covers_all_platforms_with_a_pinned_cli_and_no_credentials(self) -> None:
+        ci = self.read_workflow("ci.yml")
+        installation = ci["jobs"]["installation"]
+        self.assertEqual(installation["runs-on"], "${{ matrix.os }}")
+        self.assertEqual(set(installation["strategy"]["matrix"]["os"]), {"ubuntu-latest", "windows-latest", "macos-latest"})
+        self.assertNotIn("permissions", installation)
+        self.assertEqual(installation["timeout-minutes"], "15")
+        steps = installation["steps"]
+        checkout = next(step for step in steps if step.get("uses", "").startswith("actions/checkout@"))
+        self.assertEqual(checkout["with"]["persist-credentials"], "false")
+        node_setup = next(step for step in steps if step.get("uses", "").startswith("actions/setup-node@"))
+        self.assertEqual(node_setup["with"]["node-version"], "24")
+        commands = [step["run"] for step in steps if "run" in step]
+        self.assertEqual(len(commands), 2)
+        self.assertIn(f"skills@{smoke_install.CLI_VERSION}", commands[0])
+        self.assertIn("--ignore-scripts", commands[0])
+        self.assertEqual(commands[1], 'python scripts/smoke_install.py --cli "${{ runner.temp }}/frey-smoke-cli/node_modules/skills/bin/cli.mjs"')
+
+    def test_installation_guide_matches_the_smoke_test_pins(self) -> None:
+        guide = (ROOT / "docs" / "installation.md").read_text(encoding="utf-8")
+        self.assertIn(f"npx skills@{smoke_install.CLI_VERSION}", guide)
+        self.assertIn(f"npx skills add {smoke_install.SOURCE_URL} --list", guide)
+        self.assertIn(f"npx skills add {smoke_install.SOURCE_URL} --skill code-review --agent codex", guide)
 
     def test_publication_runs_only_on_version_tags_after_validation(self) -> None:
         workflow = self.read_workflow("release.yml")

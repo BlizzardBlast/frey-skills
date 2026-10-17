@@ -12,6 +12,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 from scripts import check
@@ -44,6 +45,33 @@ class CheckTests(unittest.TestCase):
             self.assertEqual(check.preflight(("plugin", "whitespace")), [])
         with mock.patch.object(check.shutil, "which", return_value=None):
             self.assertIn("Git", check.preflight(("whitespace",))[0])
+
+    def test_missing_posix_ps_stops_before_any_repository_command(self) -> None:
+        with mock.patch.object(check, "os", SimpleNamespace(name="posix", environ=os.environ)), mock.patch.object(
+            check.importlib.util, "find_spec", return_value=object()
+        ), mock.patch.object(check.shutil, "which", side_effect=lambda name: "/tools/git" if name == "git" else None), mock.patch.object(
+            check.subprocess, "run"
+        ) as run, redirect_stderr(io.StringIO()) as errors, redirect_stdout(io.StringIO()) as output:
+            result = check.main(["--group", "repository"])
+        self.assertEqual(result, 2)
+        run.assert_not_called()
+        self.assertIn("ps must be available on PATH", errors.getvalue())
+        self.assertNotIn("checks passed", output.getvalue())
+
+    def test_ps_requirement_is_scoped_to_posix_repository_checks(self) -> None:
+        for platform in ("posix", "nt"):
+            for group in check.GROUPS:
+                with self.subTest(platform=platform, group=group), mock.patch.object(
+                    check, "os", SimpleNamespace(name=platform)
+                ), mock.patch.object(check.sys, "version_info", (3, 12)), mock.patch.object(
+                    check.importlib.util, "find_spec", return_value=object()
+                ), mock.patch.object(check.shutil, "which", side_effect=lambda name: "/tools/git" if name == "git" else None):
+                    errors = check.preflight((group,))
+                if platform == "posix" and group == "repository":
+                    self.assertEqual(len(errors), 1)
+                    self.assertIn("ps must be available on PATH", errors[0])
+                else:
+                    self.assertEqual(errors, [])
 
     def test_failed_check_stops_remaining_checks_and_never_claims_success(self) -> None:
         with mock.patch.object(check, "preflight", return_value=[]), mock.patch.object(

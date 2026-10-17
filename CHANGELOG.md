@@ -11,6 +11,23 @@ output fields, and trust contracts are unchanged in 1.8.1.
 - A README skill-selection table and installation guide covering version-pinned
   skill sources, the Codex plugin archive, verification, upgrades, and rollback.
 - A macOS Python 3.12 CI job running the full deterministic validation set.
+- Installation smoke checks on Windows, Linux, and macOS using the pinned Skills
+  CLI, isolated project/user directories, and byte parity for selected and
+  complete skill installations from the checkout and documented release tag in
+  default and copy modes. Offline assertion tests cover incomplete installs,
+  altered resources, installer failures, version mismatches, and timeouts.
+
+### Fixed
+
+- POSIX repository validation preflights its `ps` prerequisite and reports
+  missing setup before running checks; contributor setup documents the utility.
+- Selected and complete installation smoke checks use independent empty projects
+  so an earlier install cannot hide an omitted wildcard skill.
+- Discovery checks verify the exact listed skill names, including missing,
+  extra, and duplicate results, against the pinned CLI's output format.
+- Timed-out smoke commands terminate their owned process trees and collect
+  output through temporary files with bounded cleanup waits. A real nested
+  subprocess test covers inherited output handles and descendant termination.
 
 ## [1.8.1] - 2026-10-16
 
