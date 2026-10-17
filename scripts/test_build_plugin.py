@@ -49,6 +49,13 @@ def module_attr(module: Any, name: str, value: Any) -> Iterator[None]:
 
 
 class PluginBundleTests(unittest.TestCase):
+    def test_canonical_manifest_respects_client_starter_prompt_limit(self) -> None:
+        manifest_path = REPOSITORY_ROOT / "plugin-template" / ".codex-plugin" / "plugin.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        # Keep prompts within the manifest loader's three-prompt limit.
+        # Check the current template without rejecting historical release bytes.
+        self.assertLessEqual(len(manifest["interface"]["defaultPrompt"]), 3)
+
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
         self.temp_root = Path(self.temp_dir.name).resolve()

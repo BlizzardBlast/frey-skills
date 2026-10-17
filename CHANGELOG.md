@@ -2,9 +2,11 @@
 
 Entries describe versioned repository changes. The GitHub Releases page records
 which versions have actually been published. Skill activation, structured
-output fields, and trust contracts are unchanged in 1.8.1.
+output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
+
+## [1.8.2] - 2026-10-17
 
 ### Added
 
@@ -26,6 +28,9 @@ output fields, and trust contracts are unchanged in 1.8.1.
 
 ### Fixed
 
+- The Codex plugin offers three starter prompts, within the client's supported
+  limit, so the manifest loader accepts the complete prompt list. All seven
+  packaged skills remain available with unchanged activation and output contracts.
 - Published archive downloads enforce their total deadline outside blocking
   network I/O, terminate and reap timed-out workers, and discard partial files.
   Real slow-stream and blocked-connection regression tests cover this boundary.
