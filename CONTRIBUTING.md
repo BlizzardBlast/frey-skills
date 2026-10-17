@@ -139,7 +139,7 @@ python scripts/smoke_install.py --cli dist/smoke-tools/node_modules/skills/bin/c
 
 Use Node.js 24 and Python 3.11+ for this command. The runner verifies the CLI
 version, stages the checkout's canonical skills without local runtime caches,
-and separately installs the documented `v1.8.1` GitHub source pin. That tag must
+and separately installs the documented `v1.8.2` GitHub source pin. That tag must
 still resolve to its recorded commit. Each source is checked with default and
 explicit `--copy` installation, selecting only `code-review` and all skills in
 separate empty projects. `--list` must report exactly the expected skill names
@@ -225,10 +225,12 @@ config, and caches are disposable; credentials and inherited Codex settings are
 excluded from their environment. An unrelated user-skill fixture must survive.
 Each metadata session has a 60-second total deadline and bounded output. Windows
 assigns the suspended server to a Job Object before it can spawn descendants;
-POSIX uses a new process group. Both paths terminate the owned tree after success
-or failure and bound cleanup waits. Temporary-directory cleanup retries Windows
-sharing violations for at most five seconds; persistent locks still fail. Offline assertion and real subprocess tests
-run through `check.py` without installing Codex or accessing the network.
+closing the supervisor's job handle also terminates that tree after abrupt
+supervisor exit. POSIX uses a new process group. Both paths terminate the owned
+tree after success or failure and bound cleanup waits. Temporary-directory
+cleanup retries Windows sharing violations for at most five seconds; persistent
+locks still fail. Offline assertion and real subprocess tests run through
+`check.py` without installing Codex or accessing the network.
 
 These CLI results do not establish desktop plugin directory, selector, or restart
 compatibility. Keep those results separate using the

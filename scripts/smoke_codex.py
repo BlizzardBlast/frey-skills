@@ -117,8 +117,8 @@ def server_process(command: list[str], project: Path, environment: dict[str, str
                 process.stdin.close()
         return
 
-    # Assign a suspended process before it can create helpers. Terminating its
-    # Job Object then owns every descendant even if an intermediate parent exits.
+    # Assign a suspended process before it can create helpers. The Job Object
+    # owns every descendant and also kills them if this supervisor is terminated.
     import ctypes
     from ctypes import wintypes
 
@@ -133,9 +133,22 @@ def server_process(command: list[str], project: Path, environment: dict[str, str
                     ("faults", wintypes.DWORD), ("total", wintypes.DWORD),
                     ("active", wintypes.DWORD), ("terminated", wintypes.DWORD)]
 
+    class JobBasicLimits(ctypes.Structure):
+        _fields_ = [("process_user_time", ctypes.c_int64), ("job_user_time", ctypes.c_int64),
+                    ("flags", wintypes.DWORD), ("minimum_working_set", ctypes.c_size_t),
+                    ("maximum_working_set", ctypes.c_size_t), ("active_process_limit", wintypes.DWORD),
+                    ("affinity", ctypes.c_size_t), ("priority_class", wintypes.DWORD),
+                    ("scheduling_class", wintypes.DWORD)]
+
+    class JobExtendedLimits(ctypes.Structure):
+        _fields_ = [("basic", JobBasicLimits), ("io_counters", ctypes.c_uint64 * 6),
+                    ("process_memory_limit", ctypes.c_size_t), ("job_memory_limit", ctypes.c_size_t),
+                    ("peak_process_memory", ctypes.c_size_t), ("peak_job_memory", ctypes.c_size_t)]
+
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
     signatures = {
         "CreateJobObjectW": ([wintypes.LPVOID, wintypes.LPCWSTR], wintypes.HANDLE),
+        "SetInformationJobObject": ([wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID, wintypes.DWORD], wintypes.BOOL),
         "AssignProcessToJobObject": ([wintypes.HANDLE, wintypes.HANDLE], wintypes.BOOL),
         "TerminateJobObject": ([wintypes.HANDLE, wintypes.UINT], wintypes.BOOL),
         "QueryInformationJobObject": ([wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID, wintypes.DWORD, wintypes.LPVOID], wintypes.BOOL),
@@ -154,6 +167,11 @@ def server_process(command: list[str], project: Path, environment: dict[str, str
         raise ctypes.WinError(ctypes.get_last_error())
     process, assigned = None, False
     try:
+        limits = JobExtendedLimits()
+        limits.basic.flags = 0x00002000  # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+        # JobObjectExtendedLimitInformation configures the job before launch.
+        if not kernel.SetInformationJobObject(job, 9, ctypes.byref(limits), ctypes.sizeof(limits)):
+            raise ctypes.WinError(ctypes.get_last_error())
         process = subprocess.Popen(command, creationflags=0x00000004, **options)  # CREATE_SUSPENDED
         if not kernel.AssignProcessToJobObject(job, int(process._handle)):
             raise ctypes.WinError(ctypes.get_last_error())

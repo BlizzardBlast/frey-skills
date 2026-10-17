@@ -236,6 +236,81 @@ class RpcTests(unittest.TestCase):
         time.sleep(2.1)
         self.assertFalse(marker.exists(), "descendant survived its exited parent")
 
+    @unittest.skipUnless(os.name == "nt", "Windows job lifetime boundary")
+    def test_killed_supervisor_terminates_server_and_descendant(self) -> None:
+        import ctypes
+        from ctypes import wintypes
+
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        signatures = {
+            "OpenProcess": ([wintypes.DWORD, wintypes.BOOL, wintypes.DWORD], wintypes.HANDLE),
+            "WaitForSingleObject": ([wintypes.HANDLE, wintypes.DWORD], wintypes.DWORD),
+            "TerminateProcess": ([wintypes.HANDLE, wintypes.UINT], wintypes.BOOL),
+            "CloseHandle": ([wintypes.HANDLE], wintypes.BOOL),
+        }
+        for name, (arguments, result) in signatures.items():
+            getattr(kernel, name).argtypes = arguments
+            getattr(kernel, name).restype = result
+
+        server_pid, child_pid = self.root / "server.pid", self.root / "child.pid"
+        child = f"import os,pathlib,time; pathlib.Path({str(child_pid)!r}).write_text(str(os.getpid()), encoding='ascii'); time.sleep(30)"
+        server = (
+            "import os,pathlib,subprocess,sys,time\n"
+            f"pathlib.Path({str(server_pid)!r}).write_text(str(os.getpid()), encoding='ascii')\n"
+            f"subprocess.Popen([sys.executable, '-B', '-c', {child!r}])\n"
+            "time.sleep(30)\n"
+        )
+        supervisor = (
+            "import sys,time\nfrom pathlib import Path\n"
+            f"sys.path.insert(0, {str(Path(__file__).resolve().parents[1])!r})\n"
+            "from scripts.smoke_codex import server_process, client_environment\n"
+            f"root = Path({str(self.root)!r})\n"
+            f"with server_process([sys.executable, '-B', '-c', {server!r}], root, client_environment(root), sys.stdout.buffer, sys.stderr.buffer):\n"
+            "    time.sleep(30)\n"
+        )
+        handles = {}
+        with tempfile.TemporaryFile() as output:
+            # Bypass the Windows venv launcher so kill() targets the actual
+            # supervisor that owns the Job Object, rather than its wrapper.
+            process = subprocess.Popen([sys._base_executable, "-B", "-c", supervisor], stdout=output, stderr=output)
+            try:
+                deadline = time.monotonic() + 10
+                while len(handles) < 2:
+                    for path in (server_pid, child_pid):
+                        if path in handles:
+                            continue
+                        try:
+                            pid = int(path.read_text(encoding="ascii"))
+                        except (FileNotFoundError, ValueError):
+                            continue
+                        handle = kernel.OpenProcess(0x00100001, False, pid)  # SYNCHRONIZE | PROCESS_TERMINATE
+                        if not handle:
+                            raise ctypes.WinError(ctypes.get_last_error())
+                        handles[path] = handle
+                    if len(handles) == 2:
+                        break
+                    self.assertIsNone(process.poll(), "supervisor exited before its descendants were ready")
+                    self.assertLess(time.monotonic(), deadline, "server descendants did not become ready")
+                    time.sleep(0.01)
+                process.kill()
+                process.wait(timeout=5)
+                for path, handle in handles.items():
+                    with self.subTest(process=path.name):
+                        self.assertEqual(kernel.WaitForSingleObject(handle, 5000), 0,
+                                         "owned process survived abrupt supervisor termination")
+            finally:
+                if process.poll() is None:
+                    process.kill()
+                process.wait(timeout=5)
+                for handle in handles.values():
+                    try:
+                        if kernel.WaitForSingleObject(handle, 0) == 258:  # WAIT_TIMEOUT
+                            if not kernel.TerminateProcess(handle, 1):
+                                raise ctypes.WinError(ctypes.get_last_error())
+                            self.assertEqual(kernel.WaitForSingleObject(handle, 5000), 0)
+                    finally:
+                        kernel.CloseHandle(handle)
+
     @unittest.skipUnless(os.name == "nt", "Windows file-sharing cleanup boundary")
     def test_transient_windows_handle_is_waited_for_and_permanent_lock_fails(self) -> None:
         with smoke.temporary_workspace("client-handle-test-") as workspace:
