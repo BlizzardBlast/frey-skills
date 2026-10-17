@@ -1,6 +1,6 @@
 {
   "name": "frey-skills",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "description": "Reusable Codex agent skills with repository-wide content-trust boundaries for debugging, change specification, implementation planning, risk-based test strategy, controlled plan execution, rigorous code review, and iterative remediation.",
   "author": {
     "name": "BlizzardBlast",
@@ -43,13 +43,9 @@
     "capabilities": ["Review", "Write"],
     "websiteURL": "https://github.com/BlizzardBlast/frey-skills",
     "defaultPrompt": [
-      "Investigate this failure with $debug before editing.",
       "Define this change with $change-specification before planning.",
-      "Plan this change with $implementation-plan before editing.",
       "Create a risk-based testing strategy with $test-strategy.",
-      "Execute this approved plan with $implementation-execution.",
-      "Review my current changes with $code-review.",
-      "Run iterative self-review on this implementation."
+      "Execute this approved plan with $implementation-execution."
     ]
   }
 }
