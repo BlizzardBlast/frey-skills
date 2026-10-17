@@ -79,8 +79,8 @@ must survive, and the owned server tree is stopped after success or failure.
 | Surface | Result | Evidence |
 | --- | --- | --- |
 | Windows CLI 0.150.1 | PASS | Local automated install, upgrade, and rollback on 2026-10-17; both published ZIP digests above matched and all seven installed skills retained byte parity. |
-| Linux CLI 0.150.1 | NOT_TESTED | The CI matrix is configured; no successful run has been recorded here yet. |
-| macOS CLI 0.150.1 | NOT_TESTED | The CI matrix is configured; no successful run has been recorded here yet. |
+| Linux CLI 0.150.1 | PASS | [Hosted Ubuntu check](https://github.com/BlizzardBlast/frey-skills/actions/runs/39034359545/job/117401091810) on 2026-10-17; install, upgrade, rollback, and all seven skills passed. |
+| macOS CLI 0.150.1 | PASS | [Hosted macOS check](https://github.com/BlizzardBlast/frey-skills/actions/runs/39034359545/job/117401091797) on 2026-10-17; install, upgrade, rollback, and all seven skills passed. |
 | Desktop UI | NOT_TESTED | Native desktop controls and restart remain unavailable in this session. |
 
 See [Contributing](../CONTRIBUTING.md#codex-client-compatibility-smoke-check) for

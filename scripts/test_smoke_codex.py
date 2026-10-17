@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -234,6 +235,24 @@ class RpcTests(unittest.TestCase):
                 process.wait(timeout=5)
         time.sleep(2.1)
         self.assertFalse(marker.exists(), "descendant survived its exited parent")
+
+    @unittest.skipUnless(os.name == "nt", "Windows file-sharing cleanup boundary")
+    def test_transient_windows_handle_is_waited_for_and_permanent_lock_fails(self) -> None:
+        with smoke.temporary_workspace("client-handle-test-") as workspace:
+            handle = (workspace / "held").open("wb")
+            timer = threading.Timer(0.2, handle.close)
+            timer.start()
+        timer.join(timeout=5)
+        self.assertFalse(workspace.exists())
+        handle = None
+        try:
+            with self.assertRaises(PermissionError):
+                with smoke.temporary_workspace("client-locked-test-", cleanup_timeout=0.1) as workspace:
+                    handle = (workspace / "held").open("wb")
+        finally:
+            if handle is not None:
+                handle.close()
+            shutil.rmtree(workspace)
 
 
 if __name__ == "__main__":

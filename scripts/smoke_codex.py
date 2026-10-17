@@ -40,6 +40,25 @@ class CodexSmokeError(ValueError):
     """Client metadata did not prove the expected installed release."""
 
 
+@contextmanager
+def temporary_workspace(prefix: str, *, cleanup_timeout: float = 5) -> Iterator[Path]:
+    temporary = tempfile.TemporaryDirectory(prefix=prefix)
+    try:
+        yield Path(temporary.name).resolve()
+    finally:
+        deadline = time.monotonic() + cleanup_timeout
+        while True:
+            try:
+                temporary.cleanup()
+                break
+            except PermissionError as exc:
+                # A terminated Windows helper can retain an inherited file
+                # handle briefly after the job reports zero active processes.
+                if os.name != "nt" or exc.winerror != 32 or time.monotonic() >= deadline:
+                    raise
+                time.sleep(0.05)
+
+
 def native_cli(entry: Path) -> list[str]:
     # Own the native server directly: a Node wrapper can exit while its child
     # still holds Windows project handles, masking assertion/cleanup failures.
@@ -189,8 +208,8 @@ def server_process(command: list[str], project: Path, environment: dict[str, str
 def read_metadata(cli: list[str], project: Path, environment: dict[str, str], *, timeout: float = 60) -> tuple[dict, dict]:
     """Use a fresh stdio server and only the three fixed metadata RPC methods."""
     deadline = time.monotonic() + timeout
-    with tempfile.TemporaryDirectory(prefix="frey-rpc-") as temporary:
-        output_path, error_path = Path(temporary) / "stdout", Path(temporary) / "stderr"
+    with temporary_workspace("frey-rpc-") as temporary:
+        output_path, error_path = temporary / "stdout", temporary / "stderr"
         with output_path.open("wb") as output, error_path.open("wb") as errors, output_path.open("rb") as stdout:
             return _read_metadata(cli, project, environment, deadline, stdout, output, errors)
 
@@ -340,8 +359,7 @@ def main(argv: list[str] | None = None) -> int:
         if not shutil.which("git") or not args.cli.is_file():
             raise CodexSmokeError("Git and the installed Codex CLI entry point are required")
         cli = native_cli(args.cli)
-        with tempfile.TemporaryDirectory(prefix="frey codex café ") as temporary:
-            workspace = Path(temporary).resolve()
+        with temporary_workspace("frey codex café ") as workspace:
             home_dir = workspace / "home"
             home_dir.mkdir()
             environment = client_environment(home_dir)

@@ -226,7 +226,8 @@ excluded from their environment. An unrelated user-skill fixture must survive.
 Each metadata session has a 60-second total deadline and bounded output. Windows
 assigns the suspended server to a Job Object before it can spawn descendants;
 POSIX uses a new process group. Both paths terminate the owned tree after success
-or failure and bound cleanup waits. Offline assertion and real subprocess tests
+or failure and bound cleanup waits. Temporary-directory cleanup retries Windows
+sharing violations for at most five seconds; persistent locks still fail. Offline assertion and real subprocess tests
 run through `check.py` without installing Codex or accessing the network.
 
 These CLI results do not establish desktop plugin directory, selector, or restart
