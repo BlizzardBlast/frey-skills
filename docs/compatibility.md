@@ -1,15 +1,16 @@
 # Recorded plugin compatibility
 
 The current published release is v1.9.0; see the separate
-[v1.9.0 verification](#v190-verification) for its archive and CLI results.
+[v1.9.0 verification](#v190-verification) for its archive, CLI, and
+maintainer-reported Windows desktop results.
 
 Historical v1.8.1/v1.8.2 checks were recorded on 2026-10-17 with Windows 11
 build 26300 and Codex CLI 0.150.1.
 CLI and app-server metadata results are recorded separately from the
 [Windows desktop observations](#windows-desktop-observations) below. Desktop
 installation, upgrade, rollback, final restoration, and the plugin-settings skill list have
-screenshot evidence; composer-selector discovery and restart persistence remain
-**NOT_TESTED**.
+screenshot evidence. For those historical checks, composer-selector discovery
+and restart persistence remain **NOT_TESTED**.
 
 ## Verified releases
 
@@ -141,12 +142,33 @@ Windows ZIP, supplies the digest and bytes for the results below.
 | Upgrade to v1.9.0 | PASS | Eight uniquely named, enabled plugin skills resolve to the isolated 1.9.0 cache, including `frey-skills:release-readiness`. |
 | Roll back to v1.8.2 | PASS | Exactly seven plugin skills resolve to 1.8.2; the eighth skill is absent. |
 | Starter prompts and preservation | PASS | Both versions retain their three prompts, installed files match their verified public archives, and the unrelated standalone skill fixture survives every phase. |
-| v1.9.0 desktop UI | NOT_TESTED | No plugin-settings, composer-selector, restart, starter-prompt, or preservation observations were supplied for this release. Historical v1.8.x screenshots remain separate evidence. |
+| v1.9.0 Windows desktop UI | PASS (maintainer-reported) | On 2026-10-18 the maintainer confirmed completing the proposed Windows desktop checklist successfully; see the report below. Historical v1.8.x screenshots remain separate evidence. |
 
-These rows record local Windows results. The installation/archive and Codex
-client CI matrices are configured to repeat the same pinned checks on Windows,
+The archive and CLI rows record local Windows results. The installation/archive
+and Codex client CI matrices are configured to repeat the same pinned checks on Windows,
 Linux, and macOS; inspect the matching commit's jobs in the
 [CI workflow history](https://github.com/BlizzardBlast/frey-skills/actions/workflows/ci.yml)
 for hosted evidence. The metadata checks use disposable credential-free homes
-and fresh app-server processes. No model turn, skill invocation, or behavioral
-model eval was run, and no model-behavior certification is claimed.
+and fresh app-server processes. Those checks ran no model turn, skill invocation,
+or behavioral model eval, and no model-behavior certification is claimed.
+
+### Maintainer-reported Windows desktop check
+
+On 2026-10-18 the maintainer responded to the proposed three-step Windows
+desktop checklist: "I have done it myself. It works."
+
+The confirmed checklist covered:
+
+1. Upgrade from v1.8.2 to v1.9.0 and confirm all eight skills appear in plugin
+   settings and the composer selector.
+2. Fully restart the app, confirm skill discovery persists, and confirm the three
+   starter prompts appear.
+3. Roll back to v1.8.2 and verify seven skills, restore v1.9.0, and confirm
+   unrelated installations remain intact.
+
+This is a maintainer-reported pass for that Windows checklist. No new
+screenshots, desktop app build, or per-step captures accompanied the report;
+do not infer the app build from the historical v1.8.x observations. This report
+does not establish desktop installed-byte parity or model behavior. macOS and
+Linux desktop UI remain **NOT_TESTED**. Behavioral model evals were not run,
+and no model-behavior certification is claimed.

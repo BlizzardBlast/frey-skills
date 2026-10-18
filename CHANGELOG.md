@@ -13,7 +13,10 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
   v1.9.0 upgrade, and v1.8.2 rollback, including the added skill's removal on
   rollback and preservation of both releases' three starter prompts.
 - The compatibility record separates v1.9.0 archive and CLI observations from
-  historical v1.8.x desktop evidence; v1.9.0 desktop UI remains untested.
+  historical v1.8.x desktop evidence and adds the maintainer-reported successful
+  v1.9.0 Windows desktop checklist. The report covers skill discovery, restart
+  persistence, starter prompts, upgrade/rollback, final restoration, and unrelated
+  installation preservation; macOS and Linux desktop UI remain untested.
 
 ## [1.9.0] - 2026-10-18
 
