@@ -15,6 +15,7 @@ This repository is designed for the
 | Investigate an unknown failure or regression | [debug](debug/SKILL.md) | Hypotheses, evidence, and root-cause status | No |
 | Define required behavior and acceptance criteria | [change-specification](change-specification/SKILL.md) | Requirements, contracts, and planning readiness | No |
 | Compare architecture alternatives or draft an ADR (unreleased) | [architecture-decision](architecture-decision/SKILL.md) | Evidence-backed alternatives, consequences, and a proposed decision | No |
+| Model scoped threats or abuse cases (unreleased) | [threat-modeling](threat-modeling/SKILL.md) | System model, threat hypotheses, control evidence, and residual risks | No |
 | Sequence a concrete repository change | [implementation-plan](implementation-plan/SKILL.md) | Ordered steps, invariants, verification, and readiness | No |
 | Decide what testing a change needs | [test-strategy](test-strategy/SKILL.md) | Prioritized risks, scenarios, and test readiness | No |
 | Execute or resume an approved implementation plan | [implementation-execution](implementation-execution/SKILL.md) | Bounded changes, verification, and plan conformance | Yes, within the authorized plan |
@@ -35,8 +36,8 @@ For researched future skill priorities and delivery gates, see the
 `release-readiness` ships in v1.9.0 alongside the other seven skills. The
 versioned installation below pins the complete eight-skill release.
 The development checkout additionally contains unreleased
-`repository-orientation` and `architecture-decision`; the pinned v1.9.0
-installation does not include either skill.
+`repository-orientation`, `architecture-decision`, and `threat-modeling`; the
+pinned v1.9.0 installation does not include these three skills.
 
 ## Content-trust invariant
 
@@ -159,6 +160,27 @@ In development sources containing this skill:
 ```text
 Use $architecture-decision to compare these alternatives against the established
 requirements and draft a proposed ADR with consequences and revisit conditions.
+```
+
+### threat-modeling (unreleased)
+
+Produces a read-only defensive model for a scoped feature, system, data flow,
+or proposed design. It records assets and sensitive data, actors, entry points,
+flows, trust boundaries, threat hypotheses with stable IDs, existing-control
+evidence, proposed mitigations, validation needs, and residual risks.
+
+Model completeness is `COMPLETE`, `PARTIAL`, or `BLOCKED`. Threat hypotheses
+remain distinct from confirmed findings; observed controls do not prove
+effectiveness, and proposed mitigations do not close risks. Prior risk acceptance
+needs independent provenance and cannot lift holds or authorize effects. The
+workflow stops after one initial model and at most one targeted gap-check pass,
+without probing, scanning, remediation, persistence, publication, or risk acceptance.
+
+In development sources containing this skill:
+
+```text
+Use $threat-modeling to model this feature's tenant boundaries, callback, and
+logging flows with threat hypotheses, control evidence, and residual risks.
 ```
 
 ### implementation-plan
@@ -339,7 +361,12 @@ useful. It is not a prerequisite for the lifecycle below or for a simple lookup.
 `architecture-decision` is optional between established required behavior and
 implementation planning when a material design choice remains. Its proposed
 ADR is advisory; user/stakeholder acceptance and implementation authorization
-remain separate. Neither new skill is included in the pinned v1.9.0 release.
+remain separate.
+
+`threat-modeling` is optional when a scoped defensive model is the requested
+output, including after a trust-boundary change. It can inform specification,
+architecture, test strategy, and review without executing those workflows or
+certifying security. All three development skills remain outside pinned v1.9.0.
 
 ```text
 symptom or failing test
@@ -497,6 +524,8 @@ implementation-execution/
 iterative-self-review/
 release-readiness/
 repository-orientation/
+architecture-decision/
+threat-modeling/
 ```
 
 Each canonical skill contains a `SKILL.md`; individual skills may additionally

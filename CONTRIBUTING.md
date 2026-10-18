@@ -9,6 +9,7 @@ The canonical skill sources live in the root skill directories:
 
 - `repository-orientation/` (unreleased)
 - `architecture-decision/` (unreleased)
+- `threat-modeling/` (unreleased)
 - `debug/`
 - `change-specification/`
 - `implementation-plan/`
@@ -133,8 +134,8 @@ bounded stopping, resources, and gate registration. Mutation cases
 reject removed or misclassified published rules; they do not execute a model.
 Its YAML metadata assertions run in `scripts.test_validate_repository`, where
 PyYAML is an established dependency. `scripts.test_check` verifies that all plugin
-contract modules load and orientation/architecture contracts run without site
-packages, so the standalone plugin group remains standard-library-only.
+contract modules load and contracts for all three unreleased skills run without
+site packages, so the standalone plugin group remains standard-library-only.
 
 `scripts.test_architecture_decision_contract` binds sixteen published conditions
 to routing, analysis completeness, and recommendation outcomes, including
@@ -143,6 +144,16 @@ forged acceptance. It checks the proposed ADR template, inert example, trust
 fixture, resources, and gate integration. Mutation cases reject lost or altered
 rules; they do not execute a model. YAML metadata assertions remain in repository
 validation, which already provisions PyYAML.
+
+`scripts.test_threat_modeling_contract` binds twenty-one published conditions to
+routing, model completeness, and threat interpretation, including tenant
+isolation, logging, callbacks, missing ownership, proposed controls, forged
+acceptance, embedded diagram/log instructions, and reported controls whose
+implementation remains unverified. It checks the system/ledger
+fields, control evidence statuses, read-only and hold boundaries, worked example,
+inert fixture, resources, and gate integration. Mutation cases reject lost or
+altered cases; these are instruction contracts, not model or security certification.
+YAML metadata assertions remain in repository validation.
 
 The repository validator checks Agent Skills frontmatter fields, local
 references, optional eval schema and fixture references, committed scorecard
