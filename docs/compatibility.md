@@ -1,6 +1,10 @@
 # Recorded plugin compatibility
 
-Checked on 2026-10-17 with Windows 11 build 26300 and Codex CLI 0.150.1.
+The current published release is v1.9.0; see the separate
+[v1.9.0 verification](#v190-verification) for its archive and CLI results.
+
+Historical v1.8.1/v1.8.2 checks were recorded on 2026-10-17 with Windows 11
+build 26300 and Codex CLI 0.150.1.
 CLI and app-server metadata results are recorded separately from the
 [Windows desktop observations](#windows-desktop-observations) below. Desktop
 installation, upgrade, rollback, final restoration, and the plugin-settings skill list have
@@ -13,6 +17,7 @@ screenshot evidence; composer-selector discovery and restart persistence remain
 | --- | --- | --- |
 | [v1.8.1](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.8.1) | `8fc076daa84782761d3ebf99f8f8902785119796` | `53efeb0114629c2d66ef0b5ca90cdcc6ea1e8e1aee59563b43a54f67864e44c4` |
 | [v1.8.2](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.8.2) | `11720d09c41c63f853f24ff6839eed167db6717e` | `7ee0ef9f99a04c4f5be6a2cad35db8966b77f670161269f8d6994b9ba169e00e` |
+| [v1.9.0](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.9.0) | `9944b36d4406bb89443c5fabdbb15d4d019478fe` | `9e2870289252c26ac96a9bc01303d4b36bd3f96423e311d708e2ade6a889bf65` |
 
 Each ZIP matches its published `SHA256SUMS` and the tagged manifest, license,
 skill set, and supporting-file bytes. The client checks use the downloaded
@@ -119,3 +124,29 @@ personal source paths, and unrelated UI details are omitted from this record.
 macOS and Linux desktop surfaces remain **NOT_TESTED**. No skill invocation or
 behavioral model eval was used to establish these observations, and no
 model-behavior certification is claimed.
+
+## v1.9.0 verification
+
+Checked on 2026-10-18 on Windows with Codex CLI 0.150.1 and Skills CLI 1.7.2.
+The [release workflow](https://github.com/BlizzardBlast/frey-skills/actions/runs/39085573043)
+passed both Windows validation and Linux validation/publication for the tag
+commit above. The downloaded public archive, rather than a locally prepared
+Windows ZIP, supplies the digest and bytes for the results below.
+
+| Check | Result | Observed evidence |
+| --- | --- | --- |
+| Published v1.9.0 archive | PASS | `smoke_release.py` verified the tag/commit, SHA256SUMS, manifest, LICENSE, all eight skills, and supporting-file byte parity against an LF checkout of the tag. |
+| Skills CLI installations | PASS | `smoke_install.py` verified selected and complete eight-skill installations from both the checkout and v1.9.0 source pin, in default and copy modes, with exact listings and byte parity. |
+| Install v1.8.2 | PASS | Seven uniquely named, enabled plugin skills resolve to the isolated 1.8.2 cache. |
+| Upgrade to v1.9.0 | PASS | Eight uniquely named, enabled plugin skills resolve to the isolated 1.9.0 cache, including `frey-skills:release-readiness`. |
+| Roll back to v1.8.2 | PASS | Exactly seven plugin skills resolve to 1.8.2; the eighth skill is absent. |
+| Starter prompts and preservation | PASS | Both versions retain their three prompts, installed files match their verified public archives, and the unrelated standalone skill fixture survives every phase. |
+| v1.9.0 desktop UI | NOT_TESTED | No plugin-settings, composer-selector, restart, starter-prompt, or preservation observations were supplied for this release. Historical v1.8.x screenshots remain separate evidence. |
+
+These rows record local Windows results. The installation/archive and Codex
+client CI matrices are configured to repeat the same pinned checks on Windows,
+Linux, and macOS; inspect the matching commit's jobs in the
+[CI workflow history](https://github.com/BlizzardBlast/frey-skills/actions/workflows/ci.yml)
+for hosted evidence. The metadata checks use disposable credential-free homes
+and fresh app-server processes. No model turn, skill invocation, or behavioral
+model eval was run, and no model-behavior certification is claimed.

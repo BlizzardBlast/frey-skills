@@ -6,6 +6,15 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+### Changed
+
+- Installation examples and published archive smoke checks pin verified v1.9.0
+  sources with all eight skills. The Codex CLI matrix now checks v1.8.2 install,
+  v1.9.0 upgrade, and v1.8.2 rollback, including the added skill's removal on
+  rollback and preservation of both releases' three starter prompts.
+- The compatibility record separates v1.9.0 archive and CLI observations from
+  historical v1.8.x desktop evidence; v1.9.0 desktop UI remains untested.
+
 ## [1.9.0] - 2026-10-18
 
 ### Added

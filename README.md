@@ -28,9 +28,8 @@ that authority.
 For installation, see the [setup guide](docs/installation.md). For a complete
 handoff sequence, see the [worked example](docs/worked-example.md).
 
-`release-readiness` is included in the development sources for v1.9.0. The
-published v1.8.2 installation below contains the previous seven skills; install
-the default branch to use the new skill before its release.
+`release-readiness` ships in v1.9.0 alongside the other seven skills. The
+versioned installation below pins the complete eight-skill release.
 
 ## Content-trust invariant
 
@@ -321,7 +320,7 @@ behavioral model eval evidence.
 Install the versioned skill sources with the Skills CLI:
 
 ```bash
-npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.8.2
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.9.0
 ```
 
 Choose the skills, agent, and project or user scope in the installer. To follow

@@ -104,6 +104,24 @@ class ClientSmokeTests(unittest.TestCase):
         with self.assertRaisesRegex(smoke.CodexSmokeError, "starter prompts"):
             self.verify()
 
+    def test_previous_release_lost_prompts_fail(self) -> None:
+        version = smoke.PREVIOUS_TAG.removeprefix("v")
+        self.manifest["version"] = version
+        for root in (self.extracted, self.installed):
+            (root / ".codex-plugin" / "plugin.json").write_text(json.dumps(self.manifest), encoding="utf-8")
+        previous = self.installed.with_name(version)
+        self.installed.rename(previous)
+        self.installed = previous
+        summary = self.plugin["plugin"]["summary"]
+        summary["localVersion"] = version
+        for skill in self.listing["data"][0]["skills"]:
+            name = skill["name"].removeprefix("frey-skills:")
+            skill["path"] = str(previous / "skills" / name / "SKILL.md")
+        self.verify()
+        summary["interface"] = {"defaultPrompt": ["One"]}
+        with self.assertRaisesRegex(smoke.CodexSmokeError, "starter prompts"):
+            self.verify()
+
     def test_changed_missing_and_extra_supporting_files_fail(self) -> None:
         resource = self.installed / "skills" / "debug" / "references" / "café.md"
         for content in (b"changed", None):

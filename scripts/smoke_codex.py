@@ -30,8 +30,8 @@ except ModuleNotFoundError:
 
 
 CLI_VERSION = "0.150.1"
-PREVIOUS_TAG = "v1.8.1"
-PREVIOUS_COMMIT = "8fc076daa84782761d3ebf99f8f8902785119796"
+PREVIOUS_TAG = "v1.8.2"
+PREVIOUS_COMMIT = "11720d09c41c63f853f24ff6839eed167db6717e"
 MARKETPLACE = "frey-smoke"
 MAX_OUTPUT_BYTES = 2 * 1024 * 1024
 
@@ -294,11 +294,8 @@ def verify_metadata(plugin: dict, listing: dict, extracted: Path, project: Path,
         "frey-skills", version, True, True,
     ) or detail.get("marketplaceName") != MARKETPLACE or not summary.get("id"):
         raise CodexSmokeError("plugin is absent, disabled, or has the wrong installed version/marketplace")
-    # 1.8.1's known prompt-limit defect is deliberately excluded from the
-    # baseline check; the current release must retain every published prompt.
-    if version == smoke_release.SOURCE_TAG.removeprefix("v"):
-        if (summary.get("interface") or {}).get("defaultPrompt") != manifest["interface"]["defaultPrompt"]:
-            raise CodexSmokeError("current release starter prompts differ from its manifest")
+    if (summary.get("interface") or {}).get("defaultPrompt") != manifest["interface"]["defaultPrompt"]:
+        raise CodexSmokeError("release starter prompts differ from its manifest")
     entries = listing.get("data", [])
     if len(entries) != 1 or entries[0].get("cwd") != str(project) or entries[0].get("errors") != []:
         raise CodexSmokeError("skill discovery returned the wrong project or load errors")
