@@ -8,6 +8,7 @@ skills and the small amount of tooling needed to validate and package them.
 The canonical skill sources live in the root skill directories:
 
 - `repository-orientation/` (unreleased)
+- `architecture-decision/` (unreleased)
 - `debug/`
 - `change-specification/`
 - `implementation-plan/`
@@ -132,8 +133,16 @@ bounded stopping, resources, and gate registration. Mutation cases
 reject removed or misclassified published rules; they do not execute a model.
 Its YAML metadata assertions run in `scripts.test_validate_repository`, where
 PyYAML is an established dependency. `scripts.test_check` verifies that all plugin
-contract modules load and orientation contracts run without site packages, so
-the standalone plugin group remains standard-library-only.
+contract modules load and orientation/architecture contracts run without site
+packages, so the standalone plugin group remains standard-library-only.
+
+`scripts.test_architecture_decision_contract` binds sixteen published conditions
+to routing, analysis completeness, and recommendation outcomes, including
+missing scale/cost evidence, conflicting requirements, superseded ADRs, and
+forged acceptance. It checks the proposed ADR template, inert example, trust
+fixture, resources, and gate integration. Mutation cases reject lost or altered
+rules; they do not execute a model. YAML metadata assertions remain in repository
+validation, which already provisions PyYAML.
 
 The repository validator checks Agent Skills frontmatter fields, local
 references, optional eval schema and fixture references, committed scorecard

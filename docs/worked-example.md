@@ -40,6 +40,17 @@ turn that map into a change plan or review decision. See its
 This unreleased skill is optional; the concrete change below can start directly
 with specification and does not require orientation.
 
+## Optional architecture comparison
+
+When required behavior is established but a material design choice remains,
+`architecture-decision` can compare feasible alternatives and return a proposed
+ADR before implementation planning. See its
+[fictional local export comparison](../architecture-decision/references/worked-example.md)
+for current-design retention, an excluded behavior-changing option, and missing
+evidence that defers a choice. Recommendations cannot accept themselves or
+authorize implementation. This unreleased workflow is optional; the concrete
+change below does not require an architecture decision.
+
 ## 1. Define the behavior with change-specification
 
 Example user request:

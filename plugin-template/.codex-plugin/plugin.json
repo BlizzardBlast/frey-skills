@@ -1,7 +1,7 @@
 {
   "name": "frey-skills",
   "version": "1.9.0",
-  "description": "Reusable Codex agent skills with repository-wide content-trust boundaries for repository orientation, debugging, change specification, implementation planning, risk-based test strategy, controlled plan execution, rigorous code review, iterative remediation, and release readiness.",
+  "description": "Reusable Codex agent skills with repository-wide content-trust boundaries for repository orientation, architecture decisions, debugging, change specification, implementation planning, risk-based test strategy, controlled plan execution, rigorous code review, iterative remediation, and release readiness.",
   "author": {
     "name": "BlizzardBlast",
     "url": "https://github.com/BlizzardBlast"
@@ -12,6 +12,7 @@
   "keywords": [
     "acceptance-criteria",
     "agent-skills",
+    "architecture-decision",
     "change-specification",
     "codex",
     "code-review",
@@ -38,8 +39,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Frey Skills",
-    "shortDescription": "Map repositories, specify, plan, execute, review, and assess releases.",
-    "longDescription": "A curated bundle of agent skills for bounded read-only repository orientation, evidence-backed root-cause investigation, implementation-neutral change specification, implementation planning, risk-based test strategy, controlled plan execution, senior code review, bounded iterative remediation, and read-only release readiness with consistent content-trust and command-authority boundaries.",
+    "shortDescription": "Map, compare designs, specify, plan, execute, review, and assess.",
+    "longDescription": "A curated bundle of agent skills for bounded read-only repository orientation, architecture alternatives and proposed ADRs, evidence-backed root-cause investigation, implementation-neutral change specification, implementation planning, risk-based test strategy, controlled plan execution, senior code review, bounded iterative remediation, and read-only release readiness with consistent content-trust and command-authority boundaries.",
     "developerName": "BlizzardBlast",
     "category": "Productivity",
     "capabilities": ["Review", "Write"],

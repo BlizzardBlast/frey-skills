@@ -5,7 +5,9 @@ Repository baseline: `19f0bf09ff8a1f1224c45f865090e246f316dfd3` on `main`,
 with eight canonical skills and plugin manifest version `1.9.0`.
 
 M1 has added the unreleased [repository-orientation skill](../repository-orientation/SKILL.md).
-The next candidate is `architecture-decision`, followed by `threat-modeling`.
+M2 has added the unreleased [architecture-decision skill](../architecture-decision/SKILL.md);
+see the [development record](architecture-decision-development.md).
+The following candidate is `threat-modeling`.
 Explore performance investigation through `debug`
 before deciding whether it needs a separate skill. Keep
 `incident-retrospective` as a later candidate pending evidence of recurring use.
@@ -19,7 +21,9 @@ M1 planning completed on 2026-10-18: the [implementation plan](repository-orient
 was **READY_TO_IMPLEMENT**. The user subsequently requested implementation;
 the [execution record](repository-orientation-implementation-plan.md#execution-record)
 records **IMPLEMENTED**, passing deterministic gates, and scoped self-review.
-M2 is the next roadmap milestone; it has not started.
+M2 completed on 2026-10-18: the [development record](architecture-decision-development.md)
+records **IMPLEMENTED**, passing deterministic gates, and scoped self-review.
+M3 `threat-modeling` is the next candidate; it has not started.
 
 The remaining names and scopes are proposals. This document does not activate skills,
 approve their specifications, authorize implementation or commands, accept
@@ -243,7 +247,7 @@ request; documenting this roadmap does not approve the future work.
 | --- | --- | --- |
 | M0: validate the first boundary | Completed 2026-10-18: [boundary specification and two static task examples](repository-orientation-boundary.md) define the map, routing, requirements, acceptance criteria, and evidence limits. | **GO_TO_M1_PLANNING**: the map is distinct from diagnosis, planning, and review; direct lookups skip it. This is a design decision, not measured demand or runtime certification. |
 | M1: repository-orientation | Completed 2026-10-18: [execution record](repository-orientation-implementation-plan.md#execution-record) covers canonical instructions, references, metadata, deterministic contracts, catalog/package integration, passing checks, and scoped self-review. | **IMPLEMENTED**, unreleased. Nine-skill development bundle parity passed; no behavioral or new client-UI certification is claimed. |
-| M2: architecture-decision | Add a proposed ADR template, alternatives/consequences rules, routing boundaries, and focused contracts. Anchor integration to [change-specification](../change-specification/SKILL.md) and [implementation-plan](../implementation-plan/SKILL.md). | Sequence after M1 or M0's reranking. No runtime dependency on orientation. Exit with proposed-versus-accepted status and requirement boundaries covered. |
+| M2: architecture-decision | Completed 2026-10-18: [development record](architecture-decision-development.md) covers the canonical skill, proposed ADR template, alternatives/consequences rules, routing boundaries, focused contracts, and catalog/package integration. | **IMPLEMENTED**, unreleased. Proposed-versus-accepted status, requirement boundaries, and ten-skill bundle parity passed deterministic checks. No model-behavior or client certification is claimed. |
 | M3: threat-modeling | Add scoped system-model and threat-ledger references, inert examples, coverage limits, and trust/decision contracts. Check overlap with [code-review](../code-review/SKILL.md) and [test-strategy](../test-strategy/SKILL.md). | Follow the earlier boundary lessons; no mandatory dependency on either new skill. Exit with hypothesis-versus-finding and risk-acceptance boundaries covered. |
 | M4: reassess specialists | Review the proposed `debug` performance extension and demand for incident retrospectives. Record build, extend, defer, or drop decisions here with evidence. | Complete the first three candidate decisions. Create separate skills only if their extraction conditions hold; do not build them to fill the schedule. |
 
@@ -326,3 +330,4 @@ they should constrain future implementation scope.
 | 2026-10-18 | M0 complete; `GO_TO_M1_PLANNING` | [Boundary specification](repository-orientation-boundary.md) at baseline `19f0bf09ff8a1f1224c45f865090e246f316dfd3` plus uncommitted roadmap documentation; inspected routing contracts and two synthetic examples support a distinct artifact. Demand and runtime effectiveness remain unmeasured. | Plan M1 against the specified requirements, contracts, and acceptance criteria, preserving its read-only and optional-workflow boundary. |
 | 2026-10-18 | M1 planning complete; `READY_TO_IMPLEMENT` | [Five-step plan](repository-orientation-implementation-plan.md) traces all eight requirements and eleven acceptance criteria into authoring, contracts, integration, and verification. Implementation and gate results were unobserved at planning handoff. | Execute and verify the addition. |
 | 2026-10-18 | M1 delivered; `IMPLEMENTED` | [Execution record](repository-orientation-implementation-plan.md#execution-record): 20 focused tests passed; full gate discovered 236 tests with one expected Windows-only skip, validated all nine skills, rebuilt the bundle, and passed parity. Scoped self-review found no actionable findings. Skill remains unreleased and runtime effectiveness unmeasured. | M2: scope architecture-decision against the existing specification/planning boundaries before authoring it. |
+| 2026-10-18 | M2 delivered; `IMPLEMENTED` | [Development record](architecture-decision-development.md) at baseline `51950489682fbe304ca818b17a7e911e2f4bd7f6`: 19 focused tests passed; full gate reported 247 tests, 246 passed and one expected Windows-only skip; all ten skills validated and bundle parity passed. Scoped self-review found no actionable findings. Skill remains unreleased; model behavior and recurring demand remain unmeasured. | M3: scope threat-modeling against review and test-strategy boundaries before authoring it. |
