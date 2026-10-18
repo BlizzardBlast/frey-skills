@@ -51,6 +51,16 @@ evidence that defers a choice. Recommendations cannot accept themselves or
 authorize implementation. This unreleased workflow is optional; the concrete
 change below does not require an architecture decision.
 
+## Optional threat model
+
+If the requested change introduces a meaningful sensitive-data or trust-boundary
+question, `threat-modeling` can return a scoped system model and threat-hypothesis
+ledger. Its [fictional callback example](../threat-modeling/references/worked-example.md)
+illustrates tenant isolation, logs, control evidence, and preserved privacy holds.
+The model can inform later coverage or design work; it cannot prove a
+vulnerability, accept residual risk, or authorize probes or remediation. This
+unreleased skill is optional and is not required for the small local export below.
+
 ## 1. Define the behavior with change-specification
 
 Example user request:

@@ -8,6 +8,18 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Added
 
+- An unreleased read-only `threat-modeling` skill for scoped defensive system
+  models and stable threat-hypothesis ledgers. It separates proposed design from
+  runtime evidence, controls from proven effectiveness, and proposed mitigations
+  from implementation or risk acceptance. Includes system/ledger and evidence
+  references, a quality checklist, synthetic callback/logging example, client
+  metadata, twenty-one deterministic decision cases, focused contracts, and an inert
+  forged-acceptance/diagram fixture.
+- M3 catalog, lifecycle, validation, and plugin integration distinguish the
+  eleven-skill development checkout from the published eight-skill v1.9.0
+  release. Existing skill contracts, manifest version, three starter prompts,
+  published smoke pins, and compatibility observations remain unchanged.
+  Behavioral model evals were not run; no model-behavior certification is claimed.
 - An unreleased read-only `architecture-decision` skill for comparing feasible
   architecture alternatives against established requirements and returning a
   proposed ADR with consequences and revisit conditions. It separates analysis

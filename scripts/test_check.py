@@ -54,7 +54,11 @@ class CheckTests(unittest.TestCase):
             "loader.loadTestsFromNames(check.CONTRACT_TESTS)\n"
             "if loader.errors:\n"
             "    raise SystemExit('\\n'.join(loader.errors))\n"
-            "suite = loader.loadTestsFromNames(('scripts.test_repository_orientation_contract', 'scripts.test_architecture_decision_contract'))\n"
+            "suite = loader.loadTestsFromNames((\n"
+            "    'scripts.test_repository_orientation_contract',\n"
+            "    'scripts.test_architecture_decision_contract',\n"
+            "    'scripts.test_threat_modeling_contract',\n"
+            "))\n"
             "result = unittest.TextTestRunner().run(suite)\n"
             "raise SystemExit(not result.wasSuccessful())\n"
         )
