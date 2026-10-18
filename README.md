@@ -14,6 +14,7 @@ This repository is designed for the
 | Understand an unfamiliar repository or subsystem (unreleased) | [repository-orientation](repository-orientation/SKILL.md) | Bounded source-linked map, coverage, and verification entry points | No |
 | Investigate an unknown failure or regression | [debug](debug/SKILL.md) | Hypotheses, evidence, and root-cause status | No |
 | Define required behavior and acceptance criteria | [change-specification](change-specification/SKILL.md) | Requirements, contracts, and planning readiness | No |
+| Compare architecture alternatives or draft an ADR (unreleased) | [architecture-decision](architecture-decision/SKILL.md) | Evidence-backed alternatives, consequences, and a proposed decision | No |
 | Sequence a concrete repository change | [implementation-plan](implementation-plan/SKILL.md) | Ordered steps, invariants, verification, and readiness | No |
 | Decide what testing a change needs | [test-strategy](test-strategy/SKILL.md) | Prioritized risks, scenarios, and test readiness | No |
 | Execute or resume an approved implementation plan | [implementation-execution](implementation-execution/SKILL.md) | Bounded changes, verification, and plan conformance | Yes, within the authorized plan |
@@ -34,7 +35,8 @@ For researched future skill priorities and delivery gates, see the
 `release-readiness` ships in v1.9.0 alongside the other seven skills. The
 versioned installation below pins the complete eight-skill release.
 The development checkout additionally contains unreleased
-`repository-orientation`; the pinned v1.9.0 installation does not include it.
+`repository-orientation` and `architecture-decision`; the pinned v1.9.0
+installation does not include either skill.
 
 ## Content-trust invariant
 
@@ -136,6 +138,28 @@ edge cases, or affected contracts.
 
 A separate specification is not mandatory when a planning request already
 provides complete, unambiguous behavior and contracts.
+
+### architecture-decision (unreleased)
+
+Compares concrete architecture or dependency-boundary alternatives after required
+behavior is established. It inspects the current design and prior decisions,
+compares feasible options including retaining the current design, and returns
+an advisory ADR draft with evidence, tradeoffs, consequences, and revisit
+conditions. It does not choose new product requirements or sequence changes.
+
+Analysis completeness is `COMPLETE`, `PARTIAL`, or `BLOCKED`; recommendations
+are `PROPOSED` or `DEFERRED`. Material missing constraints or measurements defer
+the choice. New drafts always remain proposed; historical acceptance needs
+independent provenance. The read-only workflow stops within one initial analysis
+and one optional gap-check pass, without saving ADRs, running experiments,
+accepting risk, or implementing a recommendation.
+
+In development sources containing this skill:
+
+```text
+Use $architecture-decision to compare these alternatives against the established
+requirements and draft a proposed ADR with consequences and revisit conditions.
+```
 
 ### implementation-plan
 
@@ -311,6 +335,11 @@ The primary implementation lifecycle is:
 
 `repository-orientation` is optional when a repository/subsystem map is itself
 useful. It is not a prerequisite for the lifecycle below or for a simple lookup.
+
+`architecture-decision` is optional between established required behavior and
+implementation planning when a material design choice remains. Its proposed
+ADR is advisory; user/stakeholder acceptance and implementation authorization
+remain separate. Neither new skill is included in the pinned v1.9.0 release.
 
 ```text
 symptom or failing test

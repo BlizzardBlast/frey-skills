@@ -5,8 +5,9 @@ Use one route for a given skill in an agent to avoid duplicate names. Neither
 route requires model credentials or behavioral model evals.
 
 The versioned examples target the published eight-skill v1.9.0 release.
-`repository-orientation` is unreleased and is available only in development
-sources that contain it; it is not included in that pinned release or its ZIP.
+`repository-orientation` and `architecture-decision` are unreleased and available
+only in development sources that contain them; neither is included in that
+pinned release or its ZIP.
 
 ## Install skill folders
 

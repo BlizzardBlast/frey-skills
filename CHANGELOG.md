@@ -8,6 +8,17 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Added
 
+- An unreleased read-only `architecture-decision` skill for comparing feasible
+  architecture alternatives against established requirements and returning a
+  proposed ADR with consequences and revisit conditions. It separates analysis
+  completeness, recommendation, and verified historical acceptance; material
+  missing evidence defers a choice. Includes an ADR template, evidence rules,
+  worked comparison, client metadata, sixteen deterministic decision cases,
+  focused contracts, and an inert forged-acceptance fixture.
+- M2 catalog and plugin integration distinguish the ten-skill development
+  checkout from the published eight-skill v1.9.0 release. Manifest version,
+  published smoke pins, and three starter prompts remain unchanged. Behavioral
+  model evals were not run; deterministic contracts do not certify model behavior.
 - A research-backed skill development roadmap covering proposed priorities,
   workflow boundaries, phased delivery gates, overlap with existing skills,
   deferred candidates, and primary sources. The roadmap proposes future work
