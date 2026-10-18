@@ -34,6 +34,9 @@ Run this before finalizing any `debug` investigation.
 - [ ] Discriminating checks separate plausible alternatives where possible.
 - [ ] Rejected hypotheses remain visible.
 - [ ] `CONFIRMED` is used only when the causal chain is established and alternatives are immaterial.
+- [ ] Each check could distinguish an open hypothesis; equivalent evidence did not prolong a stalled investigation.
+- [ ] Repeated inconclusive sampling had an explicit discriminating rationale and finite limit established beforehand; work stopped at that limit.
+- [ ] Stalled investigations preserve the ledger and name the smallest missing evidence without retrying unavailable access.
 
 ## Completeness and status
 
@@ -41,7 +44,8 @@ Run this before finalizing any `debug` investigation.
 - [ ] `CONFIRMED` root-cause status is used only with `COMPLETE` investigation.
 - [ ] `LIKELY` is paired with `PARTIAL` and names the missing confirmation.
 - [ ] `BLOCKED` investigation maps to `UNRESOLVED`.
-- [ ] `NOT_A_DEFECT` explains why the symptom occurs and which contract or boundary supports the conclusion.
+- [ ] `NOT_A_DEFECT` explains why the symptom and materially relevant local failure handling satisfy the applicable contracts; external origin alone is insufficient.
+- [ ] Confirmed external failures and external triggers exposing local defects retain their causal status; failure ownership is reported separately.
 
 ## Handoff and safety
 

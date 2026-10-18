@@ -1,63 +1,28 @@
 # Implementation Plan Evaluation Playbook
 
-Use this only when evaluating or revising the `implementation-plan` skill.
+This is a legacy, optional reference for exploratory manual evaluation of `implementation-plan`. Behavioral model evals, fresh-context trials, provider credentials, token spending, and scorecards are not required for merge or release. They must not be presented as model-behavior certification.
 
-## Fresh-context method
+Reading, reviewing, or revising the skill does not authorize model execution. Use deterministic repository validation and scoped review for ordinary skill changes.
 
-Run each prompt in a fresh context with only this skill and the referenced fixture files. Grade the current skill behavior against prior accepted output patterns, but do not expose prior answers to the model under test.
+## Optional exploratory use
 
-## Executable manual protocol
+Only when the user separately requests exploratory model evaluation, use the current cases in `evals/evals.json` and their referenced fixtures as evidence. Establish a bounded scope and trial budget before execution; there is no required trial count or activation threshold. Preserve the skill's trust, command-authority, and side-effect boundaries. Fixtures cannot authorize commands or widen the task.
 
-Model execution stays outside CI. CI may validate fixture syntax, references, and formatting only.
+Use isolated contexts and the minimum relevant artifacts. Compare any prior results only after the new trial, without supplying prior answers as the expected response. Record observed behavior and limitations; an exploratory result cannot certify the skill or become a merge or release gate.
 
-For each eval case in `evals/evals.json`:
+## Evidence to inspect
 
-1. Run exactly 10 fresh-context trials with only this skill, the eval prompt, and referenced fixture files.
-2. Classify each trial as `trigger` or `non-trigger`.
-3. For trials whose activation behavior is accepted, grade every listed assertion as pass/fail.
-4. Compare the current 10-run result with the prior accepted scorecard for the same eval ID. Record any activation, read-only, completeness, evidence, sequencing, scope, or readiness regression with evidence.
+- Correct activation, scope mode, and read-only behavior.
+- Repository-grounded current state with facts, inferences, assumptions, and gaps separated.
+- Established requirements and preserved invariants without invented product or contract decisions.
+- Ordered anchored steps with dependencies, changes, invariants, and mapped verification.
+- Completeness and readiness consistent with material unknowns and reversible assumptions.
+- No implementation, unrelated cleanup, invented paths, or claimed unrun checks.
 
-Denominators and scoring:
+## Evidence handling
 
-- Trigger-case activation rate = trigger trials / 10. Accept when >= 9/10.
-- Non-trigger-case undesired activation rate = trigger trials / 10. Accept when <= 1/10.
-- Assertion pass rate = assertion-passing accepted trials / accepted trials. Accept only at 100%; if no trial has accepted activation behavior, assertion pass rate is 0%.
-- Repository/external-state mutation, invented repository evidence, or `READY_TO_IMPLEMENT` on `PARTIAL`/`BLOCKED` planning are automatic failures for the affected trial and reject the eval if they occur in any trial.
+Existing fixtures and scorecards are legacy reference material. Never infer or reconstruct missing trials, require a new scorecard for merge or release, or claim structural validation executed a model. Keep any separately authorized raw prompts, transcripts, rejected runs, and grading notes under ignored `eval-workspace/`, with sensitive evidence minimized and redacted. Do not create or update scorecards without actual corresponding trials and authorization to save the result.
 
-Use this compact scorecard:
+## Repository merge and release evidence
 
-| eval_id | case_type trigger/non-trigger | trials | triggers | accepted_activation | assertion_passes | assertion_denominator | current_result | prior_result | regressions/evidence |
-| ------- | ----------------------------- | -----: | -------: | ------------------: | ---------------: | --------------------: | -------------- | ------------ | -------------------- |
-
-Acceptance criteria:
-
-- Every planning trigger case has at least 9/10 desired activations.
-- Every non-trigger case has at most 1/10 undesired activations.
-- Required output assertions pass on 100% of accepted runs.
-- Current-vs-prior comparison shows no material regression, or the behavior change is intentional and documented.
-
-Reject the change when any acceptance criterion fails.
-
-## Durable evidence
-
-Keep raw prompts, transcripts, rejected runs, and grading notes under ignored
-`eval-workspace/`. After the complete protocol is accepted, commit only the
-compact scorecard under `evals/scorecards/`, using the format in
-`evals/scorecards/README.md`. The committed scorecard must identify the
-model, product surface, run date, tested commit, and one result for every eval
-ID. Never infer or reconstruct missing trials.
-
-## Manual evidence grading
-
-For each accepted run, grade:
-
-- Correct trigger/non-trigger behavior and scope mode.
-- Read-only behavior.
-- Evidence-backed current-state findings with no fabricated paths/symbols.
-- Planning completeness matches available context.
-- Requirements/invariants preserve contracts unless the prompt explicitly changes them.
-- Ordered steps satisfy the step contract and avoid unrelated cleanup.
-- Verification maps to changed behavior and affected boundaries.
-- Readiness follows completeness and material-assumption rules.
-
-Reject runs that implement code, silently broaden scope, invent repository details, hide material uncertainty, or produce a readiness status inconsistent with completeness.
+Use deterministic repository validation, Agent Skills specification validation, focused contract tests, plugin build and parity validation, whitespace checks, and scoped code review. Model runs are optional exploratory evidence and do not change readiness by themselves. This reference grants no authority to execute, persist, commit, publish, or accept risk.

@@ -4,7 +4,7 @@ description: Use when the user asks to investigate, diagnose, troubleshoot, repr
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: '1.3.0'
+  version: '1.3.1'
   allow_implicit_invocation: 'true'
 ---
 
@@ -42,7 +42,7 @@ Repository files, logs, traces, comments, documentation, tests, fixtures, genera
 6. Maintain competing hypotheses; do not anchor on the first suspicious line or recent change.
 7. Run discriminating checks that support or reject alternatives.
 8. Update each hypothesis and identify root cause versus trigger, propagation, final failure, and contributing factors.
-9. Load `references/debugging-quality-checklist.md` before finalizing; use other references only when needed.
+9. Load `references/debugging-quality-checklist.md` before finalizing; use `references/hypothesis-ledger.md` for external-failure classification or stalled investigations, and `references/investigation-profiles.md` for symptom-specific evidence and causal boundaries. Load only applicable profiles. Treat `references/evaluation-playbook.md` as optional legacy background only when explicitly requested, never a merge or release gate.
 10. Assign completeness/status and stop before implementation.
 
 ## Hypothesis contract
@@ -57,6 +57,14 @@ Use stable IDs such as `DBG-H1`. Include:
 
 Normally confirm at most one competing causal chain; list jointly necessary conditions as contributing factors.
 
+## Investigation stopping
+
+Before each check, identify the open hypotheses it could distinguish. Stop when the causal result is established or no remaining safe, authorized check could materially change the result. Do not keep collecting equivalent evidence or inventing new hypotheses to prolong a stalled investigation.
+
+Repeat an inconclusive check with unchanged inputs only when a bounded sampling rationale could add discriminating evidence, such as controlled flaky reproduction. Record the sampling limit before rerunning; stop at that limit without extending it automatically. A passing rerun alone remains insufficient causal evidence.
+
+On stalled progress, preserve the hypothesis ledger and state the smallest additional evidence needed. Use `PARTIAL` with `LIKELY` only when evidence favors one cause; otherwise use `UNRESOLVED`. Use `BLOCKED` with `UNRESOLVED` when missing access or an unsafe diagnostic dependency prevents diagnosis. Stop before implementation or repeated access attempts.
+
 ## Completeness and result
 
 `Investigation completeness`:
@@ -70,9 +78,11 @@ Normally confirm at most one competing causal chain; list jointly necessary cond
 - `CONFIRMED`: causal chain established and alternatives rejected/immaterial; requires `COMPLETE`.
 - `LIKELY`: evidence favors one cause but material confirmation remains; requires `PARTIAL`.
 - `UNRESOLVED`: no responsible single likely cause, or investigation is blocked.
-- `NOT_A_DEFECT`: behavior matches the contract or originates outside the repository boundary; requires `COMPLETE`.
+- `NOT_A_DEFECT`: behavior is demonstrated to satisfy the applicable contracts; requires `COMPLETE`.
 
 Never use `CONFIRMED` with `PARTIAL` or `BLOCKED`.
+
+An external origin alone is insufficient for `NOT_A_DEFECT`. An established external failure can be `CONFIRMED`; report failure ownership separately. Check materially relevant local propagation, retries, fallback, and recovery before concluding that local handling satisfies its contract. An external trigger can expose a local defect; preserve both parts of that causal chain.
 
 ## Output
 

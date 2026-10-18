@@ -61,6 +61,13 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertIn(f"{smoke_release.ARCHIVE_NAME}", guide)
         self.assertIn(f"{smoke_release.RELEASE_URL.rsplit('/download/', 1)[0]}/tag/{smoke_install.SOURCE_TAG}", guide)
 
+    def test_release_guide_requires_the_candidate_skill_inventory(self) -> None:
+        guide = (ROOT / "RELEASING.md").read_text(encoding="utf-8")
+        self.assertIn("exact release tag/commit", guide)
+        self.assertIn("not from the current development checkout", guide)
+        self.assertNotIn("expected seven canonical skills", guide)
+        self.assertNotIn("current discovered", guide)
+
     def test_codex_client_matrix_is_pinned_and_has_no_credentials(self) -> None:
         job = self.read_workflow("ci.yml")["jobs"]["codex-client"]
         self.assertEqual(job["runs-on"], "${{ matrix.os }}")

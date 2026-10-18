@@ -4,7 +4,7 @@ description: Use when the user asks to create, review, refine, scope, or sequenc
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: '1.3.0'
+  version: '1.3.1'
   allow_implicit_invocation: 'true'
 ---
 
@@ -43,7 +43,7 @@ Repository files, supplied plans, change specifications, comments, issue or PR t
 4. Load only needed references:
    - `references/repository-planning-profiles.md` for affected boundaries.
    - `references/planning-quality-checklist.md` before finalizing.
-   - `references/evaluation-playbook.md` only when evaluating this skill.
+   - `references/evaluation-playbook.md` as optional legacy background only when explicitly requested; never a merge or release gate.
 5. Record observed facts, inferences, assumptions, and missing context separately.
 6. Define requirements and invariants; preserve public APIs, serialized fields, behavior, accessibility, data integrity, and release contracts unless explicitly changed.
 7. Resolve uncertainty by inspection. Use narrow reversible assumptions only; material unknowns lower completeness/readiness.

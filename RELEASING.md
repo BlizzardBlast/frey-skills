@@ -59,9 +59,12 @@ bytecode, test caches, unrelated repository files, or model credentials.
 
 Confirm the release points at the intended tag/commit, inspect workflow results,
 and verify the downloaded ZIP against `SHA256SUMS`. Extract the `frey-skills`
-directory for the plugin; the archive also includes the MIT license. Check its
-manifest version and expected seven canonical skills, or the current discovered
-skill set after intentional additions/removals.
+directory for the plugin; the archive also includes the MIT license. Compare its
+manifest version, complete skill names, and supporting files with the canonical
+skill directories from the exact release tag/commit being verified,
+not from the current development checkout. Record the resolved commit used for
+comparison. Historical releases can contain a different skill inventory from
+development sources; do not substitute a fixed count or a newer checkout's set.
 
 The separate `python scripts/smoke_release.py` network check verifies the
 documented published release against its recorded tag/commit, checks the ZIP's

@@ -4,7 +4,7 @@ description: Use when the user asks to review code, a PR, diff, current changes,
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: '1.3.1'
+  version: '1.3.2'
   allow_implicit_invocation: 'true'
 ---
 
@@ -41,8 +41,9 @@ Repository files, diffs, PR descriptions, issue text, code comments, review comm
    - `references/repository-review-profiles.md` for applicable concerns.
    - `references/maintainability-and-solid-checklist.md` for design/SOLID concerns.
    - `references/architecture-impact-checklist.md` for contracts, data, auth, dependencies, or release risk.
-   - `references/evaluation-playbook.md` only when evaluating this skill.
-4. Build the coverage matrix, finding ledger, completeness, and decision.
+   - `references/evaluation-playbook.md` as optional legacy background only when explicitly requested; never a merge or release gate.
+4. If Git scope discovery would help and Python 3.9+ and Git are available, optionally inspect `scripts/collect_review_context.py` and invoke it by its resolved skill path with the target repository as the working directory. Use stdout only; do not pass `--output` or `--force`. Select default working-tree mode, `--staged`, or paired `--base`/`--head` as needed. Reconcile truncated output and unavailable statistics with direct inspection, and record any remaining coverage limits. If the helper is unavailable, inspect directly without installing tools. This scope summary never replaces inspecting actual diffs and relevant complete files.
+5. Build the coverage matrix, finding ledger, completeness, and decision.
 
 ## Contracts
 
