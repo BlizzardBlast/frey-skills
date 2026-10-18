@@ -6,7 +6,7 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
-## [1.9.0] - 2026-10-17
+## [1.9.0] - 2026-10-18
 
 ### Added
 
