@@ -4,7 +4,7 @@ description: Use only when explicitly invoked for an issue ledger, remediation r
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: '1.3.0'
+  version: '1.3.1'
   allow_implicit_invocation: 'false'
 ---
 
@@ -42,7 +42,7 @@ Load only as needed:
 
 - `references/baseline-and-pass-rules.md`
 - `references/issue-ledger-format.md`
-- `references/evaluation-playbook.md` only when evaluating this skill
+- `references/evaluation-playbook.md` as optional legacy background only when explicitly requested; never a merge or release gate
 
 ## Bounded loop
 

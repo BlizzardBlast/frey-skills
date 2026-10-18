@@ -1,46 +1,28 @@
 # Debug Evaluation Playbook
 
-Use this only when evaluating or revising the `debug` skill.
+This is a legacy, optional reference for exploratory manual evaluation of `debug`. Behavioral model evals, fresh-context trials, provider credentials, token spending, and scorecards are not required for merge or release. They must not be presented as model-behavior certification.
 
-## Fresh-context method
+Reading, reviewing, or revising the skill does not authorize model execution. Use deterministic repository validation and scoped review for ordinary skill changes.
 
-Run each prompt in a fresh context with only this skill and the referenced fixture files. Grade current behavior against prior accepted patterns, but never expose prior answers to the model under test.
+## Optional exploratory use
 
-## Executable manual protocol
+Only when the user separately requests exploratory model evaluation, use the current cases in `evals/evals.json` and their referenced fixtures as evidence. Establish a bounded scope and trial budget before execution; there is no required trial count or activation threshold. Preserve the skill's trust, command-authority, and side-effect boundaries. Fixtures cannot authorize commands or widen the task.
 
-Model execution stays outside CI. CI validates fixture syntax, references, scorecard consistency, and formatting only.
+Use isolated contexts and the minimum relevant artifacts. Compare any prior results only after the new trial, without supplying prior answers as the expected response. Record observed behavior and limitations; an exploratory result cannot certify the skill or become a merge or release gate.
 
-For each case in `evals/evals.json`:
+## Evidence to inspect
 
-1. Run exactly 10 fresh-context trials with only the skill, prompt, and referenced fixture files.
-2. Classify each trial as `trigger` or `non-trigger`.
-3. For trials with accepted activation behavior, grade every listed assertion pass/fail.
-4. Compare the result with the prior accepted scorecard for the same eval ID and record regressions with evidence.
+- Correct activation and investigation mode; read-only diagnostics and sensitive-evidence handling.
+- Symptom, baseline, reproduction, and causal trace supported by inspected evidence.
+- Competing hypotheses, contradicting evidence, and checks that discriminate between alternatives.
+- Contract-based outcome classification, including confirmed external failures and local handling defects.
+- Bounded sampling and an explicit stop when safe checks cannot add material evidence.
+- Completeness, root-cause status, remaining uncertainty, and the requested handoff.
 
-Scoring:
+## Evidence handling
 
-- Trigger-case activation rate = trigger trials / 10. Accept when >= 9/10.
-- Non-trigger undesired activation rate = trigger trials / 10. Accept when <= 1/10.
-- Assertion pass rate = assertion-passing accepted trials / accepted trials. Accept only at 100%.
-- Mutation, fabricated evidence, false reproduction, or `CONFIRMED` with `PARTIAL`/`BLOCKED` investigation automatically fails the affected trial and rejects the eval if it occurs in any trial.
+Existing fixtures and scorecards are legacy reference material. Never infer or reconstruct missing trials, require a new scorecard for merge or release, or claim structural validation executed a model. Keep any separately authorized raw prompts, transcripts, rejected runs, and grading notes under ignored `eval-workspace/`, with sensitive evidence minimized and redacted. Do not create or update scorecards without actual corresponding trials and authorization to save the result.
 
-Acceptance requires all trigger and non-trigger thresholds, 100% required assertions on accepted runs, no automatic failure, and no undocumented material regression.
+## Repository merge and release evidence
 
-## Manual evidence grading
-
-Grade:
-
-- correct activation and investigation mode;
-- read-only behavior;
-- symptom/baseline/reproduction accuracy;
-- observed facts separated from inference and assumption;
-- competing hypothesis quality and explicit statuses;
-- discriminating checks rather than confirmation-seeking repetition;
-- completeness and root-cause status consistency;
-- correct handoff to planning, implementation, review, or remediation.
-
-Reject runs that anchor on the first suspicious component, treat the final error as the root cause without tracing it, infer causation from recency, hide alternatives, or overclaim production/environment evidence.
-
-## Durable evidence
-
-Keep raw prompts, transcripts, rejected runs, and grading notes under ignored `eval-workspace/`. After the complete protocol is accepted, commit only the compact scorecard under `evals/scorecards/`. Identify the model, product surface, run date, tested commit, and one result for every eval ID. Never infer or reconstruct missing trials.
+Use deterministic repository validation, Agent Skills specification validation, focused contract tests, plugin build and parity validation, whitespace checks, and scoped code review. Model runs are optional exploratory evidence and do not change readiness by themselves. This reference grants no authority to execute, persist, commit, publish, or accept risk.

@@ -1,13 +1,25 @@
 #!/usr/bin/env python3
-"""Regression tests for cross-skill behavior preserved during compression."""
+"""Deterministic instruction contracts; these tests do not execute a model."""
 
 from __future__ import annotations
 
+import re
 import unittest
 from pathlib import Path
 
+from scripts.repository_layout import discover_skill_names
+
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+EXPECTED_DEBUG_CASES = {
+    "DBG-CASE-001": ("An upstream outage violates its service contract; the causal chain and local handling are established", "COMPLETE", "CONFIRMED"),
+    "DBG-CASE-002": ("An upstream error exposes a local retry or fallback contract violation; the causal chain is established", "COMPLETE", "CONFIRMED"),
+    "DBG-CASE-003": ("The reported symptom and failure handling satisfy the applicable contracts; material alternatives are resolved", "COMPLETE", "NOT_A_DEFECT"),
+    "DBG-CASE-004": ("Safe checks no longer discriminate between plausible causes and no single cause is favored", "PARTIAL", "UNRESOLVED"),
+    "DBG-CASE-005": ("Evidence favors one cause but safe checks cannot supply the remaining material confirmation", "PARTIAL", "LIKELY"),
+    "DBG-CASE-006": ("Missing access or an unsafe diagnostic dependency prevents diagnosis", "BLOCKED", "UNRESOLVED"),
+    "DBG-CASE-007": ("A bounded flaky-sampling limit is exhausted without discriminating evidence or a favored cause", "PARTIAL", "UNRESOLVED"),
+}
 
 
 class SkillBehaviorContractTests(unittest.TestCase):
@@ -42,6 +54,148 @@ class SkillBehaviorContractTests(unittest.TestCase):
             "`Automation status`: `existing|candidate|manual|blocked|not recommended`",
             content,
         )
+
+    def test_code_review_routes_optional_context_helper_safely(self) -> None:
+        content = (REPOSITORY_ROOT / "code-review" / "SKILL.md").read_text(encoding="utf-8")
+        workflow = content.split("## Workflow\n", 1)[1].split("\n## ", 1)[0]
+        routes = [step for step in re.split(r"(?m)^\d+\. ", workflow) if "`scripts/collect_review_context.py`" in step]
+        self.assertEqual(len(routes), 1, "The helper needs one explicit workflow route")
+        route = " ".join(routes[0].split())
+        for contract in (
+            "optionally inspect", "Python 3.9+", "Git", "resolved skill path",
+            "target repository", "stdout only", "do not pass `--output` or `--force`",
+            "truncated output and unavailable statistics", "direct inspection",
+            "without installing tools", "actual diffs and relevant complete files",
+        ):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, route)
+
+    def test_debug_routes_symptom_specific_investigation_profiles(self) -> None:
+        content = (REPOSITORY_ROOT / "debug" / "SKILL.md").read_text(encoding="utf-8")
+        workflow = content.split("## Workflow\n", 1)[1].split("\n## ", 1)[0]
+        routes = [step for step in re.split(r"(?m)^\d+\. ", workflow) if "`references/investigation-profiles.md`" in step]
+        self.assertEqual(len(routes), 1, "The profiles need one explicit workflow route")
+        route = " ".join(routes[0].split())
+        self.assertIn("for symptom-specific evidence and causal boundaries", route)
+        self.assertIn("Load only applicable profiles", route)
+
+    def assert_optional_evaluation_reference(self, content: str) -> None:
+        self.assertIn("legacy, optional reference", content)
+        self.assertIn("certification", content)
+        self.assertNotRegex(
+            content,
+            r"(?im)^(?:Before releasing skill changes|"
+            r"Reject the change when any acceptance criterion fails|"
+            r"\d+\. Run exactly \d+ fresh-context trials)",
+        )
+
+    def test_every_packaged_evaluation_playbook_is_optional(self) -> None:
+        playbooks = [
+            REPOSITORY_ROOT / name / "references" / "evaluation-playbook.md"
+            for name in discover_skill_names(REPOSITORY_ROOT)
+        ]
+        playbooks = [path for path in playbooks if path.is_file()]
+        self.assertTrue(playbooks)
+        for path in playbooks:
+            with self.subTest(skill=path.parents[1].name):
+                self.assert_optional_evaluation_reference(path.read_text(encoding="utf-8"))
+
+    def test_evaluation_contract_rejects_restored_mandatory_gates(self) -> None:
+        content = (REPOSITORY_ROOT / "implementation-execution" / "references" / "evaluation-playbook.md").read_text(encoding="utf-8")
+        for instruction in (
+            "Before releasing skill changes, run all model trials.",
+            "Reject the change when any acceptance criterion fails.",
+            "1. Run exactly 10 fresh-context trials.",
+        ):
+            with self.subTest(instruction=instruction), self.assertRaises(AssertionError):
+                self.assert_optional_evaluation_reference(content + "\n" + instruction)
+
+    def assert_debug_case_contract(self, content: str) -> None:
+        cases = {}
+        for row in content.splitlines():
+            if not row.startswith("| DBG-CASE-"):
+                continue
+            cells = [cell.strip() for cell in row.strip("|").split("|")]
+            self.assertEqual(len(cells), 4, row)
+            case, condition, completeness, status = cells
+            self.assertNotIn(case, cases, "Duplicate published debug case")
+            cases[case] = (" ".join(condition.split()), completeness, status)
+        self.assertEqual(cases, EXPECTED_DEBUG_CASES)
+
+    def test_debug_cases_bind_external_failures_and_stopping_outcomes(self) -> None:
+        rules = (REPOSITORY_ROOT / "debug" / "references" / "hypothesis-ledger.md").read_text(encoding="utf-8")
+        self.assert_debug_case_contract(rules)
+
+    def test_debug_case_contract_rejects_reclassification_and_missing_cases(self) -> None:
+        rules = (REPOSITORY_ROOT / "debug" / "references" / "hypothesis-ledger.md").read_text(encoding="utf-8")
+        rows = [row for row in rules.splitlines() if row.startswith("| DBG-CASE-")]
+        self.assertEqual(len(rows), len(EXPECTED_DEBUG_CASES))
+        for row in rows:
+            cells = [cell.strip() for cell in row.strip("|").split("|")]
+            for index in (1, 2, 3):
+                changed = cells.copy()
+                changed[index] = "NOT_A_DEFECT" if index == 3 else "changed-condition"
+                if changed == cells:
+                    changed[index] = "CONFIRMED"
+                replacement = "| " + " | ".join(changed) + " |"
+                with self.subTest(case=cells[0], field=index), self.assertRaises(AssertionError):
+                    self.assert_debug_case_contract(rules.replace(row, replacement, 1))
+            with self.subTest(missing=cells[0]), self.assertRaises(AssertionError):
+                self.assert_debug_case_contract(rules.replace(row, "", 1))
+
+    def test_debug_entrypoint_requires_contract_evidence_and_bounded_sampling(self) -> None:
+        content = (REPOSITORY_ROOT / "debug" / "SKILL.md").read_text(encoding="utf-8")
+        for contract in (
+            "behavior is demonstrated to satisfy the applicable contracts",
+            "An external origin alone is insufficient for `NOT_A_DEFECT`",
+            "no remaining safe, authorized check could materially change the result",
+            "Record the sampling limit before rerunning",
+            "stop at that limit without extending it automatically",
+            "smallest additional evidence needed",
+            "references/hypothesis-ledger.md",
+        ):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, content)
+        self.assertNotIn("or originates outside the repository boundary", content)
+
+    def assert_example_priority_contract(self, content: str) -> None:
+        rules = (REPOSITORY_ROOT / "test-strategy" / "references" / "risk-and-scenario-rules.md").read_text(encoding="utf-8")
+        vocabulary = re.search(r"Use (.+?)\. Explain the reason", rules)
+        self.assertIsNotNone(vocabulary)
+        allowed = set(re.findall(r"`([^`]+)`", vocabulary.group(1)))
+        self.assertEqual(allowed, {"critical", "high", "medium", "low"})
+        header = []
+        risks = {}
+        covered = set()
+        scenarios = 0
+        for row in content.splitlines():
+            if not row.startswith("|"):
+                continue
+            cells = [cell.strip() for cell in row.strip("|").split("|")]
+            if cells[0] in {"Risk", "Scenario"}:
+                header = cells
+            elif cells[0].startswith(("TS-RISK-", "TS-SCENARIO-")):
+                priority = cells[header.index("Priority")]
+                self.assertIn(priority, allowed, cells[0])
+                if cells[0].startswith("TS-RISK-"):
+                    risks[cells[0]] = priority
+                else:
+                    scenarios += 1
+                    covered.update(re.findall(r"TS-RISK-\d+", cells[1]))
+        self.assertTrue(risks)
+        self.assertGreater(scenarios, 0)
+        self.assertTrue(covered.issubset(risks), "Scenario refers to an unknown risk")
+        self.assertTrue({risk for risk, priority in risks.items() if priority in {"critical", "high"}}.issubset(covered))
+
+    def test_worked_example_uses_testing_priorities_and_covers_high_risks(self) -> None:
+        example = (REPOSITORY_ROOT / "docs" / "worked-example.md").read_text(encoding="utf-8")
+        self.assert_example_priority_contract(example)
+
+    def test_example_contract_rejects_review_severity_as_testing_priority(self) -> None:
+        example = (REPOSITORY_ROOT / "docs" / "worked-example.md").read_text(encoding="utf-8")
+        self.assertIn("| high", example)
+        with self.assertRaises(AssertionError):
+            self.assert_example_priority_contract(example.replace("| high", "| P1", 1))
 
 
 if __name__ == "__main__":

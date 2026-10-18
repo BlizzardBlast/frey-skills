@@ -156,6 +156,26 @@ class ReleaseArchiveTests(unittest.TestCase):
         self.checksums.write_text(f"{digest}  {name}\n", encoding="utf-8")
         smoke_release.verify_archive(self.archive, self.checksums, self.source, self.destination, tag=older)
 
+    def test_release_inventory_is_independent_of_a_newer_development_checkout(self) -> None:
+        development = self.root / "development"
+        shutil.copytree(self.source, development)
+        future = development / "future-skill" / "SKILL.md"
+        future.parent.mkdir()
+        future.write_text("---\nname: future-skill\ndescription: Use when testing future inventory.\n---\n", encoding="utf-8")
+        future_entry = "frey-skills/skills/future-skill/SKILL.md"
+        self.assertIn(future_entry, smoke_release.expected_files(development))
+
+        original_directory = Path.cwd()
+        try:
+            os.chdir(development)
+            self.verify()
+        finally:
+            os.chdir(original_directory)
+
+        packaged = {path.relative_to(self.destination).as_posix() for path in self.destination.rglob("*") if path.is_file()}
+        self.assertEqual(packaged, set(self.files))
+        self.assertNotIn(future_entry, packaged)
+
     def test_checksum_mismatch_wrong_filename_and_ambiguous_records_fail_before_extraction(self) -> None:
         valid = self.checksums.read_bytes()
         for checksum in (b"0" * 64 + b"  " + self.archive.name.encode() + b"\n", valid.replace(b".zip", b".other"), valid + valid, b"", b"\xff"):

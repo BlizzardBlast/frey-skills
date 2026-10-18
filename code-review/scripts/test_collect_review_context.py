@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import errno
 import importlib.util
 import io
 import json
@@ -299,6 +300,62 @@ class CollectReviewContextTests(unittest.TestCase):
         self.assertEqual(set(files), {"staged.txt", "outside.txt", "nested/inside.txt"})
         self.assertTrue(all(item["stats_available"] for item in files.values()))
 
+    @unittest.skipIf(os.name == "nt", "Trailing whitespace in directory names requires a POSIX filesystem")
+    def test_whitespace_roots_preserve_scope_for_every_mode(self) -> None:
+        def git(root: Path, *args: str) -> None:
+            run(["git", "-c", "user.email=review@example.com", "-c", "user.name=Review Tests", *args], root)
+
+        for index, suffix in enumerate((" ", "\t", "\r", "\n", "\r\n", "\u00a0")):
+            with self.subTest(suffix=repr(suffix)):
+                parent = self.repo / f"root-{index}"
+                requested = parent / ("repo" + suffix)
+                sibling = parent / "repo"
+                for root, label in ((requested, "requested"), (sibling, "unrelated")):
+                    root.mkdir(parents=True)
+                    git(root, "init", "-q")
+                    (root / "baseline.txt").write_bytes(b"baseline\n")
+                    git(root, "add", ".")
+                    git(root, "commit", "-qm", "initial")
+                    (root / f"{label}-committed.txt").write_bytes(b"committed\n" * 3)
+                    git(root, "add", ".")
+                    git(root, "commit", "-qm", "second")
+                    (root / f"{label}-staged.txt").write_bytes(b"staged\n" * 2)
+                    git(root, "add", ".")
+                    (root / f"{label}-untracked.txt").write_bytes(b"untracked\n")
+                nested = requested / "nested"
+                nested.mkdir()
+                cases = (
+                    ((), "working-tree", {"requested-staged.txt", "requested-untracked.txt"}, 3),
+                    (("--staged",), "staged", {"requested-staged.txt"}, 2),
+                    (("--base", "HEAD^", "--head", "HEAD"), "range", {"requested-committed.txt"}, 3),
+                )
+                for args, mode, paths, added_lines in cases:
+                    with self.subTest(mode=mode):
+                        result = run([sys.executable, str(SCRIPT), *args], nested)
+                        data = json.loads(result.stdout)
+                        files = self.files_by_path(data)
+                        self.assertEqual(data["git_root"], requested.name)
+                        self.assertEqual(data["mode"], mode)
+                        self.assertEqual(set(files), paths)
+                        self.assertTrue(all(item["stats_available"] for item in files.values()))
+                        self.assertEqual(data["overall_totals"]["files"], len(paths))
+                        self.assertEqual(data["overall_totals"]["added_lines"], added_lines)
+                        self.assertEqual(data["overall_totals"]["unknown_stats_files"], 0)
+
+    @unittest.skipIf(os.name == "nt", "Trailing whitespace in directory names requires a POSIX filesystem")
+    def test_whitespace_root_without_sibling_matches_root_and_nested_invocation(self) -> None:
+        root = self.repo / "repo \t\r\n"
+        nested = root / "nested"
+        nested.mkdir(parents=True)
+        run(["git", "init", "-q"], root)
+        (root / "requested.txt").write_bytes(b"requested\n")
+        expected = json.loads(run([sys.executable, str(SCRIPT)], root).stdout)
+        actual = json.loads(run([sys.executable, str(SCRIPT)], nested).stdout)
+        self.assertEqual(actual, expected)
+        self.assertEqual(actual["git_root"], root.name)
+        self.assertEqual(set(self.files_by_path(actual)), {"requested.txt"})
+        self.assertEqual(actual["overall_totals"]["added_lines"], 1)
+
     def test_rename_stats_are_preserved(self) -> None:
         self.write("old.txt", "a\nb\nc\n")
         self.commit_all("initial")
@@ -401,6 +458,116 @@ class CollectReviewContextTests(unittest.TestCase):
         self.assertEqual(changes[0]["path"], path)
         self.assertEqual(stats[path]["added_lines"], 1)
 
+    @unittest.skipIf(os.name == "nt", "Windows filenames cannot contain carriage returns or newlines")
+    def test_git_control_character_paths_are_preserved_end_to_end(self) -> None:
+        self.write("baseline.txt", "baseline\n")
+        self.commit_all("initial")
+        paths = ("carriage\rreturn.txt", "paired\r\nreturn.txt", "line\nreturn.txt")
+        expected = {path: index for index, path in enumerate(paths, 1)}
+        for path, count in expected.items():
+            self.write(path, "line\n" * count)
+
+        def assert_scope(*args: str) -> None:
+            data = self.collect(*args)
+            files = self.files_by_path(data)
+            self.assertEqual(set(files), set(expected))
+            self.assertEqual(data["overall_totals"]["added_lines"], sum(expected.values()))
+            self.assertEqual(data["overall_totals"]["unknown_stats_files"], 0)
+            for path, count in expected.items():
+                self.assertTrue(files[path]["stats_available"])
+                self.assertEqual(files[path]["added_lines"], count)
+
+        assert_scope()
+        self.git("add", ".")
+        assert_scope("--staged")
+        assert_scope()
+        self.git("commit", "-qm", "add control-character paths")
+        assert_scope("--base", "HEAD^", "--head", "HEAD")
+
+    @unittest.skipIf(os.name == "nt", "Windows filenames cannot contain carriage returns or newlines")
+    def test_git_rename_preserves_control_characters_in_both_paths(self) -> None:
+        old_path = "old\rname.txt"
+        new_path = "new\r\nname.txt"
+        self.write(old_path, "same contents\n")
+        self.commit_all("initial")
+        self.git("mv", old_path, new_path)
+
+        def assert_rename(*args: str) -> None:
+            data = self.collect(*args)
+            self.assertEqual(len(data["files"]), 1)
+            change = data["files"][0]
+            self.assertEqual(change["path"], new_path)
+            self.assertEqual(change["previous_path"], old_path)
+            self.assertEqual(change["status"], "R")
+            self.assertTrue(change["stats_available"])
+            self.assertEqual((change["added_lines"], change["deleted_lines"]), (0, 0))
+
+        assert_rename("--staged")
+        assert_rename()
+        self.git("commit", "-qm", "rename control-character path")
+        assert_rename("--base", "HEAD^", "--head", "HEAD")
+
+    @unittest.skipIf(os.name == "nt", "Non-UTF-8 filename bytes require a POSIX filesystem")
+    def test_non_utf8_git_paths_fail_without_replacement_aliases(self) -> None:
+        self.write("baseline.txt", "baseline\n")
+        self.commit_all("initial")
+        raw_path = os.fsdecode(b"bad-\xff.txt")
+        replacement_path = "bad-\ufffd.txt"
+        try:
+            self.write(raw_path, "one\n")
+        except OSError as exc:
+            if exc.errno == errno.EILSEQ:
+                self.skipTest("The filesystem rejects non-UTF-8 filename bytes")
+            raise
+        self.write(replacement_path, "other\nfile\nthree\n")
+        output = self.repo / "review-context.json"
+        output.write_bytes(b"preserve existing output\n")
+
+        def assert_rejected(*args: str) -> None:
+            result = self.run_collect(*args, "--output", str(output), "--force")
+            self.assertEqual(result.returncode, 2, result.stderr)
+            self.assertIn("Git output is not valid UTF-8", result.stderr)
+            self.assertIn("filename identity", result.stderr)
+            self.assertEqual(result.stdout, "")
+            self.assertEqual(output.read_bytes(), b"preserve existing output\n")
+
+        assert_rejected()
+        self.git("add", ".")
+        assert_rejected("--staged")
+        assert_rejected()
+        self.git("commit", "-qm", "add distinct byte paths")
+        assert_rejected("--base", "HEAD^", "--head", "HEAD")
+        self.assertEqual((self.repo / raw_path).read_bytes(), b"one\n")
+        self.assertEqual((self.repo / replacement_path).read_bytes(), b"other\nfile\nthree\n")
+
+    def test_non_utf8_git_output_never_publishes_context(self) -> None:
+        output = self.repo / "review-context.json"
+        output.write_bytes(b"preserve existing output\n")
+
+        def git_output(args: list[str], **kwargs: Any) -> subprocess.CompletedProcess[bytes]:
+            if "--show-toplevel" in args:
+                stdout = str(self.repo).encode("utf-8") + b"\n"
+            elif "--verify" in args:
+                stdout = b"1" * 40 + b"\n"
+            elif "--name-status" in args:
+                stdout = b"M\0bad-\xff.txt\0"
+            else:
+                raise AssertionError(f"Unexpected Git command: {args!r}")
+            return subprocess.CompletedProcess(args, 0, stdout=stdout, stderr=b"")
+
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with mock.patch.object(COLLECT_REVIEW_CONTEXT.subprocess, "run", side_effect=git_output), \
+                mock.patch.object(sys, "argv", [str(SCRIPT), "--output", str(output), "--force"]), \
+                redirect_stdout(stdout), redirect_stderr(stderr):
+            code = COLLECT_REVIEW_CONTEXT.main()
+
+        self.assertEqual(code, 2)
+        self.assertIn("Git output is not valid UTF-8", stderr.getvalue())
+        self.assertIn("filename identity", stderr.getvalue())
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(output.read_bytes(), b"preserve existing output\n")
+
     def test_redirected_output_uses_utf8_with_an_ascii_default(self) -> None:
         self.write("unicode-β.txt", "one\n")
         output = self.repo / "context-β.json"
@@ -418,9 +585,9 @@ class CollectReviewContextTests(unittest.TestCase):
         self.assertIn("unicode-β.txt", self.files_by_path(json.loads(result.stdout)))
         self.assertEqual(json.loads(output.read_text(encoding="utf-8")), json.loads(result.stdout))
 
-    def make_symlink_or_skip(self, target: Path, link: Path) -> None:
+    def make_symlink_or_skip(self, target: Path, link: Path, *, target_is_directory: bool = False) -> None:
         try:
-            os.symlink(target, link)
+            os.symlink(target, link, target_is_directory=target_is_directory)
         except NotImplementedError as exc:
             self.skipTest(f"symlinks are unavailable: {exc}")
         except OSError as exc:
@@ -455,6 +622,72 @@ class CollectReviewContextTests(unittest.TestCase):
             self.assertEqual(files["link.txt"]["status"], "?")
             self.assertEqual(files["link.txt"]["added_lines"], 1)
             self.assertFalse(files["link.txt"]["binary"])
+
+    def test_linked_parent_never_opens_untracked_contents(self) -> None:
+        with tempfile.TemporaryDirectory() as outside_directory:
+            for label, target in (("inside", self.repo / "real"), ("outside", Path(outside_directory).resolve())):
+                with self.subTest(target=label):
+                    target.mkdir(exist_ok=True)
+                    (target / "private.txt").write_text("synthetic\nprivate\ncontents\n", encoding="utf-8")
+                    link = self.repo / f"{label}-link"
+                    self.make_symlink_or_skip(target, link, target_is_directory=True)
+                    try:
+                        candidate = f"{label}-link/private.txt"
+                        with mock.patch.object(COLLECT_REVIEW_CONTEXT, "run_git", return_value=candidate + "\0"), mock.patch.object(
+                            Path, "open", side_effect=AssertionError("linked contents must not be opened")
+                        ) as opened:
+                            changes = COLLECT_REVIEW_CONTEXT.collect_untracked_changes(self.repo)
+                        opened.assert_not_called()
+                        self.assertEqual(changes[0]["path"], candidate)
+                        self.assertFalse(changes[0]["stats_available"])
+                        self.assertIsNone(changes[0]["added_lines"])
+                        self.assertIsNone(changes[0]["deleted_lines"])
+                    finally:
+                        if os.name == "nt":
+                            link.rmdir()
+                        else:
+                            link.unlink()
+
+    @unittest.skipUnless(os.name == "nt", "Windows directory junction regression")
+    def test_untracked_junction_retains_unknown_stats_without_reading_target(self) -> None:
+        self.write("tracked.txt", "one\n")
+        self.commit_all("initial")
+        with tempfile.TemporaryDirectory() as outside_directory:
+            target = Path(outside_directory).resolve()
+            private = target / "private-β.txt"
+            private.write_bytes(b"synthetic\nexternal\ncontents\n")
+            link = self.repo / "linked directory"
+            run(["cmd", "/d", "/c", "mklink", "/J", str(link), str(target)], self.repo)
+            try:
+                candidate = "linked directory/private-β.txt"
+                data = self.collect()
+                files = self.files_by_path(data)
+                self.assertIn(candidate, files)
+                self.assertEqual(files[candidate]["status"], "?")
+                self.assertFalse(files[candidate]["stats_available"])
+                self.assertIsNone(files[candidate]["added_lines"])
+                self.assertIsNone(files[candidate]["deleted_lines"])
+                self.assertEqual(data["overall_totals"]["unknown_stats_files"], 1)
+                self.assertEqual(data["included_totals"]["unknown_stats_files"], 1)
+                with mock.patch.object(Path, "open", side_effect=AssertionError("junction target must not be opened")) as opened:
+                    changes = COLLECT_REVIEW_CONTEXT.collect_untracked_changes(self.repo)
+                opened.assert_not_called()
+                self.assertFalse(changes[0]["stats_available"])
+            finally:
+                link.rmdir()
+            self.assertEqual(private.read_bytes(), b"synthetic\nexternal\ncontents\n")
+
+    def test_untracked_paths_outside_root_never_open_contents(self) -> None:
+        with tempfile.TemporaryDirectory() as outside_directory:
+            outside = Path(outside_directory).resolve() / "outside.txt"
+            outside.write_text("synthetic private contents\n", encoding="utf-8")
+            for candidate in (str(outside), "../outside.txt"):
+                with self.subTest(path=candidate), mock.patch.object(
+                    COLLECT_REVIEW_CONTEXT, "run_git", return_value=candidate + "\0"
+                ), mock.patch.object(Path, "open", side_effect=AssertionError("outside contents must not be opened")) as opened:
+                    changes = COLLECT_REVIEW_CONTEXT.collect_untracked_changes(self.repo)
+                opened.assert_not_called()
+                self.assertFalse(changes[0]["stats_available"])
 
     def test_unavailable_stats_are_reported_without_changing_copy_detection(self) -> None:
         original_run_git = COLLECT_REVIEW_CONTEXT.run_git

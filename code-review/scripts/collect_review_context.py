@@ -18,7 +18,8 @@ Output semantics:
         - `files`: per-file status and line stats. Each file includes
             `stats_available`, which is true when its line/binary stats were
             successfully determined and false otherwise. In working-tree mode,
-            untracked files are included with status `?`.
+            untracked files are included with status `?`. Paths outside the
+            repository or through linked parents retain unavailable statistics.
         - `generated_at`: optional wall-clock timestamp, included only with
             `--include-generated-at`.
 
@@ -31,6 +32,9 @@ Repository scope:
         Every mode inspects the full repository from its root, including when
         invoked from a nested directory or with diff.relative enabled. An
         explicitly requested relative --output path uses the invoking directory.
+        NUL-delimited UTF-8 filenames retain control characters without newline conversion.
+        Non-UTF-8 Git output fails with exit code 2 instead of replacing filename
+        bytes, emitting ambiguous records, or publishing an output file.
 
 Output publication:
         Non-forced file output uses an atomic hard link and requires filesystem
@@ -62,18 +66,26 @@ def run_git(args: list[str], *, cwd: Path | None = None, input_text: str | None 
     result = subprocess.run(
         ["git", "-c", "diff.relative=false", *args],
         cwd=cwd,
-        input=input_text,
+        input=input_text.encode("utf-8") if input_text is not None else None,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
         check=False,
     )
     if result.returncode != 0:
-        error = result.stderr.strip() or result.stdout.strip() or "unknown git error"
+        error = (
+            result.stderr.decode("utf-8", errors="replace").strip()
+            or result.stdout.decode("utf-8", errors="replace").strip()
+            or "unknown git error"
+        )
         raise RuntimeError(f"git {' '.join(args)} failed: {error}")
-    return result.stdout
+    try:
+        # Text-mode pipes translate CR/CRLF even inside Git's NUL records.
+        return result.stdout.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ContextParseError(
+            "Git output is not valid UTF-8; cannot preserve filename identity. "
+            "Review context was not produced."
+        ) from exc
 
 
 class OutputWriteError(RuntimeError):
@@ -92,13 +104,25 @@ def git_has_head(*, cwd: Path) -> bool:
     return True
 
 
-def stat_untracked_file(path: Path) -> dict[str, Any] | None:
-    if path.is_symlink():
-        return {
-            "added_lines": 1,
-            "deleted_lines": 0,
-            "binary": False,
-        }
+def stat_untracked_file(path: Path, *, git_root_path: Path) -> dict[str, Any] | None:
+    try:
+        relative = path.relative_to(git_root_path)
+        if not relative.parts or ".." in relative.parts:
+            return None
+        # Resolve parents before inspecting the leaf: Windows junctions are not
+        # reported as symlinks, and either kind of parent link can escape scope.
+        if path.parent.resolve() != path.parent:
+            return None
+        if path.is_symlink():
+            return {
+                "added_lines": 1,
+                "deleted_lines": 0,
+                "binary": False,
+            }
+        if path.resolve() != path:
+            return None
+    except (OSError, RuntimeError, ValueError):
+        return None
 
     try:
         with path.open("rb") as handle:
@@ -135,11 +159,12 @@ def stat_untracked_file(path: Path) -> dict[str, Any] | None:
 
 
 def collect_untracked_changes(git_root_path: Path) -> list[dict[str, Any]]:
+    git_root_path = git_root_path.resolve()
     paths = _split_nul(run_git(["ls-files", "--others", "--exclude-standard", "--full-name", "-z"], cwd=git_root_path))
     changes: list[dict[str, Any]] = []
 
     for path in paths:
-        stat = stat_untracked_file(git_root_path / path)
+        stat = stat_untracked_file(git_root_path / path, git_root_path=git_root_path)
         change = {
             "path": path,
             "status": "?",
@@ -409,7 +434,8 @@ def collect_context(
     max_files: int,
     include_generated_at: bool,
 ) -> dict[str, Any]:
-    git_root_path = Path(run_git(["rev-parse", "--show-toplevel"]).strip())
+    # Git appends one LF; other trailing whitespace belongs to the root path.
+    git_root_path = Path(run_git(["rev-parse", "--show-toplevel"]).removesuffix("\n"))
     git_root = git_root_path.name
     has_head = git_has_head(cwd=git_root_path)
 
@@ -553,7 +579,7 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=(
             "Exit codes:\n"
             "  0  Success.\n"
-            "  2  Invalid arguments, git command failure, or diff parse failure.\n"
+            "  2  Invalid arguments, git command, UTF-8 decoding, or diff parse failure.\n"
             "  3  Output file write failure.\n\n"
             "Examples:\n"
             "  python3 scripts/collect_review_context.py\n"

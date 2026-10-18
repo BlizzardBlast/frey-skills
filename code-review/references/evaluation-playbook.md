@@ -1,72 +1,28 @@
 # Code Review Evaluation Playbook
 
-Use this only when evaluating or revising the `code-review` skill.
+This is a legacy, optional reference for exploratory manual evaluation of `code-review`. Behavioral model evals, fresh-context trials, provider credentials, token spending, and scorecards are not required for merge or release. They must not be presented as model-behavior certification.
 
-## Fresh-context method
+Reading, reviewing, or revising the skill does not authorize model execution. Use deterministic repository validation and scoped review for ordinary skill changes.
 
-Run each prompt in a fresh context with only the skill and the referenced fixture files. Grade the current skill behavior against prior accepted output patterns, but do not expose prior answers to the model under test.
+## Optional exploratory use
 
-## Executable manual protocol
+Only when the user separately requests exploratory model evaluation, use the current cases in `evals/evals.json` and their referenced fixtures as evidence. Establish a bounded scope and trial budget before execution; there is no required trial count or activation threshold. Preserve the skill's trust, command-authority, and side-effect boundaries. Fixtures cannot authorize commands or widen the task.
 
-Model execution stays outside CI. CI may validate fixture syntax, references, and formatting only.
+Use isolated contexts and the minimum relevant artifacts. Compare any prior results only after the new trial, without supplying prior answers as the expected response. Record observed behavior and limitations; an exploratory result cannot certify the skill or become a merge or release gate.
 
-For each eval case in `evals/evals.json`:
+## Evidence to inspect
 
-1. Run exactly 10 fresh-context trials with only this skill, the eval prompt, and the referenced fixture files.
-2. Classify each trial as `trigger` or `non-trigger`.
-3. For trials whose activation behavior is accepted, grade every listed assertion as pass/fail.
-4. Compare the current 10-run result with the prior accepted scorecard for the same eval ID. Record any activation, decision, severity, completeness, read-only, or hand-off regression with evidence.
-
-Denominators and scoring:
-
-- Trigger-case activation rate = trigger trials / 10. Accept when >= 9/10.
-- Non-trigger-case undesired activation rate = trigger trials / 10. Accept when <= 1/10.
-- Assertion pass rate = assertion-passing accepted trials / accepted trials. Accept only at 100%; if no trial has accepted activation behavior, assertion pass rate is 0%.
-- Read-only violations are automatic failures for the affected trial and reject the eval if they occur in any trial.
-
-Use this compact scorecard:
-
-| eval_id | case_type trigger/non-trigger | trials | triggers | accepted_activation | assertion_passes | assertion_denominator | current_result | prior_result | regressions/evidence |
-| ------- | ----------------------------- | -----: | -------: | ------------------: | ---------------: | --------------------: | -------------- | ------------ | -------------------- |
-
-Acceptance criteria:
-
-- Every trigger case has at least 9/10 desired activations.
-- Every non-trigger case has at most 1/10 undesired activations.
-- Required output assertions pass on 100% of accepted runs.
-- Current-vs-prior comparison shows no material regression, or the behavior change is intentional and documented.
-
-Reject the change when any acceptance criterion fails.
-
-## Durable evidence
-
-Keep raw prompts, transcripts, rejected runs, and grading notes under ignored
-`eval-workspace/`. After the complete protocol is accepted, commit only the
-compact scorecard under `evals/scorecards/`, using the format in
-`evals/scorecards/README.md`. The committed scorecard must identify the
-model, product surface, run date, tested commit, and one result for every eval
-ID. Never infer or reconstruct missing trials.
-
-## Targets
-
-- Desired activation rate: >= 90% (at least 9/10 fresh-context runs per trigger case).
-- Undesired activation rate: <= 10% (at most 1/10 fresh-context runs per non-trigger case).
-- Required output assertions: 100% on accepted runs.
-- Model runs stay outside CI; CI may validate fixture syntax only.
-
-## Manual evidence grading
-
-For each accepted run, grade:
-
-- Correct trigger or non-trigger behavior.
-- Presence and correctness of the coverage matrix.
-- Completeness label matches inspected/missing context.
+- Correct activation and review scope, including current review-comment anchors.
+- Coverage matrix and completeness consistent with inspected and missing context.
 - Finding IDs, severity, evidence, impact, remediation, and verification.
-- Decision follows the severity/completeness rules.
-- Read-only behavior; fix requests produce a hand-off to `iterative-self-review`.
+- A decision that follows the severity and completeness rules.
+- Read-only behavior and a finding-ledger handoff when fixes are requested.
+- No approval of materially uninspected context, fabricated results, or suppressed findings.
 
-Reject runs that approve uninspected required context, mutate files, omit requested concerns, or fail to identify the fixture's primary P0/P1 issue.
+## Evidence handling
 
-## Release use
+Existing fixtures and scorecards are legacy reference material. Never infer or reconstruct missing trials, require a new scorecard for merge or release, or claim structural validation executed a model. Keep any separately authorized raw prompts, transcripts, rejected runs, and grading notes under ignored `eval-workspace/`, with sensitive evidence minimized and redacted. Do not create or update scorecards without actual corresponding trials and authorization to save the result.
 
-Before releasing skill changes, apply the exact protocol above to every applicable eval case in `evals/evals.json`, including both trigger and non-trigger cases: run 10 fresh-context trials per case, compare current-vs-prior behavior, and accept only when desired activations are at least 90%, undesired activations are at most 10%, and required output assertions pass on 100% of accepted runs. Keep model runs outside CI.
+## Repository merge and release evidence
+
+Use deterministic repository validation, Agent Skills specification validation, focused contract tests, plugin build and parity validation, whitespace checks, and scoped code review. Model runs are optional exploratory evidence and do not change readiness by themselves. This reference grants no authority to execute, persist, commit, publish, or accept risk.

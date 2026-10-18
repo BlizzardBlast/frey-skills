@@ -162,9 +162,14 @@ public export, read-only storage contract, and CLI compatibility.
 
 | Risk        | Boundary/failure mode                                | Impact                               | Likelihood | Change exposure   | Detectability                 | Recovery                                      | Priority | Evidence                               | Planned coverage                                 |
 | ----------- | ---------------------------------------------------- | ------------------------------------ | ---------- | ----------------- | ----------------------------- | --------------------------------------------- | -------- | -------------------------------------- | ------------------------------------------------ |
-| TS-RISK-001 | Export leaks internal fields or alters Unicode/order | Broken privacy/schema contract       | medium     | New formatter     | Exact parsed-output assertion | Remove export from use and correct formatter  | P1       | Current records have internal metadata | AC-001; TS-SCENARIO-001                          |
-| TS-RISK-002 | Empty/error paths produce malformed or partial JSON  | Consumers cannot distinguish failure | medium     | Output dispatch   | stdout/stderr/exit assertions | Correct dispatch without changing stored data | P1       | Existing load-error path               | AC-002, AC-003; TS-SCENARIO-002, TS-SCENARIO-003 |
-| TS-RISK-003 | Existing callers receive changed output/status       | Compatibility regression             | medium     | Argument handling | Baseline comparison           | Restore existing CLI behavior                 | P1       | Existing CLI tests                     | AC-004, AC-005; TS-SCENARIO-004, TS-SCENARIO-005 |
+| TS-RISK-001 | Export leaks internal fields or alters Unicode/order | Broken privacy/schema contract       | medium     | New formatter     | Exact parsed-output assertion | Remove export from use and correct formatter  | high     | Current records have internal metadata | AC-001; TS-SCENARIO-001                          |
+| TS-RISK-002 | Empty/error paths produce malformed or partial JSON  | Consumers cannot distinguish failure | medium     | Output dispatch   | stdout/stderr/exit assertions | Correct dispatch without changing stored data | high     | Existing load-error path               | AC-002, AC-003; TS-SCENARIO-002, TS-SCENARIO-003 |
+| TS-RISK-003 | Existing callers receive changed output/status       | Compatibility regression             | medium     | Argument handling | Baseline comparison           | Restore existing CLI behavior                 | high     | Existing CLI tests                     | AC-004, AC-005; TS-SCENARIO-004, TS-SCENARIO-005 |
+
+These risks are high priority because they could disclose internal metadata,
+hide failed operations from consumers, or break existing callers. The scenarios
+below carry that testing priority; review findings use their separate severity
+scale later in the example.
 
 The behavior/contract inventory is REQ-001 through REQ-003 and CONTRACT-001
 through CONTRACT-002. Allocate schema assertions to unit tests and stdout,
@@ -172,11 +177,11 @@ stderr, exit-code, and stored-byte assertions to local CLI integration tests.
 
 | Scenario        | Covered risks/contract      | Preconditions/test data                              | Action              | Expected result                | Layer/environment                                  | Automation status | Priority | Evidence/gap                                  |
 | --------------- | --------------------------- | ---------------------------------------------------- | ------------------- | ------------------------------ | -------------------------------------------------- | ----------------- | -------- | --------------------------------------------- |
-| TS-SCENARIO-001 | TS-RISK-001; both contracts | Two synthetic records with public and `debug` fields | Export JSON         | AC-001; stored bytes unchanged | Unit + CLI integration; disposable local directory | candidate         | P1       | New schema needs explicit exclusion assertion |
-| TS-SCENARIO-002 | TS-RISK-002; CONTRACT-001   | Empty synthetic store                                | Export JSON         | AC-002                         | CLI integration; disposable local directory        | candidate         | P1       | New empty JSON path                           |
-| TS-SCENARIO-003 | TS-RISK-002; both contracts | Deterministic local load failure                     | Invoke both modes   | AC-003; stored bytes unchanged | CLI integration; controlled local failure          | candidate         | P1       | Existing default-mode failure coverage        |
-| TS-SCENARIO-004 | TS-RISK-003; CONTRACT-001   | Baseline synthetic notes                             | Invoke default mode | AC-004                         | CLI integration; local baseline comparison         | existing          | P1       | Existing plain-text assertions                |
-| TS-SCENARIO-005 | TS-RISK-003; CONTRACT-001   | Unknown flag                                         | Invoke CLI          | AC-005                         | CLI integration; local process                     | existing          | P1       | Existing argument assertions                  |
+| TS-SCENARIO-001 | TS-RISK-001; both contracts | Two synthetic records with public and `debug` fields | Export JSON         | AC-001; stored bytes unchanged | Unit + CLI integration; disposable local directory | candidate         | high     | New schema needs explicit exclusion assertion |
+| TS-SCENARIO-002 | TS-RISK-002; CONTRACT-001   | Empty synthetic store                                | Export JSON         | AC-002                         | CLI integration; disposable local directory        | candidate         | high     | New empty JSON path                           |
+| TS-SCENARIO-003 | TS-RISK-002; both contracts | Deterministic local load failure                     | Invoke both modes   | AC-003; stored bytes unchanged | CLI integration; controlled local failure          | candidate         | high     | Existing default-mode failure coverage        |
+| TS-SCENARIO-004 | TS-RISK-003; CONTRACT-001   | Baseline synthetic notes                             | Invoke default mode | AC-004                         | CLI integration; local baseline comparison         | existing          | high     | Existing plain-text assertions                |
+| TS-SCENARIO-005 | TS-RISK-003; CONTRACT-001   | Unknown flag                                         | Invoke CLI          | AC-005                         | CLI integration; local process                     | existing          | high     | Existing argument assertions                  |
 
 Data/environment: synthetic records and disposable local directories; no real
 notes, credentials, shared data, network access, or production changes.

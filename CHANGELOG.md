@@ -55,6 +55,37 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Fixed
 
+- Preserved whitespace in repository-root names when collecting review context,
+  preventing accidental inspection of a similarly named sibling repository.
+  POSIX regressions cover nested invocation, every mode, and absent siblings.
+- Added conditional routes to the optional review-context helper and debugging
+  investigation profiles. Helper guidance preserves stdout-only inspection,
+  direct-review fallback, and explicit coverage limits; focused contracts guard
+  both discovery routes.
+- Preserved control characters in the review-context helper's Git filename
+  transport. Non-UTF-8 paths now fail explicitly before producing JSON or
+  replacing an output file, rather than collapsing distinct names and reporting
+  another file's statistics. POSIX regressions cover working-tree, staged,
+  range, and rename paths.
+- Made the raw-filename regression conditional on filesystem support: a
+  filesystem that rejects invalid UTF-8 names skips fixture creation, while
+  a platform-independent test still verifies fail-closed Git-output decoding.
+- Prevented the review-context helper from reading untracked file contents
+  through linked parent directories, including Windows junctions. Unsafe paths
+  retain unavailable statistics instead of being treated as inspected contents.
+- Corrected release verification guidance to derive complete skill inventories
+  from the exact release tag/commit. Offline regression coverage keeps a released
+  archive independent of newer development skills.
+- Removed mandatory behavioral-evaluation and scorecard gates from the legacy
+  `debug`, `code-review`, `implementation-plan`, and `iterative-self-review`
+  playbooks and made their entrypoint routing explicitly optional. Model runs
+  are not required for merge or release and do not certify model behavior.
+- Corrected `debug` outcome classification: external failures can be confirmed,
+  while `NOT_A_DEFECT` requires evidence that applicable contracts are satisfied.
+  Added no-progress stopping, bounded repeated sampling, seven published decision
+  cases, and deterministic regression contracts.
+- Aligned testing risk/scenario priorities in the lifecycle example with
+  `test-strategy` vocabulary, with high-priority rationale and traceability checks.
 - Removed the accidental PyYAML dependency from the standalone plugin contract
   suite. Orientation metadata assertions now run with repository validation,
   which already requires PyYAML. A clean-interpreter regression checks plugin
