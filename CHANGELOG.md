@@ -29,10 +29,9 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Changed
 
-- The development plugin manifest targets v1.9.0 and discovers all eight skills.
-  Its three existing starter prompts and historical release smoke pins remain
-  unchanged. Installation examples continue to identify published v1.8.2 until
-  a separately authorized release is published; v1.9.0 is not yet published.
+- The plugin manifest targets v1.9.0 and discovers all eight skills. Its three
+  existing starter prompts remain unchanged. Installation guidance and published
+  release smoke pins are updated separately after publication is verified.
 - Installation examples and cross-platform smoke checks now pin the published
   v1.8.2 tag and commit. Recorded Windows Codex CLI discovery and rollback
   results identify the verified archives. Separate Windows desktop screenshot
