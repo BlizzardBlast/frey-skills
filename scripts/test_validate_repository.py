@@ -10,6 +10,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import yaml
+
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = REPOSITORY_ROOT / "scripts" / "validate_repository.py"
@@ -116,6 +118,13 @@ class RepositoryValidatorTests(unittest.TestCase):
         result = run_validator(REPOSITORY_ROOT)
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_repository_orientation_metadata_preserves_invocation_contract(self) -> None:
+        metadata_path = REPOSITORY_ROOT / "repository-orientation" / "agents" / "openai.yaml"
+        metadata = yaml.safe_load(metadata_path.read_text(encoding="utf-8"))
+
+        self.assertIs(metadata["policy"]["allow_implicit_invocation"], True)
+        self.assertIn("$repository-orientation", metadata["interface"]["default_prompt"])
 
     def test_local_environment_and_test_caches_are_not_source(self) -> None:
         self.write_valid_skill()

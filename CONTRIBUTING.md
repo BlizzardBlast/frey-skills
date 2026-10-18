@@ -7,6 +7,7 @@ skills and the small amount of tooling needed to validate and package them.
 
 The canonical skill sources live in the root skill directories:
 
+- `repository-orientation/` (unreleased)
 - `debug/`
 - `change-specification/`
 - `implementation-plan/`
@@ -124,6 +125,15 @@ installation smoke assertion tests.
 decision cases, authority and stop boundaries, discovery metadata, and worked
 example. These are deterministic instruction contracts, not executed model
 assessments or behavioral certification.
+
+`scripts.test_repository_orientation_contract` checks routing and completeness
+cases, snapshot and ownership evidence, command effects, saved-map trust,
+bounded stopping, resources, and gate registration. Mutation cases
+reject removed or misclassified published rules; they do not execute a model.
+Its YAML metadata assertions run in `scripts.test_validate_repository`, where
+PyYAML is an established dependency. `scripts.test_check` verifies that all plugin
+contract modules load and orientation contracts run without site packages, so
+the standalone plugin group remains standard-library-only.
 
 The repository validator checks Agent Skills frontmatter fields, local
 references, optional eval schema and fixture references, committed scorecard

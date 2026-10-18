@@ -4,6 +4,10 @@ Choose skill folders through the Skills CLI or the complete Codex plugin ZIP.
 Use one route for a given skill in an agent to avoid duplicate names. Neither
 route requires model credentials or behavioral model evals.
 
+The versioned examples target the published eight-skill v1.9.0 release.
+`repository-orientation` is unreleased and is available only in development
+sources that contain it; it is not included in that pinned release or its ZIP.
+
 ## Install skill folders
 
 Install Node.js with npm and Git, then run these commands from the project that

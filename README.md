@@ -11,6 +11,7 @@ This repository is designed for the
 
 | Your task | Skill | Main output | Edits files? |
 | --- | --- | --- | --- |
+| Understand an unfamiliar repository or subsystem (unreleased) | [repository-orientation](repository-orientation/SKILL.md) | Bounded source-linked map, coverage, and verification entry points | No |
 | Investigate an unknown failure or regression | [debug](debug/SKILL.md) | Hypotheses, evidence, and root-cause status | No |
 | Define required behavior and acceptance criteria | [change-specification](change-specification/SKILL.md) | Requirements, contracts, and planning readiness | No |
 | Sequence a concrete repository change | [implementation-plan](implementation-plan/SKILL.md) | Ordered steps, invariants, verification, and readiness | No |
@@ -27,9 +28,13 @@ that authority.
 
 For installation, see the [setup guide](docs/installation.md). For a complete
 handoff sequence, see the [worked example](docs/worked-example.md).
+For researched future skill priorities and delivery gates, see the
+[skill development roadmap](docs/roadmap.md).
 
 `release-readiness` ships in v1.9.0 alongside the other seven skills. The
 versioned installation below pins the complete eight-skill release.
+The development checkout additionally contains unreleased
+`repository-orientation`; the pinned v1.9.0 installation does not include it.
 
 ## Content-trust invariant
 
@@ -46,6 +51,27 @@ they do not certify model behavior or guarantee universal prompt-injection
 resistance.
 
 ## Available Skills
+
+### repository-orientation (unreleased)
+
+Maps an unfamiliar repository or subsystem when understanding how its parts fit
+together is the requested output. It records snapshot identity, source anchors,
+responsibilities, entry points, execution/data paths, dependencies, generated
+boundaries, and verification commands with their effects and execution status.
+
+The read-only workflow stops after a bounded initial map and at most one targeted
+gap-check pass, with `COMPLETE`, `PARTIAL`, or `BLOCKED` coverage. It does not run
+tests/builds/setup, create indexes, save maps automatically, or activate other
+workflows. Simple symbol lookups remain direct; diagnosis, change planning,
+and review judgment stay with their existing skills. A complete map is not a
+passed-check or readiness claim.
+
+In development sources containing this skill:
+
+```text
+Use $repository-orientation to explain how this subsystem reaches storage,
+with source anchors, coverage limits, and verification entry points.
+```
 
 ### debug
 
@@ -283,6 +309,9 @@ for mismatched CI, missing recovery evidence, and a later readiness handoff.
 
 The primary implementation lifecycle is:
 
+`repository-orientation` is optional when a repository/subsystem map is itself
+useful. It is not a prerequisite for the lifecycle below or for a simple lookup.
+
 ```text
 symptom or failing test
         ↓
@@ -438,6 +467,7 @@ test-strategy/
 implementation-execution/
 iterative-self-review/
 release-readiness/
+repository-orientation/
 ```
 
 Each canonical skill contains a `SKILL.md`; individual skills may additionally
