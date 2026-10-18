@@ -67,6 +67,9 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
   replacing an output file, rather than collapsing distinct names and reporting
   another file's statistics. POSIX regressions cover working-tree, staged,
   range, and rename paths.
+- Made the raw-filename regression conditional on filesystem support: a
+  filesystem that rejects invalid UTF-8 names skips fixture creation, while
+  a platform-independent test still verifies fail-closed Git-output decoding.
 - Prevented the review-context helper from reading untracked file contents
   through linked parent directories, including Windows junctions. Unsafe paths
   retain unavailable statistics instead of being treated as inspected contents.

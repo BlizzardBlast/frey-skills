@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import errno
 import importlib.util
 import io
 import json
@@ -512,7 +513,12 @@ class CollectReviewContextTests(unittest.TestCase):
         self.commit_all("initial")
         raw_path = os.fsdecode(b"bad-\xff.txt")
         replacement_path = "bad-\ufffd.txt"
-        self.write(raw_path, "one\n")
+        try:
+            self.write(raw_path, "one\n")
+        except OSError as exc:
+            if exc.errno == errno.EILSEQ:
+                self.skipTest("The filesystem rejects non-UTF-8 filename bytes")
+            raise
         self.write(replacement_path, "other\nfile\nthree\n")
         output = self.repo / "review-context.json"
         output.write_bytes(b"preserve existing output\n")
@@ -533,6 +539,34 @@ class CollectReviewContextTests(unittest.TestCase):
         assert_rejected("--base", "HEAD^", "--head", "HEAD")
         self.assertEqual((self.repo / raw_path).read_bytes(), b"one\n")
         self.assertEqual((self.repo / replacement_path).read_bytes(), b"other\nfile\nthree\n")
+
+    def test_non_utf8_git_output_never_publishes_context(self) -> None:
+        output = self.repo / "review-context.json"
+        output.write_bytes(b"preserve existing output\n")
+
+        def git_output(args: list[str], **kwargs: Any) -> subprocess.CompletedProcess[bytes]:
+            if "--show-toplevel" in args:
+                stdout = str(self.repo).encode("utf-8") + b"\n"
+            elif "--verify" in args:
+                stdout = b"1" * 40 + b"\n"
+            elif "--name-status" in args:
+                stdout = b"M\0bad-\xff.txt\0"
+            else:
+                raise AssertionError(f"Unexpected Git command: {args!r}")
+            return subprocess.CompletedProcess(args, 0, stdout=stdout, stderr=b"")
+
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with mock.patch.object(COLLECT_REVIEW_CONTEXT.subprocess, "run", side_effect=git_output), \
+                mock.patch.object(sys, "argv", [str(SCRIPT), "--output", str(output), "--force"]), \
+                redirect_stdout(stdout), redirect_stderr(stderr):
+            code = COLLECT_REVIEW_CONTEXT.main()
+
+        self.assertEqual(code, 2)
+        self.assertIn("Git output is not valid UTF-8", stderr.getvalue())
+        self.assertIn("filename identity", stderr.getvalue())
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(output.read_bytes(), b"preserve existing output\n")
 
     def test_redirected_output_uses_utf8_with_an_ascii_default(self) -> None:
         self.write("unicode-β.txt", "one\n")
