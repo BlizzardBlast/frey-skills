@@ -14,6 +14,7 @@ The canonical skill sources live in the root skill directories:
 - `implementation-execution/`
 - `code-review/`
 - `iterative-self-review/`
+- `release-readiness/`
 
 Each skill owns its `SKILL.md`, optional `agents/` metadata, helper `scripts/`,
 supporting `references/`, optional `assets/`, and optional legacy `evals/`.
@@ -118,6 +119,11 @@ The plugin group includes `scripts.test_content_trust_contracts`, the focused
 skill contracts, and bundle/release tests. The repository group includes the
 validator, review-context helper, runner, workflow contracts, and offline
 installation smoke assertion tests.
+
+`scripts.test_release_readiness_contract` checks the published evidence matrix,
+decision cases, authority and stop boundaries, discovery metadata, and worked
+example. These are deterministic instruction contracts, not executed model
+assessments or behavioral certification.
 
 The repository validator checks Agent Skills frontmatter fields, local
 references, optional eval schema and fixture references, committed scorecard

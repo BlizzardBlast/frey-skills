@@ -6,8 +6,19 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+## [1.9.0] - 2026-10-17
+
 ### Added
 
+- A read-only `release-readiness` skill for an identified candidate and target,
+  covering applicable gates, artifact identity, compatibility, security/privacy,
+  migration, rollout, and recovery evidence. Separate assessment completeness
+  and readiness retain required failures, stale or mismatched results, missing
+  material evidence, nonblocking gaps, and explicit hold boundaries.
+- Release assessment references, a synthetic worked example, client metadata,
+  and deterministic contracts for candidate changes, recovery gaps, forged
+  approvals, decision cases, discovery, and content trust. A positive readiness
+  decision does not authorize publication or establish operational acceptance.
 - Pinned Codex CLI metadata compatibility checks on Windows, Linux, and macOS
   for verified published v1.8.1 installation, v1.8.2 upgrade, and v1.8.1 rollback.
   Checks require enabled, uniquely named plugin skills, correct ownership and
@@ -18,6 +29,10 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Changed
 
+- The development plugin manifest targets v1.9.0 and discovers all eight skills.
+  Its three existing starter prompts and historical release smoke pins remain
+  unchanged. Installation examples continue to identify published v1.8.2 until
+  a separately authorized release is published; v1.9.0 is not yet published.
 - Installation examples and cross-platform smoke checks now pin the published
   v1.8.2 tag and commit. Recorded Windows Codex CLI discovery and rollback
   results identify the verified archives. Separate Windows desktop screenshot
@@ -25,6 +40,18 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
   and all seven enabled plugin-settings entries; composer-selector discovery,
   restart persistence, starter-prompt UI, and other desktop platforms remain
   explicitly untested.
+
+### Validation policy
+
+Required release gates need current matching passing evidence regardless of
+impact classification; only explicitly optional nonblocking gaps can remain
+under `READY_WITH_GAPS`. Decision-case contracts bind each condition to its
+expected completeness and readiness, and deterministic mutations verify that
+removed, relabelled, or rewritten scenarios are rejected.
+
+Only deterministic repository, specification, instruction-contract, packaging,
+and whitespace checks apply. Behavioral model evals were not run, and no
+model-behavior certification is claimed.
 
 ## [1.8.2] - 2026-10-17
 

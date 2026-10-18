@@ -32,6 +32,7 @@ Current skill examples:
 - `implementation-execution/SKILL.md`
 - `code-review/SKILL.md`
 - `iterative-self-review/SKILL.md`
+- `release-readiness/SKILL.md`
 
 ## SKILL.md Requirements
 

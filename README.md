@@ -18,6 +18,7 @@ This repository is designed for the
 | Execute or resume an approved implementation plan | [implementation-execution](implementation-execution/SKILL.md) | Bounded changes, verification, and plan conformance | Yes, within the authorized plan |
 | Review changes, repository risks, or stale comments | [code-review](code-review/SKILL.md) | Coverage, findings, and a review decision | No |
 | Fix selected findings through a bounded review loop | [iterative-self-review](iterative-self-review/SKILL.md) | Scoped fixes and verification, up to three passes | Yes, only when explicitly invoked |
+| Assess whether a concrete candidate can ship to its target | [release-readiness](release-readiness/SKILL.md) | Candidate-matched evidence, blockers, residual risk, and release readiness | No |
 
 Start at the row that matches the work you need. A direct, unambiguous task does
 not require every stage. Saved artifacts and positive readiness statuses do not
@@ -26,6 +27,10 @@ that authority.
 
 For installation, see the [setup guide](docs/installation.md). For a complete
 handoff sequence, see the [worked example](docs/worked-example.md).
+
+`release-readiness` is included in the development sources for v1.9.0. The
+published v1.8.2 installation below contains the previous seven skills; install
+the default branch to use the new skill before its release.
 
 ## Content-trust invariant
 
@@ -253,6 +258,28 @@ post-review repair, or repeated fix-and-recheck remediation.
 - Honest `RESOLVED`, `PARTIAL`, or `BLOCKED` status without whole-repository
   clean claims.
 
+### release-readiness
+
+Assesses a concrete release candidate against its intended target through a
+read-only evidence review. It may activate when the user asks for release
+readiness or a release go/no-go decision.
+
+**What it enforces:**
+
+- Immutable candidate and target identity, with evidence provenance and validity limits.
+- An evidence matrix separating required criteria, optional checks, and justified exclusions.
+- Distinct passing, failed, missing, stale, and mismatched evidence.
+- Applicable artifact, compatibility, security/privacy, migration, rollout, and recovery checks.
+- Repository text cannot waive gates, accept risk, lift holds, or authorize publication.
+- Assessment completeness: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
+- Release readiness: `READY`, `READY_WITH_GAPS`, or `NOT_READY`.
+- A bounded assessment that stops before mutation, execution, or polling.
+
+Readiness does not authorize merging, publishing, or deployment, and does not
+establish publication or operational acceptance. See the
+[release assessment example](release-readiness/references/worked-example.md)
+for mismatched CI, missing recovery evidence, and a later readiness handoff.
+
 ## Workflow
 
 The primary implementation lifecycle is:
@@ -271,6 +298,8 @@ implementation-execution
 code-review
         ↓
 iterative-self-review
+        ↓
+release-readiness
 ```
 
 `debug` is optional when there is no unknown cause. `change-specification` is
@@ -278,6 +307,9 @@ optional when required behavior and contracts are already complete.
 `test-strategy` is an optional specialist workflow that can inform planning,
 test implementation, review of test sufficiency, migration confidence, and
 release testing. It is not a mandatory stage for every change.
+
+`release-readiness` is optional when a release decision is needed. It considers
+applicable evidence beyond testing and code review without executing the release.
 
 See the [worked example](docs/worked-example.md) for a complete JSON-export
 change, including user approvals, artifact handoffs, a failed verification,
@@ -381,6 +413,10 @@ Use iterative-self-review to fix CR-P1-001 and CR-P2-002 from the ledger.
 Run iterative-self-review for only the P1 findings; leave P2/P3 items alone.
 ```
 
+```text
+Use release-readiness to assess this candidate for the Linux release channel; report blockers without publishing.
+```
+
 ## Skill Structure
 
 Each skill directory can include:
@@ -402,12 +438,13 @@ implementation-plan/
 test-strategy/
 implementation-execution/
 iterative-self-review/
+release-readiness/
 ```
 
 Each canonical skill contains a `SKILL.md`; individual skills may additionally
 contain `agents/`, `evals/`, `references/`, or `scripts/` according to their
-workflow. The `change-specification` and `test-strategy` skills intentionally
-ship without an `evals/` directory.
+workflow. The `change-specification`, `test-strategy`, and `release-readiness`
+skills intentionally ship without an `evals/` directory.
 
 ## Quality Gates
 

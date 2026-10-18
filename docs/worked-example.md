@@ -236,6 +236,19 @@ findings in that scope, the illustrative result is review completeness
 CI and separate user authorization. A review decision cannot authorize an
 external write.
 
+## 7. Assess a release candidate when needed
+
+After review, the user can ask `release-readiness` to assess an identified
+candidate for a named target. It checks applicable evidence beyond review and
+testing, including artifact identity, compatibility, security/privacy holds,
+rollout, and recovery. Review approval alone does not establish release readiness.
+
+The [release assessment example](../release-readiness/references/worked-example.md)
+continues with synthetic candidate-matched evidence, a mismatched CI revision,
+missing recovery evidence, and later read-only reassessment. A positive result
+does not authorize tagging, merging, publishing, or deployment, and does not
+establish that a release was published or operationally accepted.
+
 ## Optional diagnostic entry point
 
 If the task begins with an unexplained symptom instead of established required
