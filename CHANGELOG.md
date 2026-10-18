@@ -6,6 +6,37 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+### Added
+
+- A research-backed skill development roadmap covering proposed priorities,
+  workflow boundaries, phased delivery gates, overlap with existing skills,
+  deferred candidates, and primary sources. The roadmap proposes future work
+  without adding skills or changing activation, outputs, or release metadata.
+- M0 repository-orientation boundary validation with a behavioral specification,
+  routing exclusions, traceable requirements and acceptance criteria, two
+  synthetic repository examples, and a go-to-planning decision. This records
+  static design evidence without claiming measured demand or model behavior.
+- An M1 repository-orientation implementation plan tracing the boundary
+  specification into canonical authoring, deterministic contracts, catalog and
+  plugin integration, verification, and scoped review.
+- An unreleased read-only `repository-orientation` skill for bounded repository
+  maps, with snapshot/ownership evidence, command-effect descriptions, routing
+  exclusions, coverage outcomes, and a two-pass stopping boundary. Supporting
+  references, client metadata, eighteen deterministic decision cases, focused
+  contracts, and an inert saved-map trust fixture accompany the skill.
+- Catalog, contributor, lifecycle, and installation documentation distinguish the
+  nine-skill development checkout from the published eight-skill v1.9.0 release.
+  Plugin descriptions include orientation; published-release pins, manifest
+  version, and the three starter prompts are preserved. Behavioral model evals
+  were not run, and no model-behavior certification is claimed.
+
+### Fixed
+
+- Removed the accidental PyYAML dependency from the standalone plugin contract
+  suite. Orientation metadata assertions now run with repository validation,
+  which already requires PyYAML. A clean-interpreter regression checks plugin
+  module imports and the orientation contracts without site packages.
+
 ### Changed
 
 - Installation examples and published archive smoke checks pin verified v1.9.0

@@ -25,6 +25,7 @@ CONTRACT_TESTS = (
     "scripts.test_implementation_execution_contract",
     "scripts.test_test_strategy_contract",
     "scripts.test_release_readiness_contract",
+    "scripts.test_repository_orientation_contract",
     "scripts.test_change_specification_contract",
     "scripts.test_skill_behavior_contracts",
     "scripts.test_content_trust_contracts",

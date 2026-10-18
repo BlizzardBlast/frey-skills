@@ -1,0 +1,6 @@
+interface:
+  display_name: 'Repository Orientation'
+  short_description: 'Bounded, source-linked repository maps'
+  default_prompt: 'Use $repository-orientation to explain this repository or subsystem with source anchors, coverage limits, and verification entry points without changing anything.'
+policy:
+  allow_implicit_invocation: true

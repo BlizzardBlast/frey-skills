@@ -46,6 +46,28 @@ class CheckTests(unittest.TestCase):
         with mock.patch.object(check.shutil, "which", return_value=None):
             self.assertIn("Git", check.preflight(("whitespace",))[0])
 
+    def test_plugin_contracts_load_and_orientation_runs_without_site_packages(self) -> None:
+        script = (
+            "import importlib.util\nimport unittest\nfrom scripts import check\n"
+            "assert importlib.util.find_spec('yaml') is None, 'PyYAML must be unavailable'\n"
+            "loader = unittest.TestLoader()\n"
+            "loader.loadTestsFromNames(check.CONTRACT_TESTS)\n"
+            "if loader.errors:\n"
+            "    raise SystemExit('\\n'.join(loader.errors))\n"
+            "suite = loader.loadTestsFromName('scripts.test_repository_orientation_contract')\n"
+            "result = unittest.TextTestRunner().run(suite)\n"
+            "raise SystemExit(not result.wasSuccessful())\n"
+        )
+        result = subprocess.run(
+            [sys.executable, "-B", "-E", "-S", "-X", "utf8", "-c", script],
+            cwd=check.REPOSITORY_ROOT,
+            capture_output=True,
+            encoding="utf-8",
+            timeout=30,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_missing_posix_ps_stops_before_any_repository_command(self) -> None:
         with mock.patch.object(check, "os", SimpleNamespace(name="posix", environ=os.environ)), mock.patch.object(
             check.importlib.util, "find_spec", return_value=object()

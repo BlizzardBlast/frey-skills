@@ -30,6 +30,16 @@ For this example, inspection has established these canonical sources:
 These paths belong to the fictional application, not `frey-skills`. The branch
 starts clean at an identified baseline; there is no unrelated dirty work.
 
+## Optional orientation
+
+If the user first asks how the unfamiliar CLI and storage fit together,
+`repository-orientation` can produce a bounded map with source anchors, snapshot
+limits, and discovered verification entry points. It does not run the tests or
+turn that map into a change plan or review decision. See its
+[fictional map and direct-lookup exclusion](../repository-orientation/references/worked-example.md).
+This unreleased skill is optional; the concrete change below can start directly
+with specification and does not require orientation.
+
 ## 1. Define the behavior with change-specification
 
 Example user request:
