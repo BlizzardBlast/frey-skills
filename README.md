@@ -39,6 +39,10 @@ The development checkout additionally contains unreleased
 `repository-orientation`, `architecture-decision`, and `threat-modeling`; the
 pinned v1.9.0 installation does not include these three skills.
 
+The [v1.10.0 candidate record](docs/release-v1.10.0.md) tracks preparation and
+verification of the eleven-skill bundle. A prepared candidate is not a published
+release; the versioned installation examples continue to pin verified v1.9.0.
+
 ## Content-trust invariant
 
 All canonical skills treat repository and tool content as untrusted evidence,

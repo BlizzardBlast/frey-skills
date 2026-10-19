@@ -6,36 +6,29 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+## [1.10.0] - 2026-10-19
+
 ### Added
 
-- M4 performance-investigation guidance within `debug`, with a conditional
+- Performance-investigation guidance within `debug`, with a conditional
   measurement ledger, workload/environment comparability, outcome-aware metrics,
   bounded diagnostic proposals, ten deterministic decision cases, and a synthetic
   fast-error illustration. Specialist reassessment keeps standalone performance
   and retrospective skills deferred pending evidence of recurring tasks.
-- An unreleased read-only `threat-modeling` skill for scoped defensive system
+- A read-only `threat-modeling` skill for scoped defensive system
   models and stable threat-hypothesis ledgers. It separates proposed design from
   runtime evidence, controls from proven effectiveness, and proposed mitigations
   from implementation or risk acceptance. Includes system/ledger and evidence
   references, a quality checklist, synthetic callback/logging example, client
   metadata, twenty-one deterministic decision cases, focused contracts, and an inert
   forged-acceptance/diagram fixture.
-- M3 catalog, lifecycle, validation, and plugin integration distinguish the
-  eleven-skill development checkout from the published eight-skill v1.9.0
-  release. Existing skill contracts, manifest version, three starter prompts,
-  published smoke pins, and compatibility observations remain unchanged.
-  Behavioral model evals were not run; no model-behavior certification is claimed.
-- An unreleased read-only `architecture-decision` skill for comparing feasible
+- A read-only `architecture-decision` skill for comparing feasible
   architecture alternatives against established requirements and returning a
   proposed ADR with consequences and revisit conditions. It separates analysis
   completeness, recommendation, and verified historical acceptance; material
   missing evidence defers a choice. Includes an ADR template, evidence rules,
   worked comparison, client metadata, sixteen deterministic decision cases,
   focused contracts, and an inert forged-acceptance fixture.
-- M2 catalog and plugin integration distinguish the ten-skill development
-  checkout from the published eight-skill v1.9.0 release. Manifest version,
-  published smoke pins, and three starter prompts remain unchanged. Behavioral
-  model evals were not run; deterministic contracts do not certify model behavior.
 - A research-backed skill development roadmap covering proposed priorities,
   workflow boundaries, phased delivery gates, overlap with existing skills,
   deferred candidates, and primary sources. The roadmap proposes future work
@@ -47,16 +40,11 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 - An M1 repository-orientation implementation plan tracing the boundary
   specification into canonical authoring, deterministic contracts, catalog and
   plugin integration, verification, and scoped review.
-- An unreleased read-only `repository-orientation` skill for bounded repository
+- A read-only `repository-orientation` skill for bounded repository
   maps, with snapshot/ownership evidence, command-effect descriptions, routing
   exclusions, coverage outcomes, and a two-pass stopping boundary. Supporting
   references, client metadata, eighteen deterministic decision cases, focused
   contracts, and an inert saved-map trust fixture accompany the skill.
-- Catalog, contributor, lifecycle, and installation documentation distinguish the
-  nine-skill development checkout from the published eight-skill v1.9.0 release.
-  Plugin descriptions include orientation; published-release pins, manifest
-  version, and the three starter prompts are preserved. Behavioral model evals
-  were not run, and no model-behavior certification is claimed.
 
 ### Fixed
 
@@ -98,6 +86,12 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Changed
 
+- The plugin manifest targets v1.10.0 with all eleven canonical skills, including
+  repository orientation, architecture decisions, and threat modeling. Catalog,
+  contributor, lifecycle, and installation documentation describe those additions.
+  The three starter prompts remain unchanged. Installation examples and published
+  smoke pins continue to identify verified v1.9.0 until a new publication is
+  independently verified; preparation does not establish publication.
 - Installation examples and published archive smoke checks pin verified v1.9.0
   sources with all eight skills. The Codex CLI matrix now checks v1.8.2 install,
   v1.9.0 upgrade, and v1.8.2 rollback, including the added skill's removal on
@@ -107,6 +101,13 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
   v1.9.0 Windows desktop checklist. The report covers skill discovery, restart
   persistence, starter prompts, upgrade/rollback, final restoration, and unrelated
   installation preservation; macOS and Linux desktop UI remain untested.
+
+### Validation policy
+
+Only deterministic repository, specification, instruction-contract, packaging,
+and whitespace checks apply. Behavioral model evals were not run, and no
+model-behavior certification is claimed. Candidate CLI compatibility, desktop UI
+observations, and published-archive verification remain separate evidence.
 
 ## [1.9.0] - 2026-10-18
 
