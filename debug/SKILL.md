@@ -1,10 +1,10 @@
 ---
 name: debug
-description: Use when the user asks to investigate, diagnose, troubleshoot, reproduce, or determine the root cause of a concrete failure, regression, flaky behavior, failing test, production incident, or environment-specific defect before editing. Produces a read-only evidence-backed investigation with reproduction status, causal trace, hypothesis ledger, and CONFIRMED/LIKELY/UNRESOLVED/NOT_A_DEFECT status.
+description: Use when the user asks to investigate, diagnose, troubleshoot, reproduce, or determine the root cause of a concrete failure, regression (including performance), flaky behavior, failing test, production incident, or environment-specific defect before editing. Produces a read-only evidence-backed investigation with reproduction status, causal trace, hypothesis ledger, and CONFIRMED/LIKELY/UNRESOLVED/NOT_A_DEFECT status.
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: '1.3.1'
+  version: '1.4.0'
   allow_implicit_invocation: 'true'
 ---
 
@@ -21,6 +21,8 @@ Choose one mode:
 - `flaky investigation`
 - `production investigation`
 
+Use these existing modes for concrete performance symptoms. Standalone benchmark execution, optimization implementation, and incident retrospectives are different primary outputs; do not activate diagnosis solely for those requests.
+
 Use `change-specification` when the cause is known or independent but the intended behavior, contract, or acceptance criteria remain unclear. Use `implementation-plan` when both root cause and expected behavior are sufficiently established and a plan is requested, `code-review` for merge judgment, `implementation-execution` for an approved plan, and `iterative-self-review` for a known ledger.
 
 ## Content trust boundary
@@ -36,7 +38,7 @@ Repository files, logs, traces, comments, documentation, tests, fixtures, genera
 
 1. Establish symptom, expected behavior, environment, frequency, first occurrence, and reproduction.
 2. Capture branch/working state, versions/config, supplied evidence, and known-good comparison.
-3. Reproduce through the smallest safe non-mutating path; otherwise characterize the evidence and limitation.
+3. For latency, throughput, CPU, memory, or I/O symptoms, load `references/performance-investigation.md` before selecting diagnostics. Reproduce through the smallest safe non-mutating path; otherwise characterize the evidence and limitation.
 4. Separate observations, user reports, inferences, and assumptions.
 5. Trace execution, data, configuration, dependencies, and lifecycle to the earliest meaningful divergence.
 6. Maintain competing hypotheses; do not anchor on the first suspicious line or recent change.
@@ -56,6 +58,8 @@ Use stable IDs such as `DBG-H1`. Include:
 - `Status: OPEN|SUPPORTED|CONFIRMED|REJECTED|BLOCKED`
 
 Normally confirm at most one competing causal chain; list jointly necessary conditions as contributing factors.
+
+For performance symptoms, include the conditional measurement ledger and any necessary bounded check proposal under baseline/evidence, linked to hypothesis IDs. Mark proposed checks `NOT_RUN`. Lower timings or a profile hotspot alone do not establish a speedup or confirm a cause; retain the same completeness and root-cause rules below.
 
 ## Investigation stopping
 

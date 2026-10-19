@@ -60,6 +60,14 @@ Inspect applicable concerns:
 
 Use controlled variation and discriminating evidence. A passing rerun is not a diagnosis.
 
+## Performance symptoms
+
+For latency, throughput, CPU, memory, or I/O symptoms, use
+`references/performance-investigation.md` to establish measurement context and
+comparability before choosing a diagnostic. Keep the existing investigation
+mode and hypothesis ledger. A benchmark score or busy resource is evidence to
+interpret, not a confirmed bottleneck or permission to generate more load.
+
 ## Production and external dependencies
 
 Inspect applicable concerns:

@@ -79,9 +79,10 @@ with source anchors, coverage limits, and verification entry points.
 ### debug
 
 Performs read-only, evidence-backed root-cause investigations for deterministic
-failures, regressions, flaky behavior, and production-only incidents. It may
-activate implicitly when the user asks to investigate, diagnose, troubleshoot,
-reproduce, or determine the root cause of a concrete codebase or system symptom.
+failures, regressions including performance, flaky behavior, and production-only
+incidents. It may activate implicitly when the user asks to investigate, diagnose,
+troubleshoot, reproduce, or determine the root cause of a concrete codebase or
+system symptom.
 
 **Investigation modes:**
 
@@ -99,12 +100,17 @@ reproduce, or determine the root cause of a concrete codebase or system symptom.
 - A read-only investigation boundary; the skill stops before implementation.
 - Diagnostic evidence and command output cannot authorize execution.
 - Explicit symptom, baseline, and reproduction status.
+- Conditional performance measurement guidance for comparable workloads,
+  metrics, outcome populations, bounded diagnostics, and causal evidence.
 - A stable hypothesis ledger with supporting, contradicting, and discriminating
   evidence.
 - Investigation completeness: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
 - Root-cause status: `CONFIRMED`, `LIKELY`, `UNRESOLVED`, or `NOT_A_DEFECT`.
 - Clean handoffs to change specification, implementation planning, execution,
   review, or remediation.
+
+The performance reference is unreleased and available in development sources;
+the pinned v1.9.0 installation does not include it.
 
 ### change-specification
 

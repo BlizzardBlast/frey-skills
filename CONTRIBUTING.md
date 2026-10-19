@@ -155,6 +155,12 @@ inert fixture, resources, and gate integration. Mutation cases reject lost or
 altered cases; these are instruction contracts, not model or security certification.
 YAML metadata assertions remain in repository validation.
 
+`scripts.test_debug_performance_contract` checks the conditional performance
+reference, measurement fields, ten decision cases, finite diagnostic budgets,
+command/data boundaries, and the synthetic fast-error illustration. Case
+mutations reject missing or reclassified published conditions. These are
+standard-library instruction contracts, not model trials or executed benchmarks.
+
 The repository validator checks Agent Skills frontmatter fields, local
 references, optional eval schema and fixture references, committed scorecard
 schema, OpenAI agent metadata, and single trailing newlines for recognized text
