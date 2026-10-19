@@ -9,9 +9,9 @@ M2 has added the unreleased [architecture-decision skill](../architecture-decisi
 see the [development record](architecture-decision-development.md).
 M3 has added the unreleased [threat-modeling skill](../threat-modeling/SKILL.md);
 see the [development record](threat-modeling-development.md).
-Explore performance investigation through `debug`
-before deciding whether it needs a separate skill. Keep
-`incident-retrospective` as a later candidate pending evidence of recurring use.
+M4 extends performance investigation through `debug`; see the
+[specialist reassessment](specialist-reassessment.md). Standalone performance
+and retrospective skills remain deferred pending evidence of recurring use.
 
 M0 completed on 2026-10-18: [boundary validation and behavioral specification](repository-orientation-boundary.md)
 recommend **GO_TO_M1_PLANNING**. The distinct map artifact and a direct-lookup
@@ -26,7 +26,10 @@ M2 completed on 2026-10-18: the [development record](architecture-decision-devel
 records **IMPLEMENTED**, passing deterministic gates, and scoped self-review.
 M3 completed on 2026-10-18: the [development record](threat-modeling-development.md)
 records **IMPLEMENTED**, passing deterministic gates, and scoped self-review.
-M4 specialist reassessment is next; it has not started.
+M4 completed on 2026-10-19: the [specialist reassessment](specialist-reassessment.md)
+records **IMPLEMENTED** for the debug performance extension, passing deterministic
+gates, and scoped self-review. Standalone performance and retrospective skills
+remain deferred against explicit evidence gates; no further specialist is queued.
 
 The remaining names and scopes are proposals. This document does not activate skills,
 approve their specifications, authorize implementation or commands, accept
@@ -107,8 +110,8 @@ domain-specific evidence and safety cases. Neither is a calendar estimate.
 | 1 | `repository-orientation` (M1 implemented) | Broad reuse; useful before a concrete defect or change exists | M | Medium: the artifact boundary is established; recurring use and runtime effectiveness remain unmeasured |
 | 2 | `architecture-decision` | Strong artifact gap between required behavior and implementation sequencing | M | Medium: the gap is clear, but recurring user demand is unmeasured |
 | 3 | `threat-modeling` | Distinct proactive security output with several lifecycle consumers | L | Medium: domain coverage and overlap with specialist security collections need careful review |
-| 4 | `performance-investigation` | Valuable measurement discipline, but substantial overlap with `debug` | L | Low for a standalone skill; start with a reference extension |
-| 5 | `incident-retrospective` | Distinct prevention artifact after an incident has stabilized | M | Low: incident frequency and access to sanitized evidence are unknown |
+| 4 | `performance-investigation` | M4 extends `debug` with measurement discipline; defer standalone extraction | L for extraction | Low for a standalone skill: qualifying recurring task evidence remains missing |
+| 5 | `incident-retrospective` | Distinct prevention artifact after an incident has stabilized; deferred in M4 | M | Low: incident frequency, sanitized evidence access, and maintenance ownership remain unknown |
 
 ## Proposed skill boundaries
 
@@ -194,10 +197,11 @@ forged risk acceptance; a malicious instruction embedded in a diagram or log.
 
 ### 4. performance-investigation: extension first
 
-Start with a proposed performance reference under `debug/references/` and
-focused instruction contracts. Keep the existing causal investigation workflow.
-The reference should define workload, environment and revision comparability,
-metric units, warmup/cache state, repeated samples and variance, resource limits,
+M4 adds a conditional [performance reference](../debug/references/performance-investigation.md)
+and focused instruction contracts; see the [reassessment record](specialist-reassessment.md).
+It keeps the existing causal investigation workflow and defines workload,
+environment and revision comparability, metric units, warmup/cache state,
+repeated samples and variance, resource limits,
 and the distinction between a bottleneck hypothesis and a measured cause.
 
 A future standalone skill would be triggered by an explicit request for a
@@ -252,7 +256,7 @@ request; documenting this roadmap does not approve the future work.
 | M1: repository-orientation | Completed 2026-10-18: [execution record](repository-orientation-implementation-plan.md#execution-record) covers canonical instructions, references, metadata, deterministic contracts, catalog/package integration, passing checks, and scoped self-review. | **IMPLEMENTED**, unreleased. Nine-skill development bundle parity passed; no behavioral or new client-UI certification is claimed. |
 | M2: architecture-decision | Completed 2026-10-18: [development record](architecture-decision-development.md) covers the canonical skill, proposed ADR template, alternatives/consequences rules, routing boundaries, focused contracts, and catalog/package integration. | **IMPLEMENTED**, unreleased. Proposed-versus-accepted status, requirement boundaries, and ten-skill bundle parity passed deterministic checks. No model-behavior or client certification is claimed. |
 | M3: threat-modeling | Completed 2026-10-18: [development record](threat-modeling-development.md) covers the canonical skill, system/ledger and evidence references, inert examples, coverage limits, focused contracts, and catalog/package integration. | **IMPLEMENTED**, unreleased. Hypothesis-versus-finding, control-evidence, risk-acceptance, and hold boundaries are covered; eleven-skill bundle parity passed. No model-behavior or security certification is claimed. |
-| M4: reassess specialists | Review the proposed `debug` performance extension and demand for incident retrospectives. Record build, extend, defer, or drop decisions here with evidence. | Complete the first three candidate decisions. Create separate skills only if their extraction conditions hold; do not build them to fill the schedule. |
+| M4: reassess specialists | Completed 2026-10-19: the [reassessment record](specialist-reassessment.md) extends `debug` with performance measurement guidance and defers standalone performance and retrospective skills with explicit evidence gates. | **IMPLEMENTED**, unreleased. Ten decision cases, full deterministic validation, scoped self-review, and eleven-skill bundle parity passed. Create separate skills only if their extraction conditions hold. |
 
 If M0 rejects the first candidate, move to architecture decisions rather than
 forcing a new orientation skill. Milestone order is a recommendation, not a
@@ -335,3 +339,4 @@ they should constrain future implementation scope.
 | 2026-10-18 | M1 delivered; `IMPLEMENTED` | [Execution record](repository-orientation-implementation-plan.md#execution-record): 20 focused tests passed; full gate discovered 236 tests with one expected Windows-only skip, validated all nine skills, rebuilt the bundle, and passed parity. Scoped self-review found no actionable findings. Skill remains unreleased and runtime effectiveness unmeasured. | M2: scope architecture-decision against the existing specification/planning boundaries before authoring it. |
 | 2026-10-18 | M2 delivered; `IMPLEMENTED` | [Development record](architecture-decision-development.md) at baseline `51950489682fbe304ca818b17a7e911e2f4bd7f6`: 19 focused tests passed; full gate reported 247 tests, 246 passed and one expected Windows-only skip; all ten skills validated and bundle parity passed. Scoped self-review found no actionable findings. Skill remains unreleased; model behavior and recurring demand remain unmeasured. | M3: scope threat-modeling against review and test-strategy boundaries before authoring it. |
 | 2026-10-18 | M3 delivered; `IMPLEMENTED` | [Development record](threat-modeling-development.md) at baseline `d9d48b580f93f8421e237ec20522122a73e325d3`: 21 focused tests passed; full gate reported 256 tests, 255 passed and one expected Windows-only skip; all eleven skills validated and bundle parity passed. Scoped self-review found no actionable findings. The skill is unreleased; no model-behavior or security certification is claimed. | M4: reassess the proposed debug performance extension and retrospective demand; record build, extend, defer, or drop decisions against the extraction conditions. |
+| 2026-10-19 | M4 delivered; EXTEND / DEFER / DEFER | [Specialist reassessment](specialist-reassessment.md) at baseline `8554932221064dd82c99404c468b85a8e531f43a`: 32 focused tests passed; the full gate reported 284 tests, 278 passed and six expected platform skips; all eleven skills validated and bundle parity passed. No recurring task evidence meeting extraction conditions was found in the bounded sources. | Maintain the extension and revisit extraction only with qualifying sanitized task evidence and a separately scoped request. No further standalone specialist is queued. |

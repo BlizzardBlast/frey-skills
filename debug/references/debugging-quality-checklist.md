@@ -47,6 +47,14 @@ Run this before finalizing any `debug` investigation.
 - [ ] `NOT_A_DEFECT` explains why the symptom and materially relevant local failure handling satisfy the applicable contracts; external origin alone is insufficient.
 - [ ] Confirmed external failures and external triggers exposing local defects retain their causal status; failure ownership is reported separately.
 
+## Performance evidence, when applicable
+
+- [ ] Measurements identify workload, revision/configuration, environment, metric units and boundary, sampling window, cache/warmup state, and source/execution status.
+- [ ] Baseline and current results are comparable or their material differences explicitly prevent a speedup/regression claim.
+- [ ] Successful and failed operation timings, traffic, errors, and relevant resource pressure are distinguished; aggregates do not conceal changed outcomes.
+- [ ] Profiles and timing differences remain hypotheses until discriminating evidence establishes the causal chain.
+- [ ] Every proposed check has a finite sample/time/resource budget and stopping conditions; unsafe effects are blocked and unrun checks remain `NOT_RUN`.
+
 ## Handoff and safety
 
 - [ ] The recommended next workflow matches the user's requested artifact.

@@ -8,6 +8,11 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Added
 
+- M4 performance-investigation guidance within `debug`, with a conditional
+  measurement ledger, workload/environment comparability, outcome-aware metrics,
+  bounded diagnostic proposals, ten deterministic decision cases, and a synthetic
+  fast-error illustration. Specialist reassessment keeps standalone performance
+  and retrospective skills deferred pending evidence of recurring tasks.
 - An unreleased read-only `threat-modeling` skill for scoped defensive system
   models and stable threat-hypothesis ledgers. It separates proposed design from
   runtime evidence, controls from proven effectiveness, and proposed mitigations
