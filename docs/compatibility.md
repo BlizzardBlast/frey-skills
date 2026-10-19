@@ -1,8 +1,9 @@
 # Recorded plugin compatibility
 
-The current published release is v1.9.0; see the separate
-[v1.9.0 verification](#v190-verification) for its archive, CLI, and
-maintainer-reported Windows desktop results.
+The current published release is v1.10.0; see the separate
+[v1.10.0 verification](#v1100-verification) for its public archive, CLI checks,
+and desktop coverage limits. The maintainer-reported Windows desktop results
+below apply to v1.9.0 only.
 
 Historical v1.8.1/v1.8.2 checks were recorded on 2026-10-17 with Windows 11
 build 26300 and Codex CLI 0.150.1.
@@ -19,6 +20,7 @@ and restart persistence remain **NOT_TESTED**.
 | [v1.8.1](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.8.1) | `8fc076daa84782761d3ebf99f8f8902785119796` | `53efeb0114629c2d66ef0b5ca90cdcc6ea1e8e1aee59563b43a54f67864e44c4` |
 | [v1.8.2](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.8.2) | `11720d09c41c63f853f24ff6839eed167db6717e` | `7ee0ef9f99a04c4f5be6a2cad35db8966b77f670161269f8d6994b9ba169e00e` |
 | [v1.9.0](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.9.0) | `9944b36d4406bb89443c5fabdbb15d4d019478fe` | `9e2870289252c26ac96a9bc01303d4b36bd3f96423e311d708e2ade6a889bf65` |
+| [v1.10.0](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.10.0) | `97f755b41e388f31b7c63465743ac26aa111360c` | `616ee291a1bca1ec0719045adf191b9dd773e8c23bed2a73446a865a13687cfc` |
 
 Each ZIP matches its published `SHA256SUMS` and the tagged manifest, license,
 skill set, and supporting-file bytes. The client checks use the downloaded
@@ -172,3 +174,34 @@ do not infer the app build from the historical v1.8.x observations. This report
 does not establish desktop installed-byte parity or model behavior. macOS and
 Linux desktop UI remain **NOT_TESTED**. Behavioral model evals were not run,
 and no model-behavior certification is claimed.
+
+## v1.10.0 verification
+
+Checked on 2026-10-19 on Windows 11 build 26300 with Codex CLI 0.150.1 and
+Skills CLI 1.7.2. The [release workflow](https://github.com/BlizzardBlast/frey-skills/actions/runs/39248673037)
+passed Windows validation and Linux validation/publication at the tag commit
+above. These results use the downloaded public archives. The earlier Windows
+candidate retained CRLF and a different digest; it is historical candidate
+evidence, not the public artifact used below.
+
+| Check | Result | Observed evidence |
+| --- | --- | --- |
+| Public v1.10.0 archive | PASS | `scripts/smoke_release.py` verified the tag/commit, public checksum, manifest, license, all eleven skills, and every supporting byte in all 122 files against an LF tagged checkout. |
+| Skills CLI installations | PASS | `scripts/smoke_install.py --cli dist/smoke-tools/node_modules/skills/bin/cli.mjs` verified selected and complete eleven-skill installations from both checkout and the v1.10.0 source pin, in default and copy modes, with exact listings, 120 skill-resource files, byte parity, and user-file preservation. |
+| Install v1.9.0 | PASS | `scripts/smoke_codex.py --cli dist/codex-smoke-cli/node_modules/@openai/codex/bin/codex.js` discovered exactly eight enabled plugin skills in the isolated 1.9.0 cache. |
+| Upgrade to v1.10.0 | PASS | Exactly eleven enabled plugin skills resolve to 1.10.0, including `repository-orientation`, `architecture-decision`, and `threat-modeling`. |
+| Roll back to v1.9.0 | PASS | Exactly eight plugin skills resolve to 1.9.0; the three additions are absent. |
+| Starter prompts, ownership, and preservation | PASS | Each phase retained three starter prompts, correct plugin ownership and versioned paths, installed public-archive byte parity, and the unrelated standalone skill fixture. |
+| v1.10.0 desktop UI | NOT_TESTED | No Windows, macOS, or Linux desktop observation was supplied for this version. Historical v1.9.0 maintainer observations do not establish v1.10.0 UI compatibility. |
+
+Commands used the repository's Python environment and disposable child homes;
+the three metadata RPCs ran no model turn or skill invocation. No real agent
+installation was modified. Behavioral model evals were not run, and no
+model-behavior certification is claimed.
+
+These archive and CLI rows are local Windows observations. The installation,
+archive, and Codex client matrices repeat the new published pins on Windows,
+Linux, and macOS; inspect the exact pin-update commit's jobs for hosted evidence.
+See the [release record](release-v1.10.0.md) for public and historical candidate
+identities, and keep the [optional desktop checklist](installation.md#manual-plugin-compatibility-check)
+separate from those automated checks.

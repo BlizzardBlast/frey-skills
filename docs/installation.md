@@ -4,10 +4,9 @@ Choose skill folders through the Skills CLI or the complete Codex plugin ZIP.
 Use one route for a given skill in an agent to avoid duplicate names. Neither
 route requires model credentials or behavioral model evals.
 
-The versioned examples target the published eight-skill v1.9.0 release.
-`repository-orientation`, `architecture-decision`, and `threat-modeling` are
-unreleased and available only in development sources that contain them; none
-is included in that pinned release or its ZIP.
+The versioned examples target the published eleven-skill v1.10.0 release,
+including `repository-orientation`, `architecture-decision`, and `threat-modeling`,
+and the performance-investigation guidance within `debug`.
 
 ## Install skill folders
 
@@ -24,29 +23,29 @@ installations in default and copy modes, including supporting-file byte parity.
 See [Contributing](../CONTRIBUTING.md#installation-smoke-checks) to run the checks.
 This coverage does not test agent discovery, activation, or model behavior.
 
-List the eight skills at the versioned source without installing them:
+List the eleven skills at the versioned source without installing them:
 
 ```bash
-npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.9.0 --list
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.10.0 --list
 ```
 
 Install interactively, choosing the skills, target agent, and scope:
 
 ```bash
-npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.9.0
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.10.0
 ```
 
 For example, install only `code-review` for Codex in the current project:
 
 ```bash
-npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.9.0 --skill code-review --agent codex
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.10.0 --skill code-review --agent codex
 ```
 
 Add `--global` for user scope. Use `--copy` if your environment cannot create
 the installer's symlinks. Other agents can be selected in the interactive
 installer or with their upstream agent identifier.
 
-The `tree/v1.9.0` URL selects that Git tag. For a commit pin, replace `v1.9.0`
+The `tree/v1.10.0` URL selects that Git tag. For a commit pin, replace `v1.10.0`
 with the full commit SHA. The shorthand `BlizzardBlast/frey-skills` follows the
 default branch. `owner/repo@name` selects a skill in the Skills CLI; it is not
 the version-pin syntax.
@@ -74,10 +73,10 @@ Discovery and file checks do not certify model activation or behavior.
 4. Verify the installed files and discovery again.
 
 Rollback uses the same process with the previously recorded tag or commit.
-For example, roll back from v1.9.0 to v1.8.2 with:
+For example, roll back from v1.10.0 to v1.9.0 with:
 
 ```bash
-npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.8.2 --skill code-review --agent codex
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.9.0 --skill code-review --agent codex
 ```
 
 Choose a different target tag for an upgrade. If no previous release was
@@ -96,26 +95,27 @@ sources. To repeat this file check in a repository checkout, run
 directories and does not install the plugin. Agent discovery and rollback remain
 a separate manual compatibility check below.
 
-Download `frey-skills-1.9.0.zip` and `SHA256SUMS` from the
-[v1.9.0 release](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.9.0).
+Download `frey-skills-1.10.0.zip` and `SHA256SUMS` from the
+[v1.10.0 release](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.10.0).
 Compare the archive's SHA-256 digest with its filename's entry in `SHA256SUMS`:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 -LiteralPath ./frey-skills-1.9.0.zip
+Get-FileHash -Algorithm SHA256 -LiteralPath ./frey-skills-1.10.0.zip
 ```
 
 On macOS or Linux, use:
 
 ```bash
-shasum -a 256 frey-skills-1.9.0.zip
+shasum -a 256 frey-skills-1.10.0.zip
 ```
 
 Stop if the checksum differs. Extract the archive to a new version-specific
 directory. It contains `LICENSE` and a `frey-skills/` folder with
 `.codex-plugin/plugin.json` and `skills/`. Confirm the manifest version is
-`1.9.0` and `skills/` contains these eight directories:
+`1.10.0` and `skills/` contains these eleven directories:
 
 ```text
+architecture-decision
 change-specification
 code-review
 debug
@@ -123,12 +123,14 @@ implementation-execution
 implementation-plan
 iterative-self-review
 release-readiness
+repository-orientation
 test-strategy
+threat-modeling
 ```
 
 Keep the extracted folder in a stable location. Local Codex plugins are
 installed through a marketplace source. For example, in your consuming
-project, extract under `plugins/frey-skills-1.9.0/`, then add this entry to
+project, extract under `plugins/frey-skills-1.10.0/`, then add this entry to
 that project's `.agents/plugins/marketplace.json`:
 
 ```json
@@ -140,7 +142,7 @@ that project's `.agents/plugins/marketplace.json`:
       "name": "frey-skills",
       "source": {
         "source": "local",
-        "path": "./plugins/frey-skills-1.9.0/frey-skills"
+        "path": "./plugins/frey-skills-1.10.0/frey-skills"
       },
       "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
       "category": "Productivity"
@@ -186,7 +188,7 @@ prompts, provider credentials, paid tokens, or behavioral evals.
    exists. Keep the previous extracted directory for rollback.
 2. Install the verified archive through that project's local marketplace entry,
    then restart the client as described above. Confirm **Frey Skills** appears
-   and its skill selector lists each of the eight packaged skills once. Use one
+   and its skill selector lists each of the eleven packaged skills once. Use one
    installation route to avoid duplicate skill names. Inspect discovery only;
    do not invoke a skill to establish this result.
 3. If upgrading from an older installed release, change only the Frey Skills

@@ -23,8 +23,8 @@ except ModuleNotFoundError:
 
 ROOT = Path(__file__).resolve().parents[1]
 CLI_VERSION = "1.7.2"
-SOURCE_TAG = "v1.9.0"
-SOURCE_COMMIT = "9944b36d4406bb89443c5fabdbb15d4d019478fe"
+SOURCE_TAG = "v1.10.0"
+SOURCE_COMMIT = "97f755b41e388f31b7c63465743ac26aa111360c"
 REPOSITORY_URL = "https://github.com/BlizzardBlast/frey-skills"
 SOURCE_URL = f"{REPOSITORY_URL}/tree/{SOURCE_TAG}"
 
