@@ -4,7 +4,7 @@ Prepared on 2026-10-19 from baseline
 `a800e15ca5d426c40b4a739e0290c4b8d7af9fd7` on `main`.
 Status: **PREPARED_LOCAL**. This record describes a candidate, not publication.
 The packaged source snapshot is commit
-`b72224e2cb3fa73baa5aca9666f80adf8a0b6719`; subsequent evidence-document changes
+`b72224e2cb3fa73baa5aca9666f80adf8a0b6719`; subsequent documentation changes
 do not alter the packaged skill, manifest, or license bytes.
 
 ## Scope and invariants
@@ -51,7 +51,7 @@ was exported with `git archive` and verified independently below.
 | Candidate archive | PASS | `smoke_release.verify_archive(..., tag="v1.10.0")` checked all 122 archive files against the committed source snapshot, including the license, manifest, eleven skills, and supporting bytes. |
 | Published baseline identity | PASS | `smoke_codex.release_plugin` independently verified v1.9.0 at `9944b36d4406bb89443c5fabdbb15d4d019478fe` and its public ZIP SHA-256 `9e2870289252c26ac96a9bc01303d4b36bd3f96423e311d708e2ade6a889bf65`. Downloaded helpers were not executed. |
 | Codex installation, upgrade, rollback | PASS | `smoke_codex.smoke_client` verified v1.9.0 with eight enabled skills, v1.10.0 with eleven, then v1.9.0 with exactly eight. Each phase checked unique skill names, ownership, versioned cache paths, three starter prompts, installed-byte parity, and preservation of the unrelated standalone skill. Disposable homes excluded inherited credentials/configuration; only metadata RPCs ran. |
-| Candidate notes and local links | PASS | All 26 local links/anchors in README and this record resolved. Candidate status remains separate from publication and historical compatibility evidence. |
+| Candidate notes and local links | PASS | All 29 local links/anchors in README, this record, and the proposed scope resolved. Candidate status remains separate from publication and historical compatibility evidence. |
 
 The local candidate ZIP is `dist/releases/frey-skills-1.10.0.zip`. Its SHA-256 is:
 
@@ -130,9 +130,12 @@ Update published installation pins only after an authorized release is verified.
 
 ## Later development
 
-`release-execution` remains a proposed workflow. Its next gate is a requirements
-and acceptance-criteria specification for a concrete release target, explicit
-authorization and credential boundaries, exact candidate identity, publication
-verification, and recovery after partial failure. This candidate does not add
-that skill or approve its operational design. Standalone performance and
-retrospective skills retain the [M4 evidence gates](specialist-reassessment.md#specialist-dispositions).
+The [proposed release-execution scope](release-execution-scope.md) records six
+requirements, eleven acceptance criteria, publication/receipt contracts, and
+partial-failure behavior. Its specification is **PARTIAL / NOT_READY** for
+implementation planning: target ecosystem, approval/credential model, and
+maintenance ownership remain open. The user authorized scoping; this proposal
+does not approve an operational design or implement a new skill.
+
+Standalone performance and retrospective skills retain the
+[M4 evidence gates](specialist-reassessment.md#specialist-dispositions).
