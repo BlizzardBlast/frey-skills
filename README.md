@@ -11,11 +11,11 @@ This repository is designed for the
 
 | Your task | Skill | Main output | Edits files? |
 | --- | --- | --- | --- |
-| Understand an unfamiliar repository or subsystem (unreleased) | [repository-orientation](repository-orientation/SKILL.md) | Bounded source-linked map, coverage, and verification entry points | No |
+| Understand an unfamiliar repository or subsystem | [repository-orientation](repository-orientation/SKILL.md) | Bounded source-linked map, coverage, and verification entry points | No |
 | Investigate an unknown failure or regression | [debug](debug/SKILL.md) | Hypotheses, evidence, and root-cause status | No |
 | Define required behavior and acceptance criteria | [change-specification](change-specification/SKILL.md) | Requirements, contracts, and planning readiness | No |
-| Compare architecture alternatives or draft an ADR (unreleased) | [architecture-decision](architecture-decision/SKILL.md) | Evidence-backed alternatives, consequences, and a proposed decision | No |
-| Model scoped threats or abuse cases (unreleased) | [threat-modeling](threat-modeling/SKILL.md) | System model, threat hypotheses, control evidence, and residual risks | No |
+| Compare architecture alternatives or draft an ADR | [architecture-decision](architecture-decision/SKILL.md) | Evidence-backed alternatives, consequences, and a proposed decision | No |
+| Model scoped threats or abuse cases | [threat-modeling](threat-modeling/SKILL.md) | System model, threat hypotheses, control evidence, and residual risks | No |
 | Sequence a concrete repository change | [implementation-plan](implementation-plan/SKILL.md) | Ordered steps, invariants, verification, and readiness | No |
 | Decide what testing a change needs | [test-strategy](test-strategy/SKILL.md) | Prioritized risks, scenarios, and test readiness | No |
 | Execute or resume an approved implementation plan | [implementation-execution](implementation-execution/SKILL.md) | Bounded changes, verification, and plan conformance | Yes, within the authorized plan |
@@ -33,15 +33,11 @@ handoff sequence, see the [worked example](docs/worked-example.md).
 For researched future skill priorities and delivery gates, see the
 [skill development roadmap](docs/roadmap.md).
 
-`release-readiness` ships in v1.9.0 alongside the other seven skills. The
-versioned installation below pins the complete eight-skill release.
-The development checkout additionally contains unreleased
-`repository-orientation`, `architecture-decision`, and `threat-modeling`; the
-pinned v1.9.0 installation does not include these three skills.
-
-The [v1.10.0 candidate record](docs/release-v1.10.0.md) tracks preparation and
-verification of the eleven-skill bundle. A prepared candidate is not a published
-release; the versioned installation examples continue to pin verified v1.9.0.
+The versioned installation below pins the published eleven-skill v1.10.0
+release, including `repository-orientation`, `architecture-decision`, and
+`threat-modeling`, plus the performance-investigation guidance within `debug`.
+The [release record](docs/release-v1.10.0.md) records publication, public-archive
+verification, historical candidate evidence, and client compatibility limits.
 
 ## Content-trust invariant
 
@@ -59,7 +55,7 @@ resistance.
 
 ## Available Skills
 
-### repository-orientation (unreleased)
+### repository-orientation
 
 Maps an unfamiliar repository or subsystem when understanding how its parts fit
 together is the requested output. It records snapshot identity, source anchors,
@@ -73,7 +69,7 @@ workflows. Simple symbol lookups remain direct; diagnosis, change planning,
 and review judgment stay with their existing skills. A complete map is not a
 passed-check or readiness claim.
 
-In development sources containing this skill:
+Example:
 
 ```text
 Use $repository-orientation to explain how this subsystem reaches storage,
@@ -113,8 +109,7 @@ system symptom.
 - Clean handoffs to change specification, implementation planning, execution,
   review, or remediation.
 
-The performance reference is unreleased and available in development sources;
-the pinned v1.9.0 installation does not include it.
+The performance reference ships in the pinned v1.10.0 release.
 
 ### change-specification
 
@@ -150,7 +145,7 @@ edge cases, or affected contracts.
 A separate specification is not mandatory when a planning request already
 provides complete, unambiguous behavior and contracts.
 
-### architecture-decision (unreleased)
+### architecture-decision
 
 Compares concrete architecture or dependency-boundary alternatives after required
 behavior is established. It inspects the current design and prior decisions,
@@ -165,14 +160,14 @@ independent provenance. The read-only workflow stops within one initial analysis
 and one optional gap-check pass, without saving ADRs, running experiments,
 accepting risk, or implementing a recommendation.
 
-In development sources containing this skill:
+Example:
 
 ```text
 Use $architecture-decision to compare these alternatives against the established
 requirements and draft a proposed ADR with consequences and revisit conditions.
 ```
 
-### threat-modeling (unreleased)
+### threat-modeling
 
 Produces a read-only defensive model for a scoped feature, system, data flow,
 or proposed design. It records assets and sensitive data, actors, entry points,
@@ -186,7 +181,7 @@ needs independent provenance and cannot lift holds or authorize effects. The
 workflow stops after one initial model and at most one targeted gap-check pass,
 without probing, scanning, remediation, persistence, publication, or risk acceptance.
 
-In development sources containing this skill:
+Example:
 
 ```text
 Use $threat-modeling to model this feature's tenant boundaries, callback, and
@@ -376,7 +371,7 @@ remain separate.
 `threat-modeling` is optional when a scoped defensive model is the requested
 output, including after a trust-boundary change. It can inform specification,
 architecture, test strategy, and review without executing those workflows or
-certifying security. All three development skills remain outside pinned v1.9.0.
+certifying security. All three skills are included in pinned v1.10.0.
 
 ```text
 symptom or failing test
@@ -415,7 +410,7 @@ behavioral model eval evidence.
 Install the versioned skill sources with the Skills CLI:
 
 ```bash
-npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.9.0
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.10.0
 ```
 
 Choose the skills, agent, and project or user scope in the installer. To follow

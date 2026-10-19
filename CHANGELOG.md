@@ -6,6 +6,24 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+### Changed
+
+- Installation examples and published-archive smoke checks pin verified v1.10.0
+  at `97f755b41e388f31b7c63465743ac26aa111360c` with all eleven skills.
+  The Codex client matrix checks v1.9.0 installation, v1.10.0 upgrade, and
+  v1.9.0 rollback, including removal of the three added skills on rollback.
+- Catalog and contributor documentation identify the three new skills and debug
+  performance guidance as released. Compatibility records retain separate
+  public-archive, CLI, historical candidate, and desktop evidence.
+
+### Fixed
+
+- Corrected the historical candidate record: its Windows export retained CRLF,
+  despite being described as LF-normalized. Public verification uses the
+  downloaded release ZIP and an LF checkout of the exact tag; the local candidate
+  digest is not substituted for the published digest. Behavioral model evals
+  were not run, and no model-behavior certification is claimed.
+
 ## [1.10.0] - 2026-10-19
 
 ### Added

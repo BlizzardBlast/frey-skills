@@ -4,14 +4,18 @@ Research date: 2026-10-18. Status: proposed direction, not a delivery commitment
 Repository baseline: `19f0bf09ff8a1f1224c45f865090e246f316dfd3` on `main`,
 with eight canonical skills and plugin manifest version `1.9.0`.
 
-M1 has added the unreleased [repository-orientation skill](../repository-orientation/SKILL.md).
-M2 has added the unreleased [architecture-decision skill](../architecture-decision/SKILL.md);
+M1 has added the [repository-orientation skill](../repository-orientation/SKILL.md).
+M2 has added the [architecture-decision skill](../architecture-decision/SKILL.md);
 see the [development record](architecture-decision-development.md).
-M3 has added the unreleased [threat-modeling skill](../threat-modeling/SKILL.md);
+M3 has added the [threat-modeling skill](../threat-modeling/SKILL.md);
 see the [development record](threat-modeling-development.md).
 M4 extends performance investigation through `debug`; see the
 [specialist reassessment](specialist-reassessment.md). Standalone performance
 and retrospective skills remain deferred pending evidence of recurring use.
+
+M1-M4 ship in the published v1.10.0 release; see the
+[release record](release-v1.10.0.md). Historical milestone records below retain
+their prepublication status and evidence dates.
 
 M0 completed on 2026-10-18: [boundary validation and behavioral specification](repository-orientation-boundary.md)
 recommend **GO_TO_M1_PLANNING**. The distinct map artifact and a direct-lookup
