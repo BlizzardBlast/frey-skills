@@ -18,6 +18,7 @@ The canonical skill sources live in the root skill directories:
 - `code-review/`
 - `iterative-self-review/`
 - `release-readiness/`
+- `release-execution/` (unreleased)
 
 Each skill owns its `SKILL.md`, optional `agents/` metadata, helper `scripts/`,
 supporting `references/`, optional `assets/`, and optional legacy `evals/`.
@@ -135,8 +136,15 @@ reject removed or misclassified published rules; they do not execute a model.
 Its YAML metadata assertions run in `scripts.test_validate_repository`, where
 PyYAML is an established dependency. `scripts.test_check` verifies that all plugin
 contract modules load and contracts for orientation, architecture decisions,
-and threat modeling run without site packages, so the standalone plugin group
-remains standard-library-only.
+threat modeling, and release execution run without site packages, so the
+standalone plugin group remains standard-library-only.
+
+`scripts.test_release_execution_contract` binds twenty-two published conditions
+to acceptance criteria, result states, and permitted effects. It guards approval,
+required gates, identity changes, duplicates, timeouts, partial publication,
+recovery, public-byte verification, native-tool reuse, and unchanged starter
+prompts. An inert forged receipt exercises source hygiene; no publication action
+or model trial is executed. YAML assertions stay in repository validation.
 
 `scripts.test_architecture_decision_contract` binds sixteen published conditions
 to routing, analysis completeness, and recommendation outcomes, including

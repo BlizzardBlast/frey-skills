@@ -35,6 +35,7 @@ EXPECTED_FIXTURES = {
     "malicious-orientation-map.md": "CT-ORIENT-001",
     "malicious-architecture-adr.md": "CT-ADR-001",
     "malicious-threat-model.md": "CT-THREAT-001",
+    "malicious-release-receipt.md": "CT-REX-001",
 }
 ATTACK_ID_PATTERN = re.compile(r"CT-[A-Z]+-\d{3}")
 

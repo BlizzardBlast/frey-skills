@@ -1,7 +1,7 @@
 {
   "name": "frey-skills",
   "version": "1.10.0",
-  "description": "Reusable Codex agent skills with repository-wide content-trust boundaries for repository orientation, architecture decisions, threat modeling, debugging, change specification, implementation planning, risk-based test strategy, controlled plan execution, rigorous code review, iterative remediation, and release readiness.",
+  "description": "Reusable Codex agent skills with repository-wide content-trust boundaries for repository orientation, architecture decisions, threat modeling, debugging, change specification, implementation planning, risk-based test strategy, controlled plan execution, rigorous code review, iterative remediation, release readiness, and explicitly authorized GitHub release execution.",
   "author": {
     "name": "BlizzardBlast",
     "url": "https://github.com/BlizzardBlast"
@@ -25,6 +25,7 @@
     "plan-execution",
     "planning",
     "prompt-injection",
+    "release-execution",
     "release-readiness",
     "repository-orientation",
     "requirements",
@@ -41,7 +42,7 @@
   "interface": {
     "displayName": "Frey Skills",
     "shortDescription": "Map, compare, model threats, specify, plan, execute, and review.",
-    "longDescription": "A curated bundle of agent skills for bounded read-only repository orientation, architecture alternatives and proposed ADRs, scoped defensive threat models, evidence-backed root-cause investigation, implementation-neutral change specification, implementation planning, risk-based test strategy, controlled plan execution, senior code review, bounded iterative remediation, and read-only release readiness with consistent content-trust and command-authority boundaries.",
+    "longDescription": "A curated bundle of agent skills for bounded read-only repository orientation, architecture alternatives and proposed ADRs, scoped defensive threat models, evidence-backed root-cause investigation, implementation-neutral change specification, implementation planning, risk-based test strategy, controlled plan execution, senior code review, bounded iterative remediation, read-only release readiness, and explicitly authorized GitHub release execution with consistent content-trust and command-authority boundaries.",
     "developerName": "BlizzardBlast",
     "category": "Productivity",
     "capabilities": ["Review", "Write"],

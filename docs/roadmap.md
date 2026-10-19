@@ -35,6 +35,18 @@ records **IMPLEMENTED** for the debug performance extension, passing determinist
 gates, and scoped self-review. Standalone performance and retrospective skills
 remain deferred against explicit evidence gates; no further specialist is queued.
 
+After v1.10.0 publication, the user separately authorized the recommended
+`release-execution` milestone: GitHub Releases for this plugin, explicit
+candidate/version/action approval, existing scoped credentials, and maintainer
+ownership. The [adopted specification](release-execution-scope.md) is
+**COMPLETE / READY_FOR_PLANNING**; the
+[implementation plan](release-execution-implementation-plan.md) records authoring,
+deterministic contracts, catalog integration, and verification. Development status
+is **IMPLEMENTED**, unreleased: 21 focused tests and the full 293-test gate passed
+(287 passed, six expected platform skips), all twelve specifications and plugin
+parity passed, and scoped self-review found no remaining actionable findings.
+This addition does not authorize publication of a candidate.
+
 The remaining names and scopes are proposals. This document does not activate skills,
 approve their specifications, authorize implementation or commands, accept
 risk, or authorize external writes. Future work still takes its scope and

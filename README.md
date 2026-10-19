@@ -22,6 +22,7 @@ This repository is designed for the
 | Review changes, repository risks, or stale comments | [code-review](code-review/SKILL.md) | Coverage, findings, and a review decision | No |
 | Fix selected findings through a bounded review loop | [iterative-self-review](iterative-self-review/SKILL.md) | Scoped fixes and verification, up to three passes | Yes, only when explicitly invoked |
 | Assess whether a concrete candidate can ship to its target | [release-readiness](release-readiness/SKILL.md) | Candidate-matched evidence, blockers, residual risk, and release readiness | No |
+| Publish, verify, or resume an explicitly scoped Frey Skills GitHub release (unreleased) | [release-execution](release-execution/SKILL.md) | Per-action effects, independent artifact verification, and a release receipt | Only authorized release effects |
 
 Start at the row that matches the work you need. A direct, unambiguous task does
 not require every stage. Saved artifacts and positive readiness statuses do not
@@ -38,6 +39,10 @@ release, including `repository-orientation`, `architecture-decision`, and
 `threat-modeling`, plus the performance-investigation guidance within `debug`.
 The [release record](docs/release-v1.10.0.md) records publication, public-archive
 verification, historical candidate evidence, and client compatibility limits.
+
+The development checkout also includes unreleased `release-execution`, bringing
+the canonical inventory to twelve skills. It is not in the pinned v1.10.0
+installation or ZIP.
 
 ## Content-trust invariant
 
@@ -356,6 +361,29 @@ establish publication or operational acceptance. See the
 [release assessment example](release-readiness/references/worked-example.md)
 for mismatched CI, missing recovery evidence, and a later readiness handoff.
 
+### release-execution (unreleased)
+
+Coordinates explicitly authorized GitHub Releases for the Frey Skills Codex
+plugin using existing native preparation, annotated-tag, workflow, and archive
+verification capabilities. Discovery and invocation do not authorize publication.
+
+It binds named effects to a maintainer-approved repository, immutable commit,
+and version; rechecks required evidence and holds before writes; preserves
+existing versions; and reports observed or possible effects after partial failure.
+It stops within finite action/verification bounds without automatic retries,
+workflow reruns, overwriting, cleanup, or credential procurement. Existing
+publications are independently verified rather than blindly repeated.
+
+Outputs distinguish `PUBLISHED_VERIFIED`, `ALREADY_PUBLISHED_VERIFIED`, `PARTIAL`,
+and `BLOCKED`. Local candidate evidence, public bytes, and desktop compatibility
+remain separate. See the [specification](docs/release-execution-scope.md) and
+[development plan](docs/release-execution-implementation-plan.md).
+
+```text
+Use $release-execution to verify this identified Frey Skills GitHub release;
+report its public artifacts and any incomplete effects without publication writes.
+```
+
 ## Workflow
 
 The primary implementation lifecycle is:
@@ -399,6 +427,10 @@ release testing. It is not a mandatory stage for every change.
 
 `release-readiness` is optional when a release decision is needed. It considers
 applicable evidence beyond testing and code review without executing the release.
+
+`release-execution` is a separate, unreleased workflow for specifically authorized
+publication or verification. A readiness result cannot activate it or grant
+permission to tag, push, publish, or recover a partial release.
 
 See the [worked example](docs/worked-example.md) for a complete JSON-export
 change, including user approvals, artifact handoffs, a failed verification,
@@ -528,6 +560,7 @@ test-strategy/
 implementation-execution/
 iterative-self-review/
 release-readiness/
+release-execution/
 repository-orientation/
 architecture-decision/
 threat-modeling/
