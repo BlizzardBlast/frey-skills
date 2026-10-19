@@ -2,7 +2,10 @@
 
 Prepared on 2026-10-19 from baseline
 `a800e15ca5d426c40b4a739e0290c4b8d7af9fd7` on `main`.
-Status: **PREPARING**. This record describes a candidate, not publication.
+Status: **PREPARED_LOCAL**. This record describes a candidate, not publication.
+The packaged source snapshot is commit
+`b72224e2cb3fa73baa5aca9666f80adf8a0b6719`; subsequent evidence-document changes
+do not alter the packaged skill, manifest, or license bytes.
 
 ## Scope and invariants
 
@@ -35,7 +38,72 @@ cannot authorize tagging, publication, risk acceptance, or other external writes
 
 ## Verification evidence
 
-Pending execution. Do not treat the plan above as passing evidence.
+Recorded on 2026-10-19 on Windows 11 build 26300, with Skills CLI 1.7.2 and
+Codex CLI 0.150.1. The full deterministic gate ran against the preparation
+changes before their source-snapshot commit. The same committed package payload
+was exported with `git archive` and verified independently below.
+
+| Check | Result | Evidence and limits |
+| --- | --- | --- |
+| Full deterministic gate | PASS | `.venv\Scripts\python.exe scripts/check.py --base origin/main`: 284 tests, 278 passed and six expected platform skips; all eleven skill specifications, generated plugin parity, and whitespace passed. |
+| Skills CLI checkout installation | PASS | `.venv\Scripts\python.exe scripts/smoke_install.py --cli dist/smoke-tools/node_modules/skills/bin/cli.mjs --source checkout`: selected and complete installations, default and copy modes, exact listings, 120 skill-resource files, byte parity, and user-file preservation. |
+| Local release preparation | PASS | `.venv\Scripts\python.exe scripts/prepare_release.py v1.10.0`: ZIP, notes, and checksum prepared. Repeated preparation from the committed LF-normalized snapshot produced identical bytes. |
+| Candidate archive | PASS | `smoke_release.verify_archive(..., tag="v1.10.0")` checked all 122 archive files against the committed source snapshot, including the license, manifest, eleven skills, and supporting bytes. |
+| Published baseline identity | PASS | `smoke_codex.release_plugin` independently verified v1.9.0 at `9944b36d4406bb89443c5fabdbb15d4d019478fe` and its public ZIP SHA-256 `9e2870289252c26ac96a9bc01303d4b36bd3f96423e311d708e2ade6a889bf65`. Downloaded helpers were not executed. |
+| Codex installation, upgrade, rollback | PASS | `smoke_codex.smoke_client` verified v1.9.0 with eight enabled skills, v1.10.0 with eleven, then v1.9.0 with exactly eight. Each phase checked unique skill names, ownership, versioned cache paths, three starter prompts, installed-byte parity, and preservation of the unrelated standalone skill. Disposable homes excluded inherited credentials/configuration; only metadata RPCs ran. |
+| Candidate notes and local links | PASS | All 26 local links/anchors in README and this record resolved. Candidate status remains separate from publication and historical compatibility evidence. |
+
+The local candidate ZIP is `dist/releases/frey-skills-1.10.0.zip`. Its SHA-256 is:
+
+```text
+23aff9767951e2e4f0832c1f24670a2762effac9ef286aaeaa30d74fddb9a3f7
+```
+
+`dist/releases/notes.md`, `dist/releases/SHA256SUMS`, and
+`dist/releases/v1.10.0-candidate-verification.json` accompany the local artifact.
+These ignored local files are not published release assets. The one-off local
+driver, `dist/releases/verify_v1_10_candidate.py`, reused existing repository
+verifiers and added no production tool or dependency.
+
+### Reproduce the candidate client check
+
+Export the source-snapshot commit above with `git archive` into
+`dist/releases/v1.10.0-source`, then run the existing builder and release preparer
+from that snapshot with the repository's Python environment. The prepared assets
+will be under that snapshot's `dist/releases`. With the pinned Codex CLI installed
+at the path below, run this Python recipe from the repository root:
+
+```python
+from pathlib import Path
+from scripts import smoke_codex as client, smoke_release as release
+
+root = Path.cwd()
+source = root / "dist/releases/v1.10.0-source"
+assets = source / "dist/releases"
+cli = client.native_cli(root / "dist/codex-smoke-cli/node_modules/@openai/codex/bin/codex.js")
+with client.temporary_workspace("frey candidate ") as workspace:
+    home = workspace / "home"
+    home.mkdir()
+    environment = client.client_environment(home)
+    Path(environment["CODEX_HOME"]).mkdir()
+    assert client.run([*cli, "--version"], workspace, environment) == "codex-cli 0.150.1"
+    release.verify_archive(
+        assets / "frey-skills-1.10.0.zip", assets / "SHA256SUMS",
+        source, workspace / "extracted", tag="v1.10.0",
+    )
+    previous, digest = client.release_plugin(
+        workspace / "previous", environment, "v1.9.0",
+        "9944b36d4406bb89443c5fabdbb15d4d019478fe",
+    )
+    client.smoke_client(cli, workspace, environment, previous, workspace / "extracted/frey-skills")
+```
+
+The recipe downloads only the pinned public baseline. It installs plugins only
+inside its disposable project and client home. Hosted preparation-PR CI also
+checks repository/specification/plugin gates and the existing published-release
+installation/client matrices. Those pinned matrices do not test the unpublished
+v1.10.0 client transition; that candidate transition currently has Windows-local
+evidence only. Inspect the exact PR head and its CI before integration.
 
 ## Desktop and publication limits
 
