@@ -8,6 +8,11 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Changed
 
+- Recorded partial, maintainer-reported Windows desktop version/count evidence
+  for v1.10.0 baseline, v1.11.0 upgrade, v1.10.0 rollback, and v1.11.0 final
+  restoration. Selector, restart, prompt-display, preservation, and installed-byte
+  checks remain unverified; no automated desktop or model-behavior certification
+  is claimed.
 - Installation examples and published-archive smoke checks pin verified v1.11.0
   at `7e7a535ca9f19fc8514c368cb00d5c4e8288dfcf` with all twelve skills. The
   Codex client matrix checks v1.10.0 installation, v1.11.0 upgrade, and v1.10.0

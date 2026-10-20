@@ -2,7 +2,9 @@
 
 Published on 2026-10-20 at annotated tag `v1.11.0`, resolving to reviewed commit
 `7e7a535ca9f19fc8514c368cb00d5c4e8288dfcf`. Status:
-**PUBLISHED_VERIFIED** for the public archive. Desktop UI remains untested.
+**PUBLISHED_VERIFIED** for the public archive. Windows desktop version/count
+transitions have separate, partial maintainer-reported evidence in the
+[compatibility record](compatibility.md#maintainer-reported-windows-desktop-transition).
 
 Historical preparation date: 2026-10-20. Baseline:
 `ce9fe624a88842cddc0ccb344e9816465ba23013` on `main`.
@@ -125,9 +127,16 @@ Preparation created no v1.11.0 tag or GitHub release. The separately authorized
 publication above rebuilt assets from the reviewed tag commit and independently
 verified the downloaded public bytes before this installation/smoke pin update.
 
-Desktop UI discovery, restart persistence, and upgrade/rollback on Windows,
-macOS, and Linux are **NOT_TESTED** for v1.11.0. Local CLI metadata checks and
-hosted matrices have separate coverage. At preparation time, the hosted Codex
+On 2026-10-20 the maintainer reported Windows desktop baseline version 1.10.0,
+upgrade to 1.11.0 with twelve skills, rollback to 1.10.0 with eleven skills, and
+final restoration to 1.11.0 with twelve skills. The baseline count was not
+reported. These are bounded version/count observations, not automated desktop
+verification; see the [compatibility record](compatibility.md#maintainer-reported-windows-desktop-transition).
+Specific skill entries, enabled/unique ownership, composer discovery, restart
+persistence, starter-prompt display, unrelated-installation preservation, and
+desktop installed-byte parity remain **NOT_TESTED**. macOS and Linux desktop
+UI are also **NOT_TESTED**. Local CLI metadata checks and hosted matrices have
+separate coverage. At preparation time, the hosted Codex
 matrix tested published v1.9.0/v1.10.0; the local v1.11.0 candidate transition
 had Windows-local evidence only. Current public-archive checks and the
 v1.10.0/v1.11.0 pin update are recorded in the compatibility record and the

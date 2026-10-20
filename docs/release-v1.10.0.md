@@ -2,7 +2,9 @@
 
 Published on 2026-10-19 at annotated tag `v1.10.0`, resolving to reviewed commit
 `97f755b41e388f31b7c63465743ac26aa111360c`. Status:
-**PUBLISHED_VERIFIED** for the public archive. Desktop UI remains untested.
+**PUBLISHED_VERIFIED** for the public archive. Desktop UI was untested at
+publication; later bounded Windows reports are recorded in the
+[desktop limits](#desktop-and-publication-limits) below.
 
 Historical preparation started from baseline
 `a800e15ca5d426c40b4a739e0290c4b8d7af9fd7`. The local candidate was built from a
@@ -143,7 +145,12 @@ evidence; historical candidate results do not substitute for those jobs.
 
 ## Desktop and publication limits
 
-v1.10.0 desktop UI on Windows, macOS, and Linux is **NOT_TESTED**. Existing
+v1.10.0 desktop UI was **NOT_TESTED** at the 2026-10-19 publication. On
+2026-10-20 the maintainer reported baseline version 1.10.0 and rollback to 1.10.0
+with eleven skills as part of the [v1.11.0 desktop transition](compatibility.md#maintainer-reported-windows-desktop-transition).
+Those bounded version/count observations do not exercise the v1.9.0/v1.10.0
+desktop checklist below or establish full UI compatibility. macOS and Linux
+desktop UI remain **NOT_TESTED**. Existing
 [v1.9.0 observations](compatibility.md#v190-verification) apply only to v1.9.0.
 CLI metadata checks do not establish desktop discovery, restart persistence,
 prompt display, or model behavior. Behavioral model evals are not run or required;
