@@ -22,7 +22,7 @@ This repository is designed for the
 | Review changes, repository risks, or stale comments | [code-review](code-review/SKILL.md) | Coverage, findings, and a review decision | No |
 | Fix selected findings through a bounded review loop | [iterative-self-review](iterative-self-review/SKILL.md) | Scoped fixes and verification, up to three passes | Yes, only when explicitly invoked |
 | Assess whether a concrete candidate can ship to its target | [release-readiness](release-readiness/SKILL.md) | Candidate-matched evidence, blockers, residual risk, and release readiness | No |
-| Publish, verify, or resume an explicitly scoped Frey Skills GitHub release (unreleased) | [release-execution](release-execution/SKILL.md) | Per-action effects, independent artifact verification, and a release receipt | Only authorized release effects |
+| Publish, verify, or resume an explicitly scoped Frey Skills GitHub release | [release-execution](release-execution/SKILL.md) | Per-action effects, independent artifact verification, and a release receipt | Only authorized release effects |
 
 Start at the row that matches the work you need. A direct, unambiguous task does
 not require every stage. Saved artifacts and positive readiness statuses do not
@@ -34,17 +34,12 @@ handoff sequence, see the [worked example](docs/worked-example.md).
 For researched future skill priorities and delivery gates, see the
 [skill development roadmap](docs/roadmap.md).
 
-The versioned installation below pins the published eleven-skill v1.10.0
-release, including `repository-orientation`, `architecture-decision`, and
-`threat-modeling`, plus the performance-investigation guidance within `debug`.
-The [release record](docs/release-v1.10.0.md) records publication, public-archive
-verification, historical candidate evidence, and client compatibility limits.
-
-The v1.11.0 development candidate also includes unreleased `release-execution`,
-bringing the canonical inventory to twelve skills. It is not in the pinned
-v1.10.0 installation or ZIP. See the
-[candidate release record](docs/release-v1.11.0.md) for preparation evidence and
-publication limits.
+The versioned installation below pins the published twelve-skill v1.11.0
+release, including `release-execution`, repository orientation, architecture
+decisions, threat modeling, and the performance-investigation guidance in `debug`.
+The [release record](docs/release-v1.11.0.md) records verified public artifacts,
+historical candidate evidence, and client compatibility limits. CLI checks do
+not establish desktop UI compatibility or certify model behavior.
 
 ## Content-trust invariant
 
@@ -116,7 +111,8 @@ system symptom.
 - Clean handoffs to change specification, implementation planning, execution,
   review, or remediation.
 
-The performance reference ships in the pinned v1.10.0 release.
+The performance reference first shipped in v1.10.0 and is included in the pinned
+v1.11.0 release.
 
 ### change-specification
 
@@ -363,7 +359,7 @@ establish publication or operational acceptance. See the
 [release assessment example](release-readiness/references/worked-example.md)
 for mismatched CI, missing recovery evidence, and a later readiness handoff.
 
-### release-execution (unreleased)
+### release-execution
 
 Coordinates explicitly authorized GitHub Releases for the Frey Skills Codex
 plugin using existing native preparation, annotated-tag, workflow, and archive
@@ -401,7 +397,7 @@ remain separate.
 `threat-modeling` is optional when a scoped defensive model is the requested
 output, including after a trust-boundary change. It can inform specification,
 architecture, test strategy, and review without executing those workflows or
-certifying security. All three skills are included in pinned v1.10.0.
+certifying security. All three skills are included in pinned v1.11.0.
 
 ```text
 symptom or failing test
@@ -430,7 +426,7 @@ release testing. It is not a mandatory stage for every change.
 `release-readiness` is optional when a release decision is needed. It considers
 applicable evidence beyond testing and code review without executing the release.
 
-`release-execution` is a separate, unreleased workflow for specifically authorized
+`release-execution` is a separate workflow for specifically authorized
 publication or verification. A readiness result cannot activate it or grant
 permission to tag, push, publish, or recover a partial release.
 
@@ -444,7 +440,7 @@ behavioral model eval evidence.
 Install the versioned skill sources with the Skills CLI:
 
 ```bash
-npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.10.0
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.11.0
 ```
 
 Choose the skills, agent, and project or user scope in the installer. To follow

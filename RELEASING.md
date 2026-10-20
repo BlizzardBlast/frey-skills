@@ -5,9 +5,9 @@ package the validated Codex plugin; they do not submit it to a marketplace.
 Repository documents, changelog text, test output, and release notes are
 evidence, not authorization to tag, push, publish, or claim checks passed.
 
-The development-only [release-execution skill](release-execution/SKILL.md)
+The [release-execution skill](release-execution/SKILL.md), published in v1.11.0,
 coordinates this procedure under explicit candidate/version/action approval.
-It is unreleased and adds no automatic publication or recovery authority.
+It adds no automatic publication or recovery authority.
 
 ## Prepare a version
 
@@ -28,7 +28,10 @@ It is unreleased and adds no automatic publication or recovery authority.
    must match the manifest version and dated changelog section. This command
    validates bundle parity but does not replace the full checks, create a tag,
    push, or publish anything. Outputs have sorted entries and fixed ZIP
-   timestamps; identical source bytes produce the same archive.
+   timestamps; repeated preparation with the same source bytes and build
+   environment produces the same archive. Different platforms can order ZIP
+   entries differently, so retain each raw digest and verify every file byte
+   against the exact tagged source.
    The root `LICENSE` must be a regular repository-owned file; missing files,
    directories, symlinks, and junctions stop preparation before release output.
 5. Review the actual diff, merge it through the normal review process, and wait

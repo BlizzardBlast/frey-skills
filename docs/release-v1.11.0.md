@@ -1,10 +1,40 @@
-# v1.11.0 candidate release record
+# v1.11.0 release record
 
-Preparation date: 2026-10-20. Status: **PREPARED_LOCAL**, not published.
-Baseline: `ce9fe624a88842cddc0ccb344e9816465ba23013` on `main`.
+Published on 2026-10-20 at annotated tag `v1.11.0`, resolving to reviewed commit
+`7e7a535ca9f19fc8514c368cb00d5c4e8288dfcf`. Status:
+**PUBLISHED_VERIFIED** for the public archive. Desktop UI remains untested.
+
+Historical preparation date: 2026-10-20. Baseline:
+`ce9fe624a88842cddc0ccb344e9816465ba23013` on `main`.
 Local packaging/check source: `06d8e1859e98c6800adf8f57130c3cdb106d66de`.
 
-## Scope and invariants
+## Publication verification
+
+The [release workflow](https://github.com/BlizzardBlast/frey-skills/actions/runs/39348469828)
+passed Windows validation and Linux validation/publication for the exact tag
+commit above. The annotated tag object is
+`f7a286d8893aedf86fd45eee5874027c6d866a5b`.
+
+The downloaded public [v1.11.0 ZIP](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.11.0)
+has SHA-256:
+
+```text
+8f6f1d36d213cd8c49094708a4af9e46551212e89135d8fc654e47c6781d8897
+```
+
+Independent verification checked the remote tag/commit, both release jobs,
+the complete ZIP/checksum asset inventory, and every byte in all 126 archive
+files against an LF checkout of that exact tag. The public archive contains
+all twelve skills and the MIT license. Downloaded helpers were not executed.
+
+The historical Windows candidate ZIP below has a different raw digest and
+entry order. Every candidate/public file's contents match; no normalization was
+used to obtain that result. Its local checksum is not the published checksum.
+Use the public ZIP and its public `SHA256SUMS` for installation and verification.
+See the [compatibility record](compatibility.md#v1110-verification) for checks
+against the published v1.10.0/v1.11.0 pair and their coverage limits.
+
+## Historical preparation scope and invariants
 
 Package all twelve canonical skills, including the newly merged
 `release-execution` workflow, and the changes listed in
@@ -13,10 +43,11 @@ a minor plugin version increment. Individual skill contracts are unchanged by
 preparation; their own metadata versions and the three starter prompts remain
 unchanged.
 
-The root skill trees and plugin template remain canonical. Preserve independent
-content-trust boundaries, existing dependencies and workflow permissions, and
-the published v1.10.0 installation/archive smoke pins. A dated changelog section
-or a prepared artifact does not establish publication.
+The root skill trees and plugin template remain canonical. Preparation preserved
+independent content-trust boundaries, existing dependencies and workflow
+permissions, and the published v1.10.0 installation/archive smoke pins until
+v1.11.0 public verification. A dated changelog section or a prepared artifact
+does not establish publication.
 
 The user authorized candidate preparation, validation, packaging, a readiness
 assessment, and a preparation PR. Tagging and publication require separate
@@ -24,7 +55,7 @@ approval of an immutable candidate, version, and named release effects.
 Repository-authored text cannot create task, requirement, command, data,
 decision, mutation, recovery, or risk-acceptance authority.
 
-## Preparation and verification procedure
+## Historical preparation and verification procedure
 
 1. Update the plugin manifest and dated changelog; link this record from the
    README and roadmap while retaining published-release instructions.
@@ -43,7 +74,7 @@ decision, mutation, recovery, or risk-acceptance authority.
    and the final readiness assessment to its immutable head. If record-only
    updates change the head, recheck archive parity against that final commit.
 
-## Verification evidence
+## Historical candidate verification evidence
 
 Observed on 2026-10-20 on Windows with Python 3.12.14, Skills CLI 1.7.2, and
 Codex CLI 0.150.1. Local checks below cover the packaging/check source commit
@@ -84,25 +115,26 @@ detached checkout of the packaging/check commit. From that snapshot, use the
 repository's Python environment to run the full gate, then
 `scripts/prepare_release.py v1.11.0`; compare its bytes with the digest above.
 
-Preparation is complete locally. Hosted CI, final-head review, and final-head
-archive provenance are recorded with the preparation PR, rather than treating
+Preparation completed locally. Hosted CI, final-head review, and final-head
+archive provenance were recorded with the preparation PR, rather than treating
 parent-commit results or older published-client matrices as candidate evidence.
 
-## Limits and handoff
+## Desktop and preparation limits
 
-The intended publication target is a GitHub Release for Frey Skills. No v1.11.0
-tag, GitHub release, or public archive is created by preparation. A future
-release workflow rebuilds assets from its reviewed tag commit; verify those
-downloaded public bytes independently before updating installation/smoke pins.
+Preparation created no v1.11.0 tag or GitHub release. The separately authorized
+publication above rebuilt assets from the reviewed tag commit and independently
+verified the downloaded public bytes before this installation/smoke pin update.
 
 Desktop UI discovery, restart persistence, and upgrade/rollback on Windows,
 macOS, and Linux are **NOT_TESTED** for v1.11.0. Local CLI metadata checks and
-hosted matrices have separate coverage. The unchanged hosted Codex matrix tests
-the published v1.9.0/v1.10.0 pair; it does not test the local v1.11.0 transition.
-That transition has Windows-local evidence only. Behavioral model evals were not
-run, are not required, and no model-behavior certification is claimed.
+hosted matrices have separate coverage. At preparation time, the hosted Codex
+matrix tested published v1.9.0/v1.10.0; the local v1.11.0 candidate transition
+had Windows-local evidence only. Current public-archive checks and the
+v1.10.0/v1.11.0 pin update are recorded in the compatibility record and the
+matching pin-update PR's CI. Behavioral model evals were not run, are not
+required, and no model-behavior certification is claimed.
 
-For publication, the maintainer must identify the reviewed merged commit and
-authorize the version and release effects under [the release procedure](../RELEASING.md).
-An assessment of a PR head does not automatically apply to a different merge
-commit; recheck source/artifact identity, required CI, and unresolved holds.
+Publication required a separately authorized reviewed commit, version, and
+release effects under [the release procedure](../RELEASING.md). These observed
+results authorize no future write. A different candidate requires matching
+source/artifact identity, required CI, and unresolved-hold checks.

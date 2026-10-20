@@ -4,6 +4,19 @@ Entries describe versioned repository changes. The GitHub Releases page records
 which versions have actually been published. Skill activation, structured
 output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
+## Unreleased
+
+### Changed
+
+- Installation examples and published-archive smoke checks pin verified v1.11.0
+  at `7e7a535ca9f19fc8514c368cb00d5c4e8288dfcf` with all twelve skills. The
+  Codex client matrix checks v1.10.0 installation, v1.11.0 upgrade, and v1.10.0
+  rollback, including removal of `release-execution` on rollback.
+- Release and compatibility records distinguish the verified public v1.11.0
+  ZIP from the local candidate ZIP: their raw digests and entry order differ,
+  while every file's contents match. Documentation marks release execution as
+  published and preserves separate desktop UI and behavioral-evaluation limits.
+
 ## [1.11.0] - 2026-10-20
 
 ### Added
