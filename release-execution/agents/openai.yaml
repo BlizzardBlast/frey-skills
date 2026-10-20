@@ -1,0 +1,6 @@
+interface:
+  display_name: "Release Execution"
+  short_description: "Publish and verify an explicitly scoped plugin release"
+  default_prompt: "Use $release-execution for this identified Frey Skills GitHub release, inspecting authority and gates before any specifically authorized publication action and reporting independently verified results or partial effects."
+policy:
+  allow_implicit_invocation: true

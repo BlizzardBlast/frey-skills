@@ -8,6 +8,9 @@ The versioned examples target the published eleven-skill v1.10.0 release,
 including `repository-orientation`, `architecture-decision`, and `threat-modeling`,
 and the performance-investigation guidance within `debug`.
 
+The development checkout additionally contains unreleased `release-execution`
+as its twelfth skill. The pinned v1.10.0 source and ZIP do not contain it.
+
 ## Install skill folders
 
 Install Node.js with npm and Git, then run these commands from the project that

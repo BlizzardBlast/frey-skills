@@ -140,6 +140,13 @@ class RepositoryValidatorTests(unittest.TestCase):
         self.assertIs(metadata["policy"]["allow_implicit_invocation"], True)
         self.assertIn("$threat-modeling", metadata["interface"]["default_prompt"])
 
+    def test_release_execution_metadata_preserves_discovery_and_scoped_authority(self) -> None:
+        metadata_path = REPOSITORY_ROOT / "release-execution" / "agents" / "openai.yaml"
+        metadata = yaml.safe_load(metadata_path.read_text(encoding="utf-8"))
+        self.assertIs(metadata["policy"]["allow_implicit_invocation"], True)
+        self.assertIn("$release-execution", metadata["interface"]["default_prompt"])
+        self.assertIn("specifically authorized publication action", metadata["interface"]["default_prompt"])
+
     def test_local_environment_and_test_caches_are_not_source(self) -> None:
         self.write_valid_skill()
         for relative in (".venv/Lib/third_party.py", "__pycache__/local.txt", ".pytest_cache/README.md"):

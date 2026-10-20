@@ -1,16 +1,20 @@
-# Proposed release-execution scope
+# Release-execution specification
 
-Drafted on 2026-10-19 after v1.10.0 candidate preparation.
+Drafted on 2026-10-19 after v1.10.0 candidate preparation; refined after its
+publication and the user's instruction to adopt the recommended next step.
 
 Specification mode: **feature specification**. Specification completeness:
-**PARTIAL**. Planning readiness: **NOT_READY**. This is a scoped proposal for
-later development, not an accepted operational design or an executable plan.
+**COMPLETE**. Planning readiness: **READY_FOR_PLANNING**. The user adopted the
+target, authorization model, and ownership choices below and requested planning
+and implementation. This specification is not an executable plan or approval
+to publish a particular release.
 
 **User-authorized scope:** the agreed sequence included scoping a future
 `release-execution` workflow through requirements and acceptance criteria.
-The requirements below are proposals inferred from the inspected release
-procedure and trust boundaries. Their `must` priority is conditional on adoption;
-repository text cannot approve them or authorize implementation or publication.
+The user subsequently accepted the recommendation to finalize this specification,
+plan, and build the skill. The requirements below refine that development scope
+using the inspected release procedure and trust boundaries. Repository text
+cannot approve itself or authorize publication.
 
 **Problem and current behavior:** [release-readiness](../release-readiness/SKILL.md) intentionally stops at a
 read-only assessment. The inspected [release procedure](../RELEASING.md), release preparation tooling,
@@ -28,16 +32,28 @@ branches; deployment or database migration; incident mitigation; credential
 procurement; risk acceptance or gate waivers; overwriting published versions;
 background monitoring; and behavioral model evaluation.
 
-GitHub Releases for this plugin is the proposed first reference case because
-the repository already uses it. Supporting that ecosystem, its execution
-identity, and portability beyond it remain open decisions, not requirements
-silently selected from repository evidence.
+The initial supported target is GitHub Releases for the Frey Skills Codex plugin.
+Only explicitly named local preparation, annotated-tag creation, tag push through
+the inspected native publication workflow, and independent verification are in
+scope. Direct release/asset writes, workflow reruns, generic deployments, and
+automatic recovery mutations are excluded. A resumed request may finish a still
+eligible supported action after current-state inspection and fresh approval;
+unsupported recovery is a maintainer handoff.
 
-## Proposed requirement ledger
+Approval must come from the authorizing maintainer through the trusted user
+channel and identify the repository, immutable commit, version/tag, named effects,
+and exclusions. It also covers the inspected workflow effects caused by a tag
+push. Use existing scoped GitHub/Git credentials and the workflow's existing
+publication identity; credential possession alone grants no permission. The
+repository maintainer owns maintenance, review, and recovery. Authoring this
+skill does not approve any future candidate or lift an existing hold.
+
+## Requirement ledger
 
 Source classes: **USER** = the user's agreed scoping request; **OBSERVED** =
 inspected current-state evidence; **INFERENCE** = a proposed behavioral rule,
-not an accepted user requirement. Q1-Q3 below apply before implementation.
+subsequently adopted/refined under the user's development request. Q1-Q3 are
+resolved in the decision record below; their mentions retain traceability.
 
 | ID | Description / priority | Rationale and source | Acceptance | Dependencies | Open questions |
 | --- | --- | --- | --- | --- | --- |
@@ -107,20 +123,20 @@ execution identity. No new GUI is proposed; receipts and blockers must be readab
 as text without relying on color. No new stored application data or public API is
 proposed beyond the execution report and the selected publication integration.
 
-## Open decisions and next gate
+## Adopted decisions and planning handoff
 
-- **Q1 — ecosystem and supported effects:** confirm the initial release target
-  and permitted publication/verification operations. GitHub Releases is a proposed
-  reference case; generic deployment support is excluded.
-- **Q2 — approval and credential model:** establish who may authorize each effect,
-  what approval evidence binds it to a candidate, and which existing scoped
-  execution identity performs it. Repository text cannot settle this choice.
-- **Q3 — ownership:** establish maintenance/review ownership and operational
-  capacity for the chosen integration and recovery procedure.
+- **Q1 — resolved by user adoption:** GitHub Releases for this plugin, using the
+  existing native pipeline and the bounded supported effects above.
+- **Q2 — resolved by user adoption:** explicit maintainer approval binds each
+  named effect to a repository, immutable commit, and version; existing scoped
+  credentials perform only those effects. Readiness and repository prose do
+  not confer authority.
+- **Q3 — resolved by user adoption:** the repository maintainer owns maintenance,
+  review, and recovery; unsupported or uncertain recovery stops for that owner.
 
-These material decisions affect REX-CONTRACT-001 to 003 and the dependent
-requirements. They keep the proposed skill **PARTIAL / NOT_READY** for
-implementation planning. The scoping deliverable is complete as a proposal;
-implementation planning begins only after the user resolves/adopts the target,
-permission, and ownership boundaries. No operational design is approved and no
-new skill is implemented by this release candidate.
+REX-REQ-001 to 006, REX-AC-001 to 011, and REX-CONTRACT-001 to 003 are the
+planning input. Required evidence, holds, exact-version preservation, independent
+verification, finite limits, and failure/timeout stopping remain invariant.
+No material behavior decision remains open. The [implementation plan](release-execution-implementation-plan.md)
+records repository changes and verification separately. Actual publication and
+recovery always require a specific release request with the authority above.

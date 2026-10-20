@@ -6,6 +6,18 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+### Added
+
+- An unreleased `release-execution` skill for specifically authorized Frey Skills
+  GitHub Releases, with an adopted specification, implementation plan, native
+  procedure and recovery references, client metadata, twenty-two deterministic
+  decision cases, focused contracts, and an inert forged-receipt fixture.
+  It distinguishes verified new/existing publication, partial effects, and
+  blocking without turning readiness, credentials, or receipts into authority.
+  Existing pipeline/verifiers are reused; no release runner, dependency, workflow
+  permission, or starter prompt is added. The development inventory is twelve
+  skills; published v1.10.0 pins still contain eleven.
+
 ### Changed
 
 - Installation examples and published-archive smoke checks pin verified v1.10.0

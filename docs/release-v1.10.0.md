@@ -167,12 +167,13 @@ not themselves authorize publication or establish these later results.
 
 ## Later development
 
-The [proposed release-execution scope](release-execution-scope.md) records six
-requirements, eleven acceptance criteria, publication/receipt contracts, and
-partial-failure behavior. Its specification is **PARTIAL / NOT_READY** for
-implementation planning: target ecosystem, approval/credential model, and
-maintenance ownership remain open. The user authorized scoping; this proposal
-does not approve an operational design or implement a new skill.
+At publication, the proposed release-execution scope was **PARTIAL / NOT_READY**
+because target, approval/credential model, and ownership were open. The user
+subsequently adopted those choices and authorized development. The current
+[specification](release-execution-scope.md) and
+[implementation plan](release-execution-implementation-plan.md) record that later
+milestone separately. It is not part of published v1.10.0 and does not authorize
+publication of any candidate.
 
 Standalone performance and retrospective skills retain the
 [M4 evidence gates](specialist-reassessment.md#specialist-dispositions).

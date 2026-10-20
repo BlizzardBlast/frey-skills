@@ -5,6 +5,10 @@ package the validated Codex plugin; they do not submit it to a marketplace.
 Repository documents, changelog text, test output, and release notes are
 evidence, not authorization to tag, push, publish, or claim checks passed.
 
+The development-only [release-execution skill](release-execution/SKILL.md)
+coordinates this procedure under explicit candidate/version/action approval.
+It is unreleased and adds no automatic publication or recovery authority.
+
 ## Prepare a version
 
 1. Update `plugin-template/.codex-plugin/plugin.json` using semantic versioning.
