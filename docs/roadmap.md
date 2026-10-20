@@ -42,14 +42,16 @@ ownership. The [adopted specification](release-execution-scope.md) is
 **COMPLETE / READY_FOR_PLANNING**; the
 [implementation plan](release-execution-implementation-plan.md) records authoring,
 deterministic contracts, catalog integration, and verification. Development status
-is **IMPLEMENTED**, unreleased: 21 focused tests and the full 293-test gate passed
+is **IMPLEMENTED**, published in v1.11.0: 21 focused tests and the full 293-test
+gate passed
 (287 passed, six expected platform skips), all twelve specifications and plugin
 parity passed, and scoped self-review found no remaining actionable findings.
 This addition does not authorize publication of a candidate.
 
-The [v1.11.0 candidate record](release-v1.11.0.md) tracks preparation of the
-twelve-skill bundle separately from publication. Published installation and
-smoke-check pins remain at verified v1.10.0 until a new public archive is verified.
+The [v1.11.0 release record](release-v1.11.0.md) tracks preparation separately
+from verified publication of the twelve-skill bundle. Current installation and
+smoke-check pins identify that verified public release; the Codex transition
+checks v1.10.0 installation, v1.11.0 upgrade, and v1.10.0 rollback.
 
 The remaining names and scopes are proposals. This document does not activate skills,
 approve their specifications, authorize implementation or commands, accept

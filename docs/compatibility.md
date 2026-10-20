@@ -1,7 +1,7 @@
 # Recorded plugin compatibility
 
-The current published release is v1.10.0; see the separate
-[v1.10.0 verification](#v1100-verification) for its public archive, CLI checks,
+The current published release is v1.11.0; see the separate
+[v1.11.0 verification](#v1110-verification) for its public archive, CLI checks,
 and desktop coverage limits. The maintainer-reported Windows desktop results
 below apply to v1.9.0 only.
 
@@ -21,11 +21,14 @@ and restart persistence remain **NOT_TESTED**.
 | [v1.8.2](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.8.2) | `11720d09c41c63f853f24ff6839eed167db6717e` | `7ee0ef9f99a04c4f5be6a2cad35db8966b77f670161269f8d6994b9ba169e00e` |
 | [v1.9.0](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.9.0) | `9944b36d4406bb89443c5fabdbb15d4d019478fe` | `9e2870289252c26ac96a9bc01303d4b36bd3f96423e311d708e2ade6a889bf65` |
 | [v1.10.0](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.10.0) | `97f755b41e388f31b7c63465743ac26aa111360c` | `616ee291a1bca1ec0719045adf191b9dd773e8c23bed2a73446a865a13687cfc` |
+| [v1.11.0](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.11.0) | `7e7a535ca9f19fc8514c368cb00d5c4e8288dfcf` | `8f6f1d36d213cd8c49094708a4af9e46551212e89135d8fc654e47c6781d8897` |
 
 Each ZIP matches its published `SHA256SUMS` and the tagged manifest, license,
 skill set, and supporting-file bytes. The client checks use the downloaded
-published archives. A locally prepared Windows archive had different line
-endings and a different digest; it is excluded from the results below.
+published archives. The historical v1.10.0 Windows candidate retained CRLF and
+had a different digest. The v1.11.0 Windows candidate instead has matching file
+contents but different ZIP entry ordering and a different raw digest. Both are
+kept separate from the public-archive results below.
 
 ## Original manual CLI results
 
@@ -79,13 +82,13 @@ the client surface you use.
 
 ## Automated CLI compatibility
 
-`scripts/smoke_codex.py` repeats installation, upgrade, and rollback with the
-same published release pair and pinned Codex CLI 0.150.1. It verifies each archive
-before installation and compares installed bytes, enabled skill ownership,
-unique names, versioned cache paths, and v1.8.2 starter prompts. Every phase uses
-a fresh metadata-only app-server in the same disposable client home. Inherited
-credentials and Codex settings are excluded. The unrelated user-skill fixture
-must survive, and the owned server tree is stopped after success or failure.
+The initial `scripts/smoke_codex.py` checks used the v1.8.1/v1.8.2 pair below
+and pinned Codex CLI 0.150.1. Current pins are recorded in the v1.11.0 section.
+Those checks verified each archive before installation and compared installed
+bytes, enabled skill ownership, unique names, versioned cache paths, and v1.8.2
+starter prompts. Every phase used a fresh metadata-only app-server in the same
+disposable client home. Inherited credentials and Codex settings were excluded;
+the unrelated user-skill fixture survived, and the owned server tree was stopped.
 
 | Surface | Result | Evidence |
 | --- | --- | --- |
@@ -199,9 +202,44 @@ the three metadata RPCs ran no model turn or skill invocation. No real agent
 installation was modified. Behavioral model evals were not run, and no
 model-behavior certification is claimed.
 
-These archive and CLI rows are local Windows observations. The installation,
-archive, and Codex client matrices repeat the new published pins on Windows,
-Linux, and macOS; inspect the exact pin-update commit's jobs for hosted evidence.
+These archive and CLI rows are historical local Windows observations. At that
+pin update, the installation, archive, and Codex client matrices were configured
+for those published pins on Windows, Linux, and macOS; inspect that exact
+pin-update commit's jobs for hosted evidence.
 See the [release record](release-v1.10.0.md) for public and historical candidate
 identities, and keep the [optional desktop checklist](installation.md#manual-plugin-compatibility-check)
 separate from those automated checks.
+
+## v1.11.0 verification
+
+Checked on 2026-10-20 on Windows with Python 3.12.14, Codex CLI 0.150.1,
+and Skills CLI 1.7.2. The
+[release workflow](https://github.com/BlizzardBlast/frey-skills/actions/runs/39348469828)
+passed Windows validation and Linux validation/publication for
+`7e7a535ca9f19fc8514c368cb00d5c4e8288dfcf`. Archive and Codex transition
+results below use the downloaded public ZIPs. The Skills CLI row distinguishes
+checkout installations from the identified published source pin.
+
+| Check | Result | Observed evidence |
+| --- | --- | --- |
+| Public v1.11.0 archive | PASS | `scripts/smoke_release.py` verified the annotated release's exact commit, public checksum, manifest, license, all twelve skills, and all 126 archive files against an LF tagged checkout. ZIP SHA-256 is `8f6f1d36d213cd8c49094708a4af9e46551212e89135d8fc654e47c6781d8897`. |
+| Skills CLI installations | PASS | `scripts/smoke_install.py --cli dist/smoke-tools/node_modules/skills/bin/cli.mjs` checked checkout and v1.11.0 source-pin installations: selected/complete skill sets, default/copy modes, exact listings, 124 skill-resource files, byte parity, and user-file preservation. |
+| Install v1.10.0 | PASS | `scripts/smoke_codex.py --cli dist/codex-smoke-cli/node_modules/@openai/codex/bin/codex.js` discovered exactly eleven enabled plugin skills in the isolated 1.10.0 cache. Its public archive was independently verified against the commit/digest in the release table above. |
+| Upgrade to v1.11.0 | PASS | Exactly twelve enabled plugin skills resolve to 1.11.0, including `frey-skills:release-execution`; installed bytes match the public archive. |
+| Roll back to v1.10.0 | PASS | Exactly eleven plugin skills resolve to 1.10.0; `release-execution` is absent. |
+| Starter prompts, ownership, and preservation | PASS | Each phase retained its three starter prompts, correct plugin ownership and versioned cache paths, installed public-archive byte parity, and the unrelated standalone skill fixture. |
+| v1.11.0 desktop UI | NOT_TESTED | No Windows, macOS, or Linux desktop observations were supplied for this release. Historical desktop results do not transfer to it. |
+
+The commands used the repository's Python environment and disposable,
+credential-free child homes. Downloaded helpers were not executed. Metadata
+RPCs started no model turn or skill invocation; behavioral model evals were not
+run, and no model-behavior certification is claimed.
+
+These rows are local Windows observations. The existing installation/archive
+and Codex client CI matrices now target the verified v1.11.0 source/archive and
+the published v1.10.0/v1.11.0 transition on Windows, Linux, and macOS. Inspect
+the exact pin-update commit's jobs for hosted evidence rather than extending
+the local result to another platform. See the
+[release record](release-v1.11.0.md) for independent public and candidate ZIP
+identities. The [desktop checklist](installation.md#manual-plugin-compatibility-check)
+remains optional and separate.
