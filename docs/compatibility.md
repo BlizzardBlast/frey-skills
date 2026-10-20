@@ -2,8 +2,8 @@
 
 The current published release is v1.11.0; see the separate
 [v1.11.0 verification](#v1110-verification) for its public archive, CLI checks,
-and desktop coverage limits. The maintainer-reported Windows desktop results
-below apply to v1.9.0 only.
+and desktop coverage limits. Historical Windows desktop observations remain
+version-specific; bounded v1.11.0 maintainer reports are recorded in its own section.
 
 Historical v1.8.1/v1.8.2 checks were recorded on 2026-10-17 with Windows 11
 build 26300 and Codex CLI 0.150.1.
@@ -195,7 +195,7 @@ evidence, not the public artifact used below.
 | Upgrade to v1.10.0 | PASS | Exactly eleven enabled plugin skills resolve to 1.10.0, including `repository-orientation`, `architecture-decision`, and `threat-modeling`. |
 | Roll back to v1.9.0 | PASS | Exactly eight plugin skills resolve to 1.9.0; the three additions are absent. |
 | Starter prompts, ownership, and preservation | PASS | Each phase retained three starter prompts, correct plugin ownership and versioned paths, installed public-archive byte parity, and the unrelated standalone skill fixture. |
-| v1.10.0 desktop UI | NOT_TESTED | No Windows, macOS, or Linux desktop observation was supplied for this version. Historical v1.9.0 maintainer observations do not establish v1.10.0 UI compatibility. |
+| v1.10.0 desktop UI at the 2026-10-19 check | NOT_TESTED | No matching desktop observation was available at that check. Later bounded Windows version/count reports from 2026-10-20 are recorded in the [v1.11.0 transition](#maintainer-reported-windows-desktop-transition); they do not establish full UI compatibility. |
 
 Commands used the repository's Python environment and disposable child homes;
 the three metadata RPCs ran no model turn or skill invocation. No real agent
@@ -228,7 +228,7 @@ checkout installations from the identified published source pin.
 | Upgrade to v1.11.0 | PASS | Exactly twelve enabled plugin skills resolve to 1.11.0, including `frey-skills:release-execution`; installed bytes match the public archive. |
 | Roll back to v1.10.0 | PASS | Exactly eleven plugin skills resolve to 1.10.0; `release-execution` is absent. |
 | Starter prompts, ownership, and preservation | PASS | Each phase retained its three starter prompts, correct plugin ownership and versioned cache paths, installed public-archive byte parity, and the unrelated standalone skill fixture. |
-| v1.11.0 desktop UI | NOT_TESTED | No Windows, macOS, or Linux desktop observations were supplied for this release. Historical desktop results do not transfer to it. |
+| v1.11.0 Windows desktop UI | PARTIAL (maintainer-reported) | The maintainer reported baseline version 1.10.0, upgrade to 1.11.0 with twelve skills, rollback to 1.10.0 with eleven skills, and final restoration to 1.11.0 with twelve skills; see the bounded observations below. |
 
 The commands used the repository's Python environment and disposable,
 credential-free child homes. Downloaded helpers were not executed. Metadata
@@ -243,3 +243,29 @@ the local result to another platform. See the
 [release record](release-v1.11.0.md) for independent public and candidate ZIP
 identities. The [desktop checklist](installation.md#manual-plugin-compatibility-check)
 remains optional and separate.
+
+### Maintainer-reported Windows desktop transition
+
+Recorded on 2026-10-20 (Asia/Jakarta) using the same existing disposable local
+marketplace for every phase. Both public release archives and their copied
+files were verified against the pinned commits and digests above before the
+catalog was switched. Isolated CLI metadata checks separately resolved the
+expected eleven/twelve skills and three starter prompts; those checks do not
+establish desktop UI behavior.
+
+| Desktop phase | Result | Maintainer-reported observation |
+| --- | --- | --- |
+| Baseline | PASS for version only | Plugin version 1.10.0; the baseline skill count was not reported. |
+| Upgrade | PASS for version/count | Plugin version 1.11.0 with twelve skills. |
+| Rollback | PASS for version/count | Plugin version 1.10.0 with eleven skills. |
+| Final restoration | PASS for version/count | Plugin version 1.11.0 with twelve skills. The local catalog remains on v1.11.0. |
+
+These are maintainer-reported observations, not automated desktop actions or
+screenshots. The specific discovery surface, unique/enabled entries, individual
+`release-execution` entry or its absence on rollback, composer-selector
+discovery, restart persistence, starter-prompt display, preservation of unrelated
+plugins/standalone skills, and desktop installed-byte parity were not established;
+those checks remain **NOT_TESTED**. Windows package metadata identified
+`OpenAI.Codex` version `26.1013.4894.0` on Windows build 26300; the app's displayed
+About version was not reported. macOS and Linux desktop UI remain **NOT_TESTED**.
+Behavioral model evals were not run, and no model-behavior certification is claimed.
