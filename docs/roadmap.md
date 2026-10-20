@@ -47,6 +47,10 @@ is **IMPLEMENTED**, unreleased: 21 focused tests and the full 293-test gate pass
 parity passed, and scoped self-review found no remaining actionable findings.
 This addition does not authorize publication of a candidate.
 
+The [v1.11.0 candidate record](release-v1.11.0.md) tracks preparation of the
+twelve-skill bundle separately from publication. Published installation and
+smoke-check pins remain at verified v1.10.0 until a new public archive is verified.
+
 The remaining names and scopes are proposals. This document does not activate skills,
 approve their specifications, authorize implementation or commands, accept
 risk, or authorize external writes. Future work still takes its scope and

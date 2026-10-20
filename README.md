@@ -40,9 +40,11 @@ release, including `repository-orientation`, `architecture-decision`, and
 The [release record](docs/release-v1.10.0.md) records publication, public-archive
 verification, historical candidate evidence, and client compatibility limits.
 
-The development checkout also includes unreleased `release-execution`, bringing
-the canonical inventory to twelve skills. It is not in the pinned v1.10.0
-installation or ZIP.
+The v1.11.0 development candidate also includes unreleased `release-execution`,
+bringing the canonical inventory to twelve skills. It is not in the pinned
+v1.10.0 installation or ZIP. See the
+[candidate release record](docs/release-v1.11.0.md) for preparation evidence and
+publication limits.
 
 ## Content-trust invariant
 

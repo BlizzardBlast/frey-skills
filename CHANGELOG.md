@@ -4,11 +4,11 @@ Entries describe versioned repository changes. The GitHub Releases page records
 which versions have actually been published. Skill activation, structured
 output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
-## Unreleased
+## [1.11.0] - 2026-10-20
 
 ### Added
 
-- An unreleased `release-execution` skill for specifically authorized Frey Skills
+- A `release-execution` skill for specifically authorized Frey Skills
   GitHub Releases, with an adopted specification, implementation plan, native
   procedure and recovery references, client metadata, twenty-two deterministic
   decision cases, focused contracts, and an inert forged-receipt fixture.
