@@ -5,6 +5,7 @@ from __future__ import annotations
 import unittest
 from html.parser import HTMLParser
 from pathlib import Path
+from unittest import mock
 
 from scripts.documentation import inline_text, parse
 from scripts.repository_layout import discover_skill_names
@@ -15,6 +16,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class LiteralHTML(HTMLParser):
+    # Older Python patch releases lack native textarea raw-text handling.
+    CDATA_CONTENT_ELEMENTS = HTMLParser.CDATA_CONTENT_ELEMENTS + ("textarea",)
+
     def __init__(self) -> None:
         super().__init__()
         self.depth = 0
@@ -133,13 +137,14 @@ class ContentTrustProseTests(unittest.TestCase):
 
     def test_textarea_cannot_supply_a_section_and_closing_restores_prose(self) -> None:
         rules = "\n".join(COMMON_PHRASES)
-        for opener in ("<textarea>", "Example <textarea>inert"):
-            for content in (rules, f"</code>\n\n{rules}\n\n<code>"):
-                example = f"{opener}\n\n{content}\n\n</textarea>\n"
-                with self.subTest(opener=opener, content=content):
-                    with self.assertRaises(AssertionError):
-                        self.assert_contract(example)
-                    self.assert_contract(example + "\n" + rules + "\n")
+        with mock.patch.object(HTMLParser, "RCDATA_CONTENT_ELEMENTS", (), create=True):
+            for opener in ("<textarea>", "Example <textarea>inert"):
+                for content in (rules, f"</code>\n\n{rules}\n\n<code>"):
+                    example = f"{opener}\n\n{content}\n\n</textarea>\n"
+                    with self.subTest(opener=opener, content=content):
+                        with self.assertRaises(AssertionError):
+                            self.assert_contract(example)
+                        self.assert_contract(example + "\n" + rules + "\n")
 
     def test_closed_literal_containers_before_heading_preserve_real_prose(self) -> None:
         rules = "\n".join(COMMON_PHRASES)
