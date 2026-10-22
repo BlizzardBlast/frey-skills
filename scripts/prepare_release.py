@@ -14,96 +14,46 @@ from datetime import date
 from pathlib import Path
 
 try:
+    from scripts.documentation import parse
     from scripts.publish_outputs import publish_outputs
     from scripts.repository_layout import validate_source_path
     from scripts.validate_plugin_bundle import validate_bundle
 except ModuleNotFoundError:
+    from documentation import parse
     from publish_outputs import publish_outputs
     from repository_layout import validate_source_path
     from validate_plugin_bundle import validate_bundle
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-HTML_BLOCK_TAGS = (
-    "address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|"
-    "dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[1-6]|head|"
-    "header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|noframes|ol|optgroup|option|"
-    "p|param|section|source|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul"
-)
-HTML_TAG = (
-    r"(?:</[A-Za-z][A-Za-z0-9-]*[ \t]*>"
-    r"|<[A-Za-z][A-Za-z0-9-]*(?:[ \t]+[A-Za-z_:][A-Za-z0-9_.:-]*"
-    r"(?:[ \t]*=[ \t]*(?:[^\"'=<>`\x00-\x20]+|'[^']*'|\"[^\"]*\"))?)*[ \t]*/?>)"
-)
 
 
 def release_notes(changelog: str, version: str) -> str:
     """Read the documented column-zero ATX sections, preserving their source text.
 
-    Fenced code and HTML blocks cannot supply section boundaries. Keep this
-    bounded changelog reader dependency-free for standalone plugin checks.
+    Share CommonMark block context with repository documentation validation.
     """
     lines = changelog.splitlines(keepends=True)
     headings: list[tuple[int, int, str]] = []
-    fence = ""
-    html_end: str | None = None
-    paragraph = False
-    for index, source_line in enumerate(lines):
-        line = source_line.rstrip("\r\n")
-        if fence:
-            if re.fullmatch(rf" {{0,3}}{re.escape(fence[0])}{{{len(fence)},}}[ \t]*", line):
-                fence = ""
-                paragraph = False
+    tokens, _ = parse(changelog)
+    comment_until = 0
+    for index, token in enumerate(tokens):
+        if token.map is None or token.map[0] < comment_until:
             continue
-        if html_end is not None:
-            if (not html_end and not line.strip()) or (html_end and html_end in line.lower()):
-                remainder = line.lower().split(html_end, 1)[1] if html_end else ""
-                comment_continues = html_end == "-->" and re.search(r"<!--(?:(?!-->).)*$", remainder)
-                html_end = None
-                paragraph = False
-                if comment_continues:
-                    html_end = "-->"
-            continue
-        if not paragraph and re.match(r"(?: {4}|\t)", line):
-            continue
-        opening = re.match(r" {0,3}(`{3,}|~{3,})(.*)$", line)
-        if opening and (opening[1][0] == "~" or "`" not in opening[2]):
-            fence = opening[1]
-            continue
-        literal = re.match(r" {0,3}<(pre|script|style|textarea)(?:[ \t>]|$)", line, re.IGNORECASE)
-        if literal:
-            paragraph = False
-            closing = f"</{literal[1].lower()}>"
-            if closing not in line.lower():
-                html_end = closing
-            continue
-        if re.match(r" {0,3}<!--", line):
-            paragraph = False
-            if re.search(r"<!--(?:(?!-->).)*$", line):
-                html_end = "-->"
-            continue
-        special = re.match(r" {0,3}(<\?|<!\[CDATA\[|<![A-Z])", line)
-        if special:
-            paragraph = False
-            closing = "?>" if special[1] == "<?" else "]]>" if special[1] == "<![CDATA[" else ">"
-            if closing not in line:
-                html_end = closing
-            continue
-        # CommonMark block tags interrupt paragraphs; standalone tags cannot.
-        if re.match(rf" {{0,3}}</?(?:{HTML_BLOCK_TAGS})(?=[ \t]|/?>|$)", line, re.IGNORECASE) or (
-            not paragraph and re.fullmatch(rf" {{0,3}}{HTML_TAG}[ \t]*", line)
+        # Preserve exclusion of comments reopened on an HTML block's closing line.
+        if token.type == "html_block" and token.content.lstrip().startswith("<!--") and re.search(
+            r"<!--(?:(?!-->).)*$", token.content, re.DOTALL
         ):
-            html_end = ""  # Ordinary HTML blocks end at the next blank line.
-            paragraph = False
-            continue
-        heading = re.fullmatch(r"(#{1,2})(?:[ \t]+(.*?))?[ \t]*", line)
-        if heading:
-            title = re.sub(r"[ \t]+#+[ \t]*$", "", heading[2] or "").strip()
-            headings.append((index, len(heading[1]), title))
-        paragraph = bool(line.strip()) and not (
-            re.match(r" {0,3}#{1,6}(?:[ \t]|$)", line)
-            or re.fullmatch(r" {0,3}(?:-+|=+|(?:\*[ \t]*){3,}|(?:-[ \t]*){3,}|(?:_[ \t]*){3,})[ \t]*", line)
-        )
+            comment_until = token.map[1]
+            while comment_until < len(lines):
+                line = lines[comment_until]
+                comment_until += 1
+                if "-->" in line and not re.search(r"<!--(?:(?!-->).)*$", line.split("-->", 1)[1]):
+                    break
+        if token.type == "heading_open" and token.level == 0 and token.tag in {"h1", "h2"}:
+            start = token.map[0]
+            if lines[start].startswith("#"):
+                headings.append((start, int(token.tag[1]), tokens[index + 1].content.strip()))
 
     matching = [position for position, (_, level, title) in enumerate(headings)
                 if level == 2 and re.match(rf"\[{re.escape(version)}\](?:[ \t]|$)", title)]

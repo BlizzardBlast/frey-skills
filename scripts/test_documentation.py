@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from html.parser import HTMLParser
 from pathlib import Path
+from unittest import mock
 
 from scripts.documentation import anchors, validate_documentation
 
@@ -88,6 +90,28 @@ class DocumentationTests(unittest.TestCase):
                 self.assertEqual(self.errors(source), [])
         source = self.write("source.md", '<a id="by-id" name="by-name"></a>\n\n[ID](#by-id) [Name](#by-name)\n')
         self.assertEqual(self.errors(source), [])
+
+    def test_legacy_html_parser_excludes_rcdata_contents_but_keeps_real_anchors(self) -> None:
+        with mock.patch.object(HTMLParser, "RCDATA_CONTENT_ELEMENTS", (), create=True):
+            for tag in ("textarea", "title"):
+                with self.subTest(tag=tag):
+                    content = (
+                        f'<{tag} id="container">\n<a id="example-only"></a>\n</{tag}>\n\n'
+                        '<a id="after"></a>\n\n[Container](#container) [After](#after) [Missing](#example-only)\n'
+                    )
+                    source = self.write("source.md", content)
+                    self.assertEqual(anchors(content), {"container", "after"})
+                    errors = self.errors(source)
+                    self.assertEqual(len(errors), 1, errors)
+                    self.assertIn("heading anchor does not exist", errors[0])
+
+    def test_rcdata_headings_cannot_become_fragment_targets(self) -> None:
+        with mock.patch.object(HTMLParser, "RCDATA_CONTENT_ELEMENTS", (), create=True):
+            for tag in ("textarea", "title"):
+                for prefix in ("", "Example "):
+                    with self.subTest(tag=tag, prefix=prefix):
+                        content = f'{prefix}<{tag}>\n\n# Example only\n\n</{tag}>\n\n# After\n'
+                        self.assertEqual(anchors(content), {"after"})
 
     def test_balanced_parentheses_and_reference_heading_labels(self) -> None:
         source = self.write("source.md", '[Design](design(v2).md#guide)\n')

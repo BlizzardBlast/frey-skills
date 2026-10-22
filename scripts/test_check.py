@@ -19,6 +19,11 @@ from scripts import check
 
 
 class CheckTests(unittest.TestCase):
+    def test_release_preparation_stays_in_the_dependency_equipped_repository_gate(self) -> None:
+        module = "scripts.test_prepare_release"
+        self.assertEqual(sum(command.count(module) for command in check.group_commands("repository")), 1)
+        self.assertNotIn(module, check.CONTRACT_TESTS)
+
     def test_missing_dependencies_stop_before_any_command(self) -> None:
         with mock.patch.object(check.importlib.util, "find_spec", return_value=None), mock.patch.object(
             check.shutil, "which", return_value="git"

@@ -125,9 +125,12 @@ these same groups on Ubuntu and runs the full set on Windows and macOS with
 Python 3.12.
 
 The plugin group includes `scripts.test_content_trust_contracts`, the focused
-skill contracts, and bundle/release tests. The repository group includes the
-validator, review-context helper, runner, workflow contracts, and offline
-installation smoke assertion tests.
+skill contracts, and bundle/publication tests. The repository group includes the
+validator, review-context helper, runner, workflow contracts, release-preparation
+tests, and offline installation smoke assertion tests. Release preparation uses
+the same pinned CommonMark parser as documentation validation; its tests belong
+in the dependency-equipped repository group. Plugin build and validation remain
+standard-library-only.
 
 Review-context regressions use local submodule fixtures to cover changed pointers
 and dirty worktrees despite `diff.ignoreSubmodules`, per-submodule Git config,

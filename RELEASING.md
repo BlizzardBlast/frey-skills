@@ -23,6 +23,9 @@ It adds no automatic publication or recovery authority.
    Fenced examples and HTML blocks cannot supply section headings. Fenced content
    inside a release section is preserved; the next column-zero H1/H2 ends it.
    URI autolinks do not hide following headings or duplicate version sections.
+   Release preparation uses the repository's pinned CommonMark parser, including
+   block boundaries after reference definitions and empty lists. Install the
+   development requirements before invoking preparation directly.
    Use the release preparation date; update it if preparation moves to another
    date. Changelog entries alone do not mean a version was published.
 3. Install the pinned dependencies in the selected Python 3.11+ environment and

@@ -250,6 +250,22 @@ class PrepareReleaseTests(unittest.TestCase):
             with self.subTest(opening=opening), self.assertRaisesRegex(ValueError, "non-empty dated section"):
                 prepare_release.release_notes(content, "1.2.3")
 
+    def test_nonparagraph_blocks_before_html_cannot_supply_release_headings(self) -> None:
+        for prefix in (
+            "[details]: https://example.invalid\n",
+            "[details]:\n  https://example.invalid\n",
+            '[details]: https://example.invalid\n  "Details title"\n',
+            "1.\n", "2)\n", "-\n",
+        ):
+            example = f"{prefix}<custom-panel>\n## [1.2.3] - 2026-10-22\n- Example only.\n</custom-panel>\n\n"
+            with self.subTest(prefix=prefix):
+                with self.assertRaisesRegex(ValueError, "non-empty dated section"):
+                    prepare_release.release_notes(example, "1.2.3")
+                self.assertEqual(
+                    prepare_release.release_notes(example + "## [1.2.3] - 2026-10-22\n\n- Real release.\n", "1.2.3"),
+                    "- Real release.",
+                )
+
     def test_release_dates_require_ascii_calendar_dates(self) -> None:
         for day in ("2026-99-99", "2026-02-29", "2026-04-31", "0000-01-01", "2026-1-01", "202\u0666-10-22"):
             with self.subTest(day=day):
@@ -340,6 +356,9 @@ class ReleaseIntegrationTests(unittest.TestCase):
         outputs = prepare_release.prepare_release("v1.2.3")
         before = {path.name: path.read_bytes() for path in outputs}
         changelogs = (
+            "[details]: https://example.invalid\n<custom-panel>\n"
+            "## [1.2.3] - 2026-10-22\n\n- Example only.\n",
+            "1.\n<custom-panel>\n## [1.2.3] - 2026-10-22\n\n- Example only.\n",
             "```markdown\n## [1.2.3] - 2026-10-22\n\n- Example.\n```\n",
             "<!--\n## [1.2.3] - 2026-10-22\n\n- Example.\n-->\n",
             "## [1.2.3] - 2026-10-22\n\n- First.\n\n## [1.2.3] - 2026-10-21\n\n- Second.\n",

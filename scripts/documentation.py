@@ -56,6 +56,9 @@ def inline_text(tokens: list[Token]) -> str:
 
 
 class HTMLAnchors(HTMLParser):
+    # Older Python patch releases lack native RCDATA handling.
+    CDATA_CONTENT_ELEMENTS = HTMLParser.CDATA_CONTENT_ELEMENTS + ("textarea", "title")
+
     def __init__(self) -> None:
         super().__init__()
         self.names: set[str] = set()
@@ -78,7 +81,7 @@ def anchors(text: str) -> set[str]:
         for child in token.children or []:
             if child.type == "html_inline":
                 explicit.feed(child.content)
-        if token.type == "heading_open":
+        if token.type == "heading_open" and explicit.cdata_elem is None:
             title = inline_text(tokens[index + 1].children or []).lower()
             slug = re.sub(r"\s", "-", re.sub(r"[^\w\-\s]", "", title))
             candidate = slug

@@ -8,6 +8,12 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Fixed
 
+- Release preparation reuses the pinned CommonMark parser for section boundaries,
+  excluding HTML examples after reference definitions and empty lists. Its tests
+  now run in the repository gate; standalone plugin checks retain their
+  standard-library-only dependencies.
+- Markdown anchor validation excludes textarea/title contents on older Python
+  patch releases while retaining anchors on the containers and after their closers.
 - Release-note parsing distinguishes inline HTML from block HTML, preserving
   following release boundaries and duplicate-version checks.
 - Trust-prose validation ignores unmatched literal-container closing tags and
