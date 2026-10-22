@@ -8,6 +8,12 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Fixed
 
+- POSIX subprocess cleanup reaps exited leaders before signalling their groups,
+  preserving output-limit errors on macOS without ignoring permission failures.
+- Release-note parsing keeps literal and escaped HTML-comment markers from hiding
+  following sections or duplicate versions.
+- Trust-prose validation excludes textarea contents across block and inline HTML
+  tokens, including containers opened before the trust heading.
 - Review-context collection includes changed submodule pointers and dirty
   submodule worktrees despite Git or `.gitmodules` ignore settings in every mode.
 - Release-note extraction retains section boundaries and duplicate-version checks

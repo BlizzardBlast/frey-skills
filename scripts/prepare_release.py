@@ -60,7 +60,7 @@ def release_notes(changelog: str, version: str) -> str:
             if closing not in line.lower():
                 html_end = closing
             continue
-        if "<!--" in line:
+        if re.match(r" {0,3}<!--", line):
             if re.search(r"<!--(?:(?!-->).)*$", line):
                 html_end = "-->"
             continue

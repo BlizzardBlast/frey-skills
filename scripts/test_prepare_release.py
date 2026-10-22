@@ -211,6 +211,20 @@ class PrepareReleaseTests(unittest.TestCase):
         self.validation.assert_not_called()
         self.assertFalse((self.root / "dist" / "releases").exists())
 
+    def test_literal_comment_markers_preserve_sections_and_duplicate_checks(self) -> None:
+        for body in (
+            "- Render `<!--` literally.", "- Render ``x`<!--`` literally.",
+            r"\<!--", r"- Escape \<!-- literally.", "    <!--",
+        ):
+            current = f"## [1.2.3] - 2026-10-22\n\n{body}\n\n"
+            with self.subTest(body=body):
+                self.assertEqual(
+                    prepare_release.release_notes(current + "## [1.2.2] - 2026-10-21\n\n- Older.\n", "1.2.3"),
+                    body.strip(),
+                )
+                with self.assertRaisesRegex(ValueError, "exactly one"):
+                    prepare_release.release_notes(current + "## [1.2.3] - 2026-10-21\n\n- Duplicate.\n", "1.2.3")
+
     def test_release_dates_require_ascii_calendar_dates(self) -> None:
         for day in ("2026-99-99", "2026-02-29", "2026-04-31", "0000-01-01", "2026-1-01", "202\u0666-10-22"):
             with self.subTest(day=day):

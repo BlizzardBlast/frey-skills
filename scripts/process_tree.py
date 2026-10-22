@@ -28,6 +28,8 @@ def stop_process_tree(process: subprocess.Popen[bytes]) -> None:
             if result.returncode:
                 raise ProcessCleanupError(f"could not confirm process-tree cleanup for PID {process.pid}")
         else:
+            # macOS can reject signals to a group containing only an unreaped leader.
+            process.poll()
             try:
                 os.killpg(process.pid, signal.SIGKILL)
             except ProcessLookupError:

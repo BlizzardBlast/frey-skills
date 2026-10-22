@@ -15,7 +15,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest import mock
 
-from scripts import smoke_install
+from scripts import process_tree, smoke_install
 
 
 class InstallationSmokeTests(unittest.TestCase):
@@ -106,6 +106,28 @@ class InstallationSmokeTests(unittest.TestCase):
             self.root, dict(os.environ), timeout=10,
         )
         self.assertEqual(output, argument)
+
+    def test_posix_cleanup_reaps_exited_leader_and_preserves_permission_failures(self) -> None:
+        for denied in (False, True):
+            with self.subTest(permission_denied=denied):
+                process = mock.Mock(pid=123)
+                process.poll.return_value = 0
+
+                def signal_group(pid: int, sig: int) -> None:
+                    if not process.poll.called or denied:
+                        raise PermissionError("unreaped leader or inaccessible descendants")
+
+                with mock.patch.object(process_tree, "os") as platform, mock.patch.object(process_tree, "signal") as signals:
+                    platform.name = "posix"
+                    platform.killpg.side_effect = signal_group
+                    if denied:
+                        with self.assertRaises(PermissionError):
+                            process_tree.stop_process_tree(process)
+                    else:
+                        process_tree.stop_process_tree(process)
+                    platform.killpg.assert_called_once_with(process.pid, signals.SIGKILL)
+                process.kill.assert_not_called()
+                process.wait.assert_called_once_with(timeout=5)
 
     def test_short_lived_success_and_failure_cannot_return_oversized_output(self) -> None:
         for stream in ("stdout", "stderr"):

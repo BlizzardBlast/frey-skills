@@ -20,11 +20,11 @@ class LiteralHTML(HTMLParser):
         self.depth = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        if tag in {"code", "pre", "script", "style"}:
+        if tag in {"code", "pre", "script", "style", "textarea"}:
             self.depth += 1
 
     def handle_endtag(self, tag: str) -> None:
-        if tag in {"code", "pre", "script", "style"}:
+        if tag in {"code", "pre", "script", "style", "textarea"}:
             self.depth = max(0, self.depth - 1)
 
 
@@ -112,14 +112,14 @@ class ContentTrustProseTests(unittest.TestCase):
 
     def test_block_html_literal_containers_cannot_supply_prose_obligations(self) -> None:
         rules = "\n".join(COMMON_PHRASES[1:])
-        for tag in ("code", "pre", "script", "style"):
+        for tag in ("code", "pre", "script", "style", "textarea"):
             content = f"## Content trust boundary\n\n<{tag}>\n\n{rules}\n\n</{tag}>\n"
             with self.subTest(tag=tag), self.assertRaises(AssertionError):
                 self.assert_contract(content)
 
     def test_block_html_closers_restore_prose_after_inline_literal_openers(self) -> None:
         rules = "\n".join(COMMON_PHRASES[1:])
-        for tag in ("code", "pre", "script", "style"):
+        for tag in ("code", "pre", "script", "style", "textarea"):
             content = f"## Content trust boundary\n\nExample <{tag}>inert\n\n</{tag}>\n\n{rules}\n"
             with self.subTest(tag=tag):
                 self.assert_contract(content)
@@ -130,6 +130,16 @@ class ContentTrustProseTests(unittest.TestCase):
             content = f"{opener}\n\n{rules}\n\n</code>\n"
             with self.subTest(opener=opener), self.assertRaises(AssertionError):
                 self.assert_contract(content)
+
+    def test_textarea_cannot_supply_a_section_and_closing_restores_prose(self) -> None:
+        rules = "\n".join(COMMON_PHRASES)
+        for opener in ("<textarea>", "Example <textarea>inert"):
+            for content in (rules, f"</code>\n\n{rules}\n\n<code>"):
+                example = f"{opener}\n\n{content}\n\n</textarea>\n"
+                with self.subTest(opener=opener, content=content):
+                    with self.assertRaises(AssertionError):
+                        self.assert_contract(example)
+                    self.assert_contract(example + "\n" + rules + "\n")
 
     def test_closed_literal_containers_before_heading_preserve_real_prose(self) -> None:
         rules = "\n".join(COMMON_PHRASES)
