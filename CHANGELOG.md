@@ -8,6 +8,10 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Fixed
 
+- Release-note parsing distinguishes inline HTML from block HTML, preserving
+  following release boundaries and duplicate-version checks.
+- Trust-prose validation ignores unmatched literal-container closing tags and
+  restores prose only after closing a matching container.
 - POSIX subprocess cleanup reaps exited leaders before signalling their groups,
   preserving output-limit errors on macOS without ignoring permission failures.
 - Release-note parsing keeps literal and escaped HTML-comment markers from hiding

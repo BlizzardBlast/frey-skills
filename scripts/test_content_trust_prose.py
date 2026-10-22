@@ -21,15 +21,17 @@ class LiteralHTML(HTMLParser):
 
     def __init__(self) -> None:
         super().__init__()
-        self.depth = 0
+        self.tags: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         if tag in {"code", "pre", "script", "style", "textarea"}:
-            self.depth += 1
+            self.tags.append(tag)
 
     def handle_endtag(self, tag: str) -> None:
-        if tag in {"code", "pre", "script", "style", "textarea"}:
-            self.depth = max(0, self.depth - 1)
+        for index in range(len(self.tags) - 1, -1, -1):
+            if self.tags[index] == tag:
+                del self.tags[index:]
+                break
 
 
 def trust_section(content: str) -> str:
@@ -40,7 +42,7 @@ def trust_section(content: str) -> str:
     active = False
     sections = 0
     for index, token in enumerate(tokens):
-        if token.type == "heading_open" and token.level == 0 and token.tag in {"h1", "h2"} and not literal.depth:
+        if token.type == "heading_open" and token.level == 0 and token.tag in {"h1", "h2"} and not literal.tags:
             active = token.tag == "h2" and inline_text(tokens[index + 1].children or []) == "Content trust boundary"
             if active:
                 sections += 1
@@ -58,7 +60,7 @@ def trust_section(content: str) -> str:
                     literal.feed(child.content)
                 elif not active:
                     continue
-                elif literal.depth:
+                elif literal.tags:
                     result.append("\0")
                 elif child.type == "text":
                     result.append(child.content)
@@ -151,6 +153,25 @@ class ContentTrustProseTests(unittest.TestCase):
         for opener in ("<code>", "Example <code>inert"):
             with self.subTest(opener=opener):
                 self.assert_contract(f"{opener}\n\ninert\n\n</code>\n\n{rules}\n")
+
+    def test_unmatched_literal_closers_cannot_create_trust_prose(self) -> None:
+        rules = "\n".join(COMMON_PHRASES)
+        for opener in ("<code>", "Example <code>inert"):
+            for closing in ("pre", "textarea", "script", "style"):
+                example = f"{opener}\n\n</{closing}>\n\n{rules}\n\n</code>\n"
+                with self.subTest(opener=opener, closing=closing):
+                    with self.assertRaises(AssertionError):
+                        self.assert_contract(example)
+                    self.assert_contract(example + "\n" + rules + "\n")
+
+    def test_matching_inner_closer_keeps_the_outer_literal_container(self) -> None:
+        rules = "\n".join(COMMON_PHRASES)
+        for inner in ("code", "pre"):
+            example = f"Example <code><{inner}>inert\n\n</{inner}>\n\n{rules}\n\n</code>\n"
+            with self.subTest(inner=inner):
+                with self.assertRaises(AssertionError):
+                    self.assert_contract(example)
+                self.assert_contract(example + "\n" + rules + "\n")
 
     def test_literal_headings_do_not_duplicate_or_end_real_trust_sections(self) -> None:
         rules = "\n".join(COMMON_PHRASES)

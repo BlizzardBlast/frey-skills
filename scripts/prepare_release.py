@@ -24,6 +24,17 @@ except ModuleNotFoundError:
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+HTML_BLOCK_TAGS = (
+    "address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|"
+    "dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[1-6]|head|"
+    "header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|noframes|ol|optgroup|option|"
+    "p|param|section|source|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul"
+)
+HTML_TAG = (
+    r"(?:</[A-Za-z][A-Za-z0-9-]*[ \t]*>"
+    r"|<[A-Za-z][A-Za-z0-9-]*(?:[ \t]+[A-Za-z_:][A-Za-z0-9_.:-]*"
+    r"(?:[ \t]*=[ \t]*(?:[^\"'=<>`\x00-\x20]+|'[^']*'|\"[^\"]*\"))?)*[ \t]*/?>)"
+)
 
 
 def release_notes(changelog: str, version: str) -> str:
@@ -36,19 +47,24 @@ def release_notes(changelog: str, version: str) -> str:
     headings: list[tuple[int, int, str]] = []
     fence = ""
     html_end: str | None = None
+    paragraph = False
     for index, source_line in enumerate(lines):
         line = source_line.rstrip("\r\n")
         if fence:
             if re.fullmatch(rf" {{0,3}}{re.escape(fence[0])}{{{len(fence)},}}[ \t]*", line):
                 fence = ""
+                paragraph = False
             continue
         if html_end is not None:
             if (not html_end and not line.strip()) or (html_end and html_end in line.lower()):
                 remainder = line.lower().split(html_end, 1)[1] if html_end else ""
                 comment_continues = html_end == "-->" and re.search(r"<!--(?:(?!-->).)*$", remainder)
                 html_end = None
+                paragraph = False
                 if comment_continues:
                     html_end = "-->"
+            continue
+        if not paragraph and re.match(r"(?: {4}|\t)", line):
             continue
         opening = re.match(r" {0,3}(`{3,}|~{3,})(.*)$", line)
         if opening and (opening[1][0] == "~" or "`" not in opening[2]):
@@ -56,28 +72,38 @@ def release_notes(changelog: str, version: str) -> str:
             continue
         literal = re.match(r" {0,3}<(pre|script|style|textarea)(?:[ \t>]|$)", line, re.IGNORECASE)
         if literal:
+            paragraph = False
             closing = f"</{literal[1].lower()}>"
             if closing not in line.lower():
                 html_end = closing
             continue
         if re.match(r" {0,3}<!--", line):
+            paragraph = False
             if re.search(r"<!--(?:(?!-->).)*$", line):
                 html_end = "-->"
             continue
         special = re.match(r" {0,3}(<\?|<!\[CDATA\[|<![A-Z])", line)
         if special:
+            paragraph = False
             closing = "?>" if special[1] == "<?" else "]]>" if special[1] == "<![CDATA[" else ">"
             if closing not in line:
                 html_end = closing
             continue
-        # A URI autolink's scheme colon is not part of a CommonMark tag name.
-        if re.match(r" {0,3}</?[A-Za-z][A-Za-z0-9-]*(?:[ \t/>]|$)", line):
+        # CommonMark block tags interrupt paragraphs; standalone tags cannot.
+        if re.match(rf" {{0,3}}</?(?:{HTML_BLOCK_TAGS})(?=[ \t]|/?>|$)", line, re.IGNORECASE) or (
+            not paragraph and re.fullmatch(rf" {{0,3}}{HTML_TAG}[ \t]*", line)
+        ):
             html_end = ""  # Ordinary HTML blocks end at the next blank line.
+            paragraph = False
             continue
         heading = re.fullmatch(r"(#{1,2})(?:[ \t]+(.*?))?[ \t]*", line)
         if heading:
             title = re.sub(r"[ \t]+#+[ \t]*$", "", heading[2] or "").strip()
             headings.append((index, len(heading[1]), title))
+        paragraph = bool(line.strip()) and not (
+            re.match(r" {0,3}#{1,6}(?:[ \t]|$)", line)
+            or re.fullmatch(r" {0,3}(?:-+|=+|(?:\*[ \t]*){3,}|(?:-[ \t]*){3,}|(?:_[ \t]*){3,})[ \t]*", line)
+        )
 
     matching = [position for position, (_, level, title) in enumerate(headings)
                 if level == 2 and re.match(rf"\[{re.escape(version)}\](?:[ \t]|$)", title)]

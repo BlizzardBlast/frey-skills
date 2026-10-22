@@ -225,6 +225,31 @@ class PrepareReleaseTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "exactly one"):
                     prepare_release.release_notes(current + "## [1.2.3] - 2026-10-21\n\n- Duplicate.\n", "1.2.3")
 
+    def test_inline_html_preserves_release_boundaries_and_duplicate_checks(self) -> None:
+        for body in (
+            '<span>Release details</span> follow here.', '<br/> See details.',
+            '<custom-panel title="release > details">More</custom-panel> follows.',
+            '</span> More details.', '- Current paragraph.\n<custom-panel>',
+        ):
+            current = f"## [1.2.3] - 2026-10-22\n\n{body}\n"
+            with self.subTest(body=body):
+                self.assertEqual(
+                    prepare_release.release_notes(current + "## [1.2.2] - 2026-10-21\n\n- Older.\n", "1.2.3"),
+                    body,
+                )
+                with self.assertRaisesRegex(ValueError, "exactly one"):
+                    prepare_release.release_notes(current + "## [1.2.3] - 2026-10-21\n\n- Duplicate.\n", "1.2.3")
+
+    def test_real_html_blocks_still_hide_example_headings(self) -> None:
+        for opening in (
+            '<div>Block content follows.', '<section class="release">',
+            '<custom-panel title="release > details">', '<custom-panel disabled />',
+            '</custom-panel>',
+        ):
+            content = f"{opening}\n## [1.2.3] - 2026-10-22\n\n- Example only.\n"
+            with self.subTest(opening=opening), self.assertRaisesRegex(ValueError, "non-empty dated section"):
+                prepare_release.release_notes(content, "1.2.3")
+
     def test_release_dates_require_ascii_calendar_dates(self) -> None:
         for day in ("2026-99-99", "2026-02-29", "2026-04-31", "0000-01-01", "2026-1-01", "202\u0666-10-22"):
             with self.subTest(day=day):
