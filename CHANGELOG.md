@@ -6,6 +6,65 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+### Fixed
+
+- Review-context collection includes changed submodule pointers and dirty
+  submodule worktrees despite Git or `.gitmodules` ignore settings in every mode.
+- Release-note extraction retains section boundaries and duplicate-version checks
+  after URI autolinks.
+- Markdown fragment validation accepts HTML `name` targets only on anchor elements,
+  while retaining `id` targets on all elements.
+- Release preparation reads real changelog sections, rejects duplicate versions
+  and invalid calendar dates, and preserves fenced examples in release notes.
+- Skill Markdown links accept anchors, encoded paths, and reference syntax through
+  the shared link validator while literal file references retain their checks.
+- Semantic-version checks now require ASCII digits, rejecting Unicode decimal
+  digits before release packaging.
+- JSON scorecards without their eval definition now fail validation; skills with
+  no JSON scorecards, including README-only directories, remain valid.
+- Documentation inventories use parsed Markdown entries, accepting reference
+  links and rendered headings while rejecting comment/code-only catalogs and
+  duplicate entries. The intentional directory-tree code block remains supported.
+- Repository validation rejects JSON `null` eval definitions instead of
+  silently bypassing eval and dependent scorecard checks.
+- Repository validation reports non-string frontmatter keys and malformed
+  scorecard enum values as diagnostics without aborting later checks.
+- Release downloads require HTTPS before opening the initial URL or following
+  any redirect, including chains that return to HTTPS after an HTTP hop.
+- Bundle parity reads current bytes on every validation, including repeated
+  release preparation after changes that preserve file size and modification time.
+- Release preparation rejects linked changelog and manifest inputs, including
+  linked manifest parents, before reading release metadata or touching outputs.
+- Bundle validation now shares the builder's symlink/junction guard and rejects
+  linked roots, ancestors, and descendants in bundles and canonical skill trees
+  before parity reads.
+- Trust-prose checks track literal HTML containers across block and inline
+  tokens in one full-document pass, including containers opened before the trust
+  heading, excluding code examples while restoring prose after closing tags.
+- Codex metadata RPC output is rechecked after reads and owned-process cleanup,
+  so a final response cannot bypass the stdout/stderr size limits.
+- Markdown validation now uses a pinned CommonMark parser for balanced link
+  destinations, escaped/indented examples, rendered heading labels, comments,
+  and closed mapping frontmatter. The repository gate also checks required
+  trust rules in actual section prose while plugin contracts stay dependency-free.
+- Smoke commands bound stdout/stderr output and reuse the Codex process-tree
+  supervisor for cleanup after output failure, timeout, or an early parent exit.
+- CI actions are pinned to verified official-repository commit SHAs, and both
+  validation dependency sets include exact transitive runtime pins.
+
+- Bundle and release artifact publication now retain prior outputs for rollback,
+  serialize cooperating writers, and preserve recovery backups after an
+  incomplete rollback instead of losing bundles or mixing ZIP/checksum versions.
+- Installation smoke child processes receive an explicit environment allowlist
+  and disposable application-data paths, excluding inherited credentials and
+  interpreter, proxy, and Git command injection settings.
+- Codex compatibility CI now also builds and tests the checkout candidate using
+  the existing isolated discovery, upgrade, rollback, ownership, and byte checks.
+- Release ZIP entries use platform-independent relative POSIX ordering, and
+  text checkouts use LF; raw reproducibility still depends on Python/zlib versions.
+- Repository validation now checks local Markdown targets/anchors and all skill
+  catalog inventories. Corrected the roadmap's current published-skill wording.
+
 ### Changed
 
 - Recorded partial, maintainer-reported Windows desktop version/count evidence

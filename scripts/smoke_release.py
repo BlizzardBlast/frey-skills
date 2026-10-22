@@ -43,12 +43,24 @@ class ReleaseSmokeError(ValueError):
     """The downloaded release differs from its pinned canonical sources."""
 
 
+def _require_https(url: str) -> None:
+    if urllib.parse.urlsplit(url).scheme != "https":
+        raise ReleaseSmokeError("release downloads must remain on HTTPS")
+
+
+class _HTTPSRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        _require_https(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 def _download_file(url: str, destination: Path, limit: int) -> None:
     """Stream one asset; the supervising parent owns the total deadline."""
+    _require_https(url)
+    opener = urllib.request.build_opener(_HTTPSRedirectHandler())
     request = urllib.request.Request(url, headers={"User-Agent": "frey-skills-release-smoke"})
-    with urllib.request.urlopen(request, timeout=30) as response, destination.open("xb") as output:
-        if urllib.parse.urlsplit(response.geturl()).scheme != "https":
-            raise ReleaseSmokeError("release downloads must remain on HTTPS")
+    with opener.open(request, timeout=30) as response, destination.open("xb") as output:
+        _require_https(response.geturl())
         size = 0
         while True:
             chunk = response.read(min(64 * 1024, limit - size + 1))

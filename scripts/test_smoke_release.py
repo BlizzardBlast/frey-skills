@@ -18,14 +18,24 @@ import threading
 import time
 import unittest
 import urllib.error
+import urllib.response
 import warnings
 import zipfile
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
+from email.message import Message
 from multiprocessing.connection import Connection
 from pathlib import Path
+from typing import Iterator
 from unittest import mock
 
 from scripts import check, smoke_release
+
+
+# Older supported runtimes do not recognize HTTP 308 redirects.
+REDIRECT_CODES = tuple(
+    code for code in (301, 302, 303, 307, 308)
+    if hasattr(urllib.request.HTTPRedirectHandler, f"http_error_{code}")
+)
 
 
 def _slow_body_worker(marker: str, destination: Path, limit: int, result: Connection) -> None:
@@ -50,7 +60,7 @@ def _slow_body_worker(marker: str, destination: Path, limit: int, result: Connec
     response.url = "https://example.invalid/asset"
     Path(marker).write_text(str(os.getpid()), encoding="utf-8")
     try:
-        with mock.patch.object(smoke_release.urllib.request, "urlopen", return_value=response):
+        with mock.patch.object(urllib.request.OpenerDirector, "open", return_value=response):
             smoke_release._download_worker(response.url, destination, limit, result)
     finally:
         client.close()
@@ -62,7 +72,7 @@ def _blocked_connect_worker(marker: str, destination: Path, limit: int, result: 
         time.sleep(30)
         raise OSError("fixture connection never completed")
 
-    with mock.patch.object(smoke_release.urllib.request, "urlopen", side_effect=connect):
+    with mock.patch.object(urllib.request.OpenerDirector, "open", side_effect=connect):
         smoke_release._download_worker("https://example.invalid/asset", destination, limit, result)
 
 
@@ -70,7 +80,7 @@ def _bytes_worker(url: str, destination: Path, limit: int, result: Connection) -
     response = mock.MagicMock(wraps=io.BytesIO(b"archive bytes"))
     response.__enter__.return_value = response
     response.geturl = mock.Mock(return_value="https://example.invalid/asset")
-    with mock.patch.object(smoke_release.urllib.request, "urlopen", return_value=response):
+    with mock.patch.object(urllib.request.OpenerDirector, "open", return_value=response):
         smoke_release._download_worker(url, destination, limit, result)
 
 
@@ -314,6 +324,68 @@ class ReleaseArchiveTests(unittest.TestCase):
 
 
 class DownloadAndRunnerTests(unittest.TestCase):
+    @contextmanager
+    def redirect_transport(self, redirects: dict[str, tuple[int, str]], seen: list[str]) -> Iterator[None]:
+        def respond(handler: urllib.request.BaseHandler, request: urllib.request.Request) -> urllib.response.addinfourl:
+            seen.append(request.full_url)
+            code, target = redirects.get(request.full_url, (200, ""))
+            headers = Message()
+            if target:
+                headers["Location"] = target
+            response = urllib.response.addinfourl(
+                io.BytesIO(b"" if target else b"archive bytes"), headers, request.full_url, code,
+            )
+            response.msg = "Found" if target else "OK"
+            return response
+
+        # Exercise urllib's actual redirect machinery; replace only transports.
+        with mock.patch.object(urllib.request.HTTPHandler, "http_open", new=respond), mock.patch.object(
+            urllib.request.HTTPSHandler, "https_open", new=respond
+        ):
+            yield
+
+    def test_non_https_urls_are_rejected_before_opening_any_transport(self) -> None:
+        for url in ("http://start.invalid/asset", "ftp://start.invalid/asset", "file:///asset"):
+            with self.subTest(url=url), tempfile.TemporaryDirectory() as temporary:
+                destination = Path(temporary) / "asset"
+                with mock.patch.object(urllib.request.OpenerDirector, "open", side_effect=AssertionError("unsafe URL reached transport")) as opened:
+                    with self.assertRaisesRegex(smoke_release.ReleaseSmokeError, "HTTPS"):
+                        smoke_release._download_file(url, destination, 100)
+                opened.assert_not_called()
+                self.assertFalse(destination.exists())
+
+    def test_https_redirects_preserve_bytes_and_size_limits(self) -> None:
+        start, middle, end = "https://start.invalid/asset", "https://start.invalid/middle", "https://end.invalid/asset"
+        for code in REDIRECT_CODES:
+            for limit in (13, 2):
+                with self.subTest(code=code, limit=limit), tempfile.TemporaryDirectory() as temporary:
+                    destination = Path(temporary) / "asset"
+                    seen: list[str] = []
+                    with self.redirect_transport({start: (code, "/middle"), middle: (code, end)}, seen):
+                        if limit == 13:
+                            smoke_release._download_file(start, destination, limit)
+                            self.assertEqual(destination.read_bytes(), b"archive bytes")
+                        else:
+                            with self.assertRaisesRegex(smoke_release.ReleaseSmokeError, "size limit"):
+                                smoke_release._download_file(start, destination, limit)
+                    self.assertEqual(seen, [start, middle, end])
+
+    def test_http_redirect_hops_are_rejected_before_opening(self) -> None:
+        start, middle, end = "https://start.invalid/asset", "http://middle.invalid/asset", "https://end.invalid/asset"
+        for code in REDIRECT_CODES:
+            for return_to_https in (False, True):
+                with self.subTest(code=code, return_to_https=return_to_https), tempfile.TemporaryDirectory() as temporary:
+                    destination = Path(temporary) / "asset"
+                    seen: list[str] = []
+                    redirects = {start: (code, middle)}
+                    if return_to_https:
+                        redirects[middle] = (code, end)
+                    with self.redirect_transport(redirects, seen):
+                        with self.assertRaisesRegex(smoke_release.ReleaseSmokeError, "HTTPS"):
+                            smoke_release._download_file(start, destination, 100)
+                    self.assertEqual(seen, [start])
+                    self.assertFalse(destination.exists())
+
     def test_transport_limits_size_and_https_without_overwriting_existing_files(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             destination = Path(temporary) / "asset"
@@ -325,13 +397,13 @@ class DownloadAndRunnerTests(unittest.TestCase):
                     response = mock.MagicMock(wraps=io.BytesIO(payload))
                     response.__enter__.return_value = response
                     response.geturl = mock.Mock(return_value=url)
-                    with mock.patch.object(smoke_release.urllib.request, "urlopen", return_value=response) as opened:
+                    with mock.patch.object(urllib.request.OpenerDirector, "open", return_value=response) as opened:
                         with self.assertRaisesRegex(smoke_release.ReleaseSmokeError, error):
                             smoke_release._download_file("https://example.invalid/asset", destination, limit)
                     self.assertEqual(opened.call_args.kwargs["timeout"], 30)
                     destination.unlink()
             destination.write_bytes(b"keep")
-            with mock.patch.object(smoke_release.urllib.request, "urlopen"):
+            with mock.patch.object(urllib.request.OpenerDirector, "open"):
                 with self.assertRaises(FileExistsError):
                     smoke_release._download_file("https://example.invalid/asset", destination, 100)
             self.assertEqual(destination.read_bytes(), b"keep")
@@ -342,7 +414,7 @@ class DownloadAndRunnerTests(unittest.TestCase):
             response = mock.MagicMock(wraps=io.BytesIO(b"archive bytes"))
             response.__enter__.return_value = response
             response.geturl = mock.Mock(return_value="https://example.invalid/asset")
-            with mock.patch.object(smoke_release.urllib.request, "urlopen", return_value=response):
+            with mock.patch.object(urllib.request.OpenerDirector, "open", return_value=response):
                 smoke_release._download_file("https://example.invalid/asset", destination, 13)
             self.assertEqual(destination.read_bytes(), b"archive bytes")
 

@@ -14,7 +14,7 @@ import tempfile
 import threading
 import time
 import unittest
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest import mock
 
@@ -63,6 +63,50 @@ class ClientSmokeTests(unittest.TestCase):
     def test_verified_names_owner_enabled_paths_and_resource_bytes_pass(self) -> None:
         self.listing["data"][0]["skills"].append({"name": "debug", "pluginId": None, "path": "/unrelated"})
         self.verify()
+
+    def test_default_cli_checks_published_and_newly_built_candidate_in_separate_projects(self) -> None:
+        entry = self.root / "cli.js"
+        entry.touch()
+        transitions = []
+        homes = []
+
+        def build_candidate(output: Path) -> None:
+            shutil.copytree(self.extracted, output)
+            added = output / "skills" / "candidate-only" / "SKILL.md"
+            added.parent.mkdir(parents=True)
+            added.write_bytes(b"---\nname: candidate-only\n---\n")
+
+        def inspect_transition(cli: list[str], workspace: Path, environment: dict, previous: Path, current: Path) -> None:
+            transitions.append((workspace.name, set(smoke.discover_skill_names(current / "skills"))))
+            homes.append(environment["CODEX_HOME"])
+
+        with mock.patch.object(smoke, "native_cli", return_value=["inert"]), mock.patch.object(
+            smoke, "run", return_value=f"codex-cli {smoke.CLI_VERSION}"
+        ), mock.patch.object(smoke, "release_plugin", return_value=(self.extracted, "inert-digest")), mock.patch.object(
+            smoke, "build_bundle", side_effect=build_candidate
+        ) as builder, mock.patch.object(smoke, "validate_bundle", return_value=[]) as validator, mock.patch.object(
+            smoke, "smoke_client", side_effect=inspect_transition
+        ), redirect_stdout(io.StringIO()):
+            self.assertEqual(smoke.main(["--cli", str(entry)]), 0)
+        self.assertEqual(transitions, [("published", {"debug", "code-review"}),
+                                       ("checkout", {"debug", "code-review", "candidate-only"})])
+        self.assertEqual(len(set(homes)), 2, "Each transition must have a fresh cache even when versions match")
+        builder.assert_called_once()
+        validator.assert_called_once_with(builder.call_args.args[0])
+
+    def test_invalid_candidate_stops_before_client_installation(self) -> None:
+        entry = self.root / "cli.js"
+        entry.touch()
+        with mock.patch.object(smoke, "native_cli", return_value=["inert"]), mock.patch.object(
+            smoke, "run", return_value=f"codex-cli {smoke.CLI_VERSION}"
+        ), mock.patch.object(smoke, "release_plugin", return_value=(self.extracted, "inert")) as release, mock.patch.object(
+            smoke, "build_bundle"
+        ), mock.patch.object(smoke, "validate_bundle", return_value=["inert parity failure"]), mock.patch.object(
+            smoke, "smoke_client"
+        ) as client, redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+            self.assertEqual(smoke.main(["--cli", str(entry), "--source", "checkout"]), 1)
+        client.assert_not_called()
+        self.assertEqual(release.call_count, 1, "Candidate checks need only the pinned baseline")
 
     def test_wrong_version_disabled_uninstalled_and_missing_owner_fail(self) -> None:
         for key, value in (("localVersion", "1.8.1"), ("enabled", False), ("installed", False), ("id", None)):
@@ -225,6 +269,50 @@ class RpcTests(unittest.TestCase):
             with self.subTest(behavior=behavior), mock.patch.object(smoke, "MAX_OUTPUT_BYTES", 2000):
                 with self.assertRaises(ValueError):
                     smoke.read_metadata(self.server_code(behavior), self.root, smoke.client_environment(self.root), timeout=5)
+
+    def test_final_rpc_response_cannot_bypass_stream_limits(self) -> None:
+        for flood in ("stdout", "stderr"):
+            with self.subTest(stream=flood), (self.root / "stdout").open("wb") as output, (
+                self.root / "stdout"
+            ).open("rb") as reader, (self.root / "stderr").open("wb") as errors:
+                class GrowingReader:
+                    count = 0
+
+                    def fileno(self) -> int:
+                        return reader.fileno()
+
+                    def read(self, limit: int) -> bytes:
+                        self.count += 1
+                        response = {"id": self.count, "result": {"controlled": True}}
+                        output.write((json.dumps(response) + "\n").encode())
+                        if self.count == 3:
+                            stream = output if flood == "stdout" else errors
+                            stream.write(b"x" * (smoke.MAX_OUTPUT_BYTES + 1024))
+                            stream.flush()
+                        output.flush()
+                        return reader.read(limit)
+
+                process = mock.Mock(stdin=io.BytesIO())
+                process.poll.return_value = None
+                with self.assertRaisesRegex(smoke.CodexSmokeError, "output exceeded its size limit"):
+                    smoke._metadata_requests(process, self.root, time.monotonic() + 5, GrowingReader(), errors)
+
+    def test_final_output_is_checked_after_owned_process_cleanup(self) -> None:
+        for flood in ("stdout", "stderr"):
+            with self.subTest(stream=flood), tempfile.TemporaryFile() as output, tempfile.TemporaryFile() as errors:
+                @contextmanager
+                def closing_server(*args, **kwargs):
+                    try:
+                        yield mock.Mock()
+                    finally:
+                        stream = output if flood == "stdout" else errors
+                        stream.write(b"x" * (smoke.MAX_OUTPUT_BYTES + 1))
+                        stream.flush()
+
+                with mock.patch.object(smoke, "server_process", closing_server), mock.patch.object(
+                    smoke, "_metadata_requests", return_value=({}, {})
+                ), self.assertRaisesRegex(smoke.CodexSmokeError, "output exceeded its size limit"):
+                    smoke._read_metadata([], self.root, {}, time.monotonic() + 5, output, output, errors)
 
     def test_timeout_and_success_clean_up_owned_descendants_with_inherited_handles(self) -> None:
         marker = self.root / "alive"

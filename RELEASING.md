@@ -15,8 +15,14 @@ It adds no automatic publication or recovery authority.
    Use a patch for compatible fixes, a minor version for compatible additions,
    and a major version for incompatible activation, output, or manifest changes.
    Update individual skill metadata when that skill's published contract changes.
+   Use ASCII digits for numeric version components. Local release preparation
+   requires a stable `MAJOR.MINOR.PATCH` version.
 2. Add a non-empty `## [VERSION] - YYYY-MM-DD` section to `CHANGELOG.md` with
    concrete activation, output, compatibility, packaging, and tooling changes.
+   Use exactly one column-zero version heading and a valid ASCII calendar date.
+   Fenced examples and HTML blocks cannot supply section headings. Fenced content
+   inside a release section is preserved; the next column-zero H1/H2 ends it.
+   URI autolinks do not hide following headings or duplicate version sections.
    Use the release preparation date; update it if preparation moves to another
    date. Changelog entries alone do not mean a version was published.
 3. Install the pinned dependencies in the selected Python 3.11+ environment and
@@ -27,13 +33,20 @@ It adds no automatic publication or recovery authority.
    release notes, and `SHA256SUMS` under ignored `dist/releases`. The tag argument
    must match the manifest version and dated changelog section. This command
    validates bundle parity but does not replace the full checks, create a tag,
-   push, or publish anything. Outputs have sorted entries and fixed ZIP
-   timestamps; repeated preparation with the same source bytes and build
-   environment produces the same archive. Different platforms can order ZIP
-   entries differently, so retain each raw digest and verify every file byte
-   against the exact tagged source.
+   push, or publish anything. Outputs use relative POSIX-name ordering, fixed ZIP
+   metadata, and LF text checkouts through `.gitattributes`. Identical source
+   bytes and Python/zlib build environments produce the same archive across
+   platforms. Different compression versions can still change raw ZIP bytes;
+   retain each digest and verify every file byte against the exact tagged source.
    The root `LICENSE` must be a regular repository-owned file; missing files,
    directories, symlinks, and junctions stop preparation before release output.
+   Bundle and release-file publication retain prior outputs until all renames
+   succeed and restore them on an ordinary publication failure. Cooperating
+   writers serialize through `.frey-publish` in the output parent. A crash,
+   failed rollback, or cleanup error can leave this directory for recovery;
+   stop and inspect its `previous/` backups and current outputs before removing
+   the lock or retrying. The release-file set is recoverable, not atomically
+   visible across multiple paths; concurrent readers must wait for completion.
 5. Review the actual diff, merge it through the normal review process, and wait
    for all required CI jobs, including Windows, to pass on the release commit.
 
@@ -80,7 +93,10 @@ storage. CI runs it on Windows, Linux, and macOS. It checks the shared source pi
 in `scripts/smoke_install.py`, not an unpublished checkout or an arbitrary new
 tag; update that pin and installation documentation together after an authorized
 release. The separate [Codex client smoke check](CONTRIBUTING.md#codex-client-compatibility-smoke-check)
-checks CLI discovery, upgrade, and rollback against its pinned release pair.
+checks CLI discovery, upgrade, and rollback against its pinned release pair and
+a freshly built checkout candidate in separate disposable projects. The
+candidate transition uses the pinned previous release as its baseline, avoiding
+reuse of an installed candidate cache when development retains a version number.
 Desktop discovery and rollback remain a separate optional
 [manual compatibility check](docs/installation.md#manual-plugin-compatibility-check).
 

@@ -13,8 +13,10 @@ from typing import Any, Iterable
 import yaml
 
 try:
+    from scripts.documentation import bare_reference_text, validate_documentation
     from scripts.repository_layout import SourcePathError, discover_skill_names, validate_source_path
 except ModuleNotFoundError:
+    from documentation import bare_reference_text, validate_documentation
     from repository_layout import SourcePathError, discover_skill_names, validate_source_path
 
 
@@ -66,6 +68,11 @@ class Validator:
         try:
             for skill_dir in self.discover_skill_dirs():
                 self.validate_skill(skill_dir)
+            for path, message in validate_documentation(
+                self.root, [path for path in self.walk_files(self.root) if path.suffix == ".md"],
+                discover_skill_names(self.root),
+            ):
+                self.add_error(path, message)
             self.validate_source_trailing_newlines()
         except SourcePathError as exc:
             self.add_error(self.root, str(exc))
@@ -106,15 +113,19 @@ class Validator:
             self.add_error(path, f"could not be read: {exc}")
         return None
 
-    def read_json(self, path: Path) -> Any | None:
+    def read_json_object(self, path: Path) -> dict[str, Any] | None:
         text = self.read_text(path)
         if text is None:
             return None
         try:
-            return json.loads(text)
+            data = json.loads(text)
         except json.JSONDecodeError as exc:
             self.add_error(path, f"invalid JSON: {exc.msg} at line {exc.lineno}, column {exc.colno}")
             return None
+        if not isinstance(data, dict):
+            self.add_error(path, "must parse to an object")
+            return None
+        return data
 
     def validate_skill_line_count(self, path: Path, text: str) -> None:
         if len(text.splitlines()) > 500:
@@ -144,6 +155,9 @@ class Validator:
 
         if not isinstance(loaded, dict):
             self.add_error(path, "frontmatter must parse to an object")
+            return None
+        if any(not isinstance(key, str) for key in loaded):
+            self.add_error(path, "frontmatter keys must be strings")
             return None
         return loaded
 
@@ -210,6 +224,8 @@ class Validator:
             text = self.read_text(source_file)
             if text is None:
                 continue
+            if source_file.suffix == ".md":
+                text = bare_reference_text(text)
             for reference in self.extract_local_references(text):
                 self.validate_skill_relative_path(
                     skill_dir=skill_dir,
@@ -289,11 +305,8 @@ class Validator:
         if not evals_file.exists():
             return
 
-        data = self.read_json(evals_file)
+        data = self.read_json_object(evals_file)
         if data is None:
-            return
-        if not isinstance(data, dict):
-            self.add_error(evals_file, "must parse to an object")
             return
 
         version = data.get("version")
@@ -356,11 +369,17 @@ class Validator:
     def validate_eval_scorecards(self, skill_dir: Path) -> None:
         evals_file = skill_dir / "evals" / "evals.json"
         scorecards_dir = skill_dir / "evals" / "scorecards"
-        if not evals_file.is_file() or not scorecards_dir.is_dir():
+        if not scorecards_dir.is_dir():
+            return
+        scorecards = sorted(scorecards_dir.glob("*.json"))
+        if not scorecards:
+            return
+        if not evals_file.is_file():
+            self.add_error(scorecards_dir, "JSON scorecards require an evals/evals.json definition")
             return
 
-        evals_data = self.read_json(evals_file)
-        if not isinstance(evals_data, dict):
+        evals_data = self.read_json_object(evals_file)
+        if evals_data is None:
             return
         eval_cases = evals_data.get("evals")
         if not isinstance(eval_cases, list):
@@ -371,10 +390,9 @@ class Validator:
             if isinstance(case, dict) and isinstance(case.get("id"), str) and case.get("id")
         }
 
-        for scorecard_file in sorted(scorecards_dir.glob("*.json")):
-            data = self.read_json(scorecard_file)
-            if not isinstance(data, dict):
-                self.add_error(scorecard_file, "must parse to an object")
+        for scorecard_file in scorecards:
+            data = self.read_json_object(scorecard_file)
+            if data is None:
                 continue
             if data.get("version") != 1:
                 self.add_error(scorecard_file, "version must equal 1")
@@ -404,7 +422,9 @@ class Validator:
                 else:
                     seen_ids.add(eval_id)
 
-                if result.get("case_type") not in {"trigger", "non-trigger"}:
+                case_type = result.get("case_type")
+                valid_case_type = isinstance(case_type, str) and case_type in {"trigger", "non-trigger"}
+                if not valid_case_type:
                     self.add_error(scorecard_file, f"{label}.case_type must be trigger or non-trigger")
                 if result.get("trials") != 10:
                     self.add_error(scorecard_file, f"{label}.trials must equal 10")
@@ -423,14 +443,13 @@ class Validator:
                     else:
                         numeric_values[key] = value
 
-                case_type = result.get("case_type")
                 triggers = numeric_values.get("triggers")
                 accepted_activation = numeric_values.get("accepted_activation")
                 assertion_passes = numeric_values.get("assertion_passes")
                 assertion_denominator = numeric_values.get("assertion_denominator")
                 automatic_failures = numeric_values.get("automatic_failures")
 
-                if case_type in {"trigger", "non-trigger"} and triggers is not None:
+                if valid_case_type and triggers is not None:
                     expected_accepted = triggers if case_type == "trigger" else 10 - triggers
                     if accepted_activation is not None and accepted_activation != expected_accepted:
                         self.add_error(
@@ -469,7 +488,7 @@ class Validator:
                     )
 
                 recorded_result = result.get("result")
-                if recorded_result not in {"pass", "fail"}:
+                if not isinstance(recorded_result, str) or recorded_result not in {"pass", "fail"}:
                     self.add_error(scorecard_file, f"{label}.result must be pass or fail")
                 elif all(
                     value is not None

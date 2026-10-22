@@ -20,6 +20,7 @@ except ModuleNotFoundError:
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 GROUPS = ("repository", "spec", "plugin", "whitespace")
 CONTRACT_TESTS = (
+    "scripts.test_publish_outputs",
     "scripts.test_build_plugin",
     "scripts.test_prepare_release",
     "scripts.test_implementation_execution_contract",
@@ -42,6 +43,8 @@ def preflight(groups: tuple[str, ...]) -> list[str]:
         errors.append("Repository checks require Python 3.9 or newer.")
     if "repository" in groups and importlib.util.find_spec("yaml") is None:
         errors.append("Missing PyYAML. Install requirements-dev.txt into this interpreter.")
+    if "repository" in groups and importlib.util.find_spec("markdown_it") is None:
+        errors.append("Missing markdown-it-py. Install requirements-dev.txt into this interpreter.")
     if "spec" in groups:
         if sys.version_info < (3, 11):
             errors.append("The Agent Skills reference validator requires Python 3.11 or newer.")
@@ -60,7 +63,7 @@ def group_commands(group: str) -> list[list[str]]:
         return [
             [python, "scripts/validate_repository.py"],
             [python, "-m", "unittest", "discover", "-s", "code-review/scripts", "-p", "test_*.py"],
-            [python, "-m", "unittest", "scripts.test_validate_repository", "scripts.test_check", "scripts.test_workflow_contracts", "scripts.test_smoke_install", "scripts.test_smoke_release", "scripts.test_smoke_codex"],
+            [python, "-m", "unittest", "scripts.test_validate_repository", "scripts.test_documentation", "scripts.test_content_trust_prose", "scripts.test_check", "scripts.test_workflow_contracts", "scripts.test_smoke_install", "scripts.test_smoke_release", "scripts.test_smoke_codex"],
         ]
     if group == "spec":
         return [
