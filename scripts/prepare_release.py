@@ -38,25 +38,33 @@ def release_notes(changelog: str, version: str) -> str:
     tokens, _ = parse(changelog)
     literal = LiteralHTML()
     quoted = 0
-    comment_until = 0
-    for index, token in enumerate(tokens):
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        index += 1
         if token.type == "blockquote_open":
             quoted += 1
         elif token.type == "blockquote_close":
             quoted -= 1
-        if quoted or token.map is None or token.map[0] < comment_until:
+        if quoted or token.map is None:
             continue
         # Preserve exclusion of comments reopened on an HTML block's closing line.
         if not literal.tags and token.type == "html_block" and token.content.lstrip().startswith("<!--") and re.search(
             r"<!--(?:(?!-->).)*$", token.content, re.DOTALL
         ):
-            comment_until = token.map[1]
-            while comment_until < len(lines):
-                line = lines[comment_until]
-                comment_until += 1
-                if "-->" in line and not re.search(r"<!--(?:(?!-->).)*$", line.split("-->", 1)[1]):
+            for closing_line in range(token.map[1], len(lines)):
+                _, closed, tail = lines[closing_line].partition("-->")
+                if closed and not re.search(r"<!--(?:(?!-->).)*$", tail):
                     break
-            literal.feed("".join(lines[token.map[0]:comment_until]))
+            else:
+                break
+            # Reparse exposed Markdown, keeping the closer's paragraph context and source maps.
+            tokens, _ = parse("-->" + tail + "".join(lines[closing_line + 1:]))
+            for following in tokens:
+                if following.map is not None:
+                    following.map = [line + closing_line for line in following.map]
+            index = 0
+            continue
         elif token.type == "html_block":
             literal.feed(token.content)
         for child in token.children or []:
@@ -65,7 +73,7 @@ def release_notes(changelog: str, version: str) -> str:
         if token.type == "heading_open" and token.level == 0 and token.tag in {"h1", "h2"} and not literal.tags:
             start = token.map[0]
             if lines[start].startswith("#"):
-                headings.append((start, int(token.tag[1]), tokens[index + 1].content.strip()))
+                headings.append((start, int(token.tag[1]), tokens[index].content.strip()))
 
     matching = [position for position, (_, level, title) in enumerate(headings)
                 if level == 2 and re.match(rf"\[{re.escape(version)}\](?:[ \t]|$)", title)]

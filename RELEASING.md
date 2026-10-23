@@ -25,6 +25,8 @@ It adds no automatic publication or recovery authority.
    end a section before their closing tags. Example content inside a release
    section is preserved; the next eligible column-zero H1/H2 ends it.
    URI autolinks do not hide following headings or duplicate version sections.
+   Code spans and escaped tags after an HTML comment closes remain literal;
+   actual HTML containers still exclude example headings until their closers.
    Release preparation uses the repository's pinned CommonMark parser, including
    block boundaries after reference definitions and empty lists. Install the
    development requirements before invoking preparation directly.
