@@ -8,7 +8,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from unittest import mock
 
-from scripts.documentation import anchors, validate_documentation
+from scripts.documentation import anchors, bare_reference_text, validate_documentation
 
 
 class DocumentationTests(unittest.TestCase):
@@ -138,6 +138,44 @@ class DocumentationTests(unittest.TestCase):
         source = self.write("source.md", '[unused]: missing.md\n')
         self.assertIn("missing.md", self.errors(source)[0])
 
+    def test_reopened_comments_hide_anchors_links_and_reference_definitions(self) -> None:
+        hidden = '# Hidden\n\n[Hidden](missing.md)\n\n[unused]: missing-reference.md\n'
+        for opening in ('<!-- closed --> <!--', '<!-- first\n--> <!-- second'):
+            for closing in ('', '\n-->\n\n# Visible\n\n[Visible](#visible)\n'):
+                with self.subTest(opening=opening, closing=closing):
+                    content = opening + '\n\n' + hidden + closing
+                    source = self.write("source.md", content)
+                    self.assertEqual(anchors(content), {"visible"} if closing else set())
+                    self.assertEqual(self.errors(source), [])
+                    if closing:
+                        source.write_text(content + '\n[Hidden](#hidden)\n', encoding="utf-8")
+                        self.assertIn("heading anchor does not exist", self.errors(source)[0])
+        # Literal references remain checked even inside an example comment.
+        self.assertIn('references/hidden.md', bare_reference_text(
+            '<!-- closed --> <!--\n\nreferences/hidden.md\n\n-->\n',
+        ))
+
+    def test_reopened_comments_preserve_visible_prefix_and_literal_tails(self) -> None:
+        for tail in ('`<!--`', r'\<!--', '`<pre>`', r'\<pre>', '`<!--\ncontinued`'):
+            with self.subTest(tail=tail):
+                content = ('<!-- closed --> <a id="before"></a> <!--\n\n# Hidden\n\n'
+                           f'--> {tail}\n\n# After\n')
+                self.assertEqual(anchors(content), {"before", "after"})
+
+    def test_hidden_reference_definitions_cannot_override_visible_links(self) -> None:
+        source = self.write("source.md", '<!-- closed --> <!--\n\n[guide]: missing.md\n\n-->\n\n'
+                            '[Guide][guide]\n\n[guide]: real.md#real\n')
+        self.write("real.md", "# Real\n")
+        self.assertEqual(self.errors(source), [])
+
+    def test_reopened_comments_in_quotes_do_not_hide_following_document(self) -> None:
+        for closing in ('', '>\n> --> `<!--`\n'):
+            with self.subTest(closing=closing):
+                source = self.write("source.md", '> <!-- closed --> <!--\n>\n> # Hidden\n>\n'
+                                    '> [Hidden](missing.md)\n' + closing + '\n# Visible\n\n[Visible](#visible)\n')
+                self.assertEqual(anchors(source.read_text(encoding="utf-8")), {"visible"})
+                self.assertEqual(self.errors(source), [])
+
     def test_linked_target_is_rejected_without_reading_external_content(self) -> None:
         target = self.write("target.md", "# Target\n")
         link = self.root / "link.md"
@@ -187,6 +225,18 @@ class DocumentationTests(unittest.TestCase):
             encoding="utf-8",
         )
         self.assertEqual(self.errors(readme, contributor, names=("sample",)), [])
+
+    def test_reopened_comments_cannot_replace_or_duplicate_catalog_entries(self) -> None:
+        entries = {"choose": '[Sample](sample/SKILL.md)', "available": '### sample',
+                   "layout": '```text\nsample/\n```', "sources": '- `sample/`'}
+        for key, entry in entries.items():
+            hidden = '<!-- closed --> <!--\n\n' + entry + '\n\n-->\n\n'
+            with self.subTest(inventory=key):
+                paths = self.write_inventories(**{key: hidden})
+                self.assertTrue(any("missing=['sample']" in error
+                                    for error in self.errors(*paths, names=("sample",))))
+                paths = self.write_inventories(**{key: hidden + entry})
+                self.assertEqual(self.errors(*paths, names=("sample",)), [])
 
     def test_parsed_inventory_duplicates_are_still_rejected(self) -> None:
         duplicates = {

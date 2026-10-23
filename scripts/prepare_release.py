@@ -12,36 +12,20 @@ import tempfile
 import zipfile
 from datetime import date
 from pathlib import Path
-from typing import Any
-
-from markdown_it import MarkdownIt
 
 try:
-    from scripts.documentation import LiteralHTML, parse
+    from scripts.documentation import LiteralHTML, parse_visible
     from scripts.publish_outputs import publish_outputs
     from scripts.repository_layout import validate_source_path
     from scripts.validate_plugin_bundle import validate_bundle
 except ModuleNotFoundError:
-    from documentation import LiteralHTML, parse
+    from documentation import LiteralHTML, parse_visible
     from publish_outputs import publish_outputs
     from repository_layout import validate_source_path
     from validate_plugin_bundle import validate_bundle
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-
-
-def _has_open_comment(text: str, environment: dict[str, Any]) -> bool:
-    parser = MarkdownIt("commonmark")
-    # Inline parsing keeps escape tokens separate before the full parser joins text.
-    children = parser.inline.parse(text, parser, environment, [])
-    literal = LiteralHTML()
-    for child in children:
-        if child.type == "html_inline":
-            literal.feed(child.content)
-        elif child.type == "text" and not literal.tags and re.search(r"<!--(?:(?!-->).)*$", child.content, re.DOTALL):
-            return True
-    return False
 
 
 def release_notes(changelog: str, version: str) -> str:
@@ -51,41 +35,17 @@ def release_notes(changelog: str, version: str) -> str:
     """
     lines = changelog.splitlines(keepends=True)
     headings: list[tuple[int, int, str]] = []
-    tokens, _ = parse(changelog)
+    tokens, _ = parse_visible(changelog)
     literal = LiteralHTML()
     quoted = 0
-    index = 0
-    while index < len(tokens):
-        token = tokens[index]
-        index += 1
+    for index, token in enumerate(tokens):
         if token.type == "blockquote_open":
             quoted += 1
         elif token.type == "blockquote_close":
             quoted -= 1
         if quoted or token.map is None:
             continue
-        # Preserve exclusion of comments reopened on an HTML block's closing line.
-        if not literal.tags and token.type == "html_block" and token.content.lstrip().startswith("<!--") and re.search(
-            r"<!--(?:(?!-->).)*$", token.content, re.DOTALL
-        ):
-            for closing_line in range(token.map[1], len(lines)):
-                _, closed, tail = lines[closing_line].partition("-->")
-                if not closed:
-                    continue
-                # Keep the closer's paragraph context, including multiline code spans.
-                tail_tokens, environment = parse("-->" + tail + "".join(lines[closing_line + 1:]))
-                paragraph = next(item.content for item in tail_tokens if item.type == "inline")
-                if not _has_open_comment(paragraph, environment):
-                    break
-            else:
-                break
-            tokens = tail_tokens
-            for following in tokens:
-                if following.map is not None:
-                    following.map = [line + closing_line for line in following.map]
-            index = 0
-            continue
-        elif token.type == "html_block":
+        if token.type == "html_block":
             literal.feed(token.content)
         for child in token.children or []:
             if child.type == "html_inline":
@@ -93,7 +53,7 @@ def release_notes(changelog: str, version: str) -> str:
         if token.type == "heading_open" and token.level == 0 and token.tag in {"h1", "h2"} and not literal.tags:
             start = token.map[0]
             if lines[start].startswith("#"):
-                headings.append((start, int(token.tag[1]), tokens[index].content.strip()))
+                headings.append((start, int(token.tag[1]), tokens[index + 1].content.strip()))
 
     matching = [position for position, (_, level, title) in enumerate(headings)
                 if level == 2 and re.match(rf"\[{re.escape(version)}\](?:[ \t]|$)", title)]

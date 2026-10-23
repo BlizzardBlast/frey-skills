@@ -259,6 +259,20 @@ class PluginBundleTests(unittest.TestCase):
         self.build_plugin.build_bundle(requested, force=True)
         self.assertEqual(self.validate(), 0)
 
+    def test_validator_accepts_safe_parent_segments_through_api_and_cli(self) -> None:
+        self.build_plugin.build_bundle(self.output)
+        sibling = self.temp_root / "existing"
+        sibling.mkdir()
+        requested = sibling / ".." / self.output.name
+        self.assertEqual(self.validate_plugin_bundle.validate_bundle(requested), [])
+        for argument in (requested, requested.relative_to(self.temp_root)):
+            with self.subTest(argument=argument):
+                result = subprocess.run(
+                    [sys.executable, "-B", str(VALIDATE_SCRIPT), str(argument)],
+                    cwd=self.temp_root, capture_output=True, encoding="utf-8", check=False,
+                )
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_link_before_parent_segment_preserves_both_candidate_destinations(self) -> None:
         for case, target_parts in (("same-parent", ("target",)), ("different-parent", ("external", "target"))):
             case_root = self.temp_root / case
@@ -385,11 +399,11 @@ class PluginBundleTests(unittest.TestCase):
 
     def assert_bundle_links_are_rejected_before_reads(self, *, junction: bool = False) -> None:
         self.assertEqual(self.build(), 0)
-        for location in ("root", "ancestor", "skill"):
+        for location in ("root", "root-parent-segment", "ancestor", "skill"):
             with self.subTest(location=location):
-                if location == "root":
+                if location in {"root", "root-parent-segment"}:
                     target, link = self.output, self.temp_root / "bundle-link"
-                    candidate = link
+                    candidate = link if location == "root" else link / ".." / self.output.name
                 elif location == "ancestor":
                     target, link = self.temp_root, self.temp_root / "parent-link"
                     candidate = link / self.output.name

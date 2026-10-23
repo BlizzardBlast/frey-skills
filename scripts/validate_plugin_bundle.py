@@ -11,10 +11,10 @@ from pathlib import Path
 from typing import Any, Iterable, Optional
 
 try:
-    from scripts.build_plugin import BuildError, reject_symlinks
+    from scripts.build_plugin import BuildError, reject_symlinks, validate_output_path
     from scripts.repository_layout import SourcePathError, discover_skill_names, is_runtime_artifact, validate_source_path
 except ModuleNotFoundError:
-    from build_plugin import BuildError, reject_symlinks
+    from build_plugin import BuildError, reject_symlinks, validate_output_path
     from repository_layout import SourcePathError, discover_skill_names, is_runtime_artifact, validate_source_path
 
 
@@ -110,6 +110,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 def validate_bundle(bundle: Path) -> list[str]:
     errors: list[str] = []
     try:
+        bundle = validate_output_path(bundle)
         for name in discover_skill_names(REPOSITORY_ROOT):
             reject_symlinks(REPOSITORY_ROOT / name)
         validate_source_path(PLUGIN_TEMPLATE / ".codex-plugin" / "plugin.json", REPOSITORY_ROOT)

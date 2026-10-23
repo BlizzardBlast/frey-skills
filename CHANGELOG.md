@@ -8,6 +8,12 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Fixed
 
+- Trust prose, anchors, links, catalog inventories, and release headings share
+  reopened-comment visibility checks. Hidden content and reference definitions
+  cannot satisfy visible documentation requirements; real content after closure
+  and literal source-reference checks remain intact.
+- Bundle validation accepts safe parent-directory segments through its CLI and
+  API while rejecting linked components before collapsing `..` or reading files.
 - Release-note parsing preserves Markdown code and escaped tags after reopened
   comments close, including literal comment markers, while retaining real section
   boundaries and duplicate-version checks. Active reopened comments remain excluded.

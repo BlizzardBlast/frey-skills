@@ -76,6 +76,76 @@ class LiteralHTML(HTMLParser):
                 break
 
 
+def _has_open_comment(text: str, environment: dict[str, Any]) -> bool:
+    parser = MarkdownIt("commonmark")
+    # Inline parsing keeps escape tokens separate before the full parser joins text.
+    children = parser.inline.parse(text, parser, environment, [])
+    literal = LiteralHTML()
+    for child in children:
+        if child.type == "html_inline":
+            literal.feed(child.content)
+        elif child.type == "text" and not literal.tags and re.search(r"<!--(?:(?!-->).)*$", child.content, re.DOTALL):
+            return True
+    return False
+
+
+def parse_visible(text: str) -> tuple[list[Token], dict[str, Any]]:
+    """Exclude reopened HTML comments, preserving source lines and Markdown tails."""
+    lines = text.splitlines(keepends=True)
+    while True:
+        tokens, environment = parse("".join(lines))
+        contexts = [(LiteralHTML(), len(lines))]
+        for token in tokens:
+            if token.type == "blockquote_open":
+                contexts.append((LiteralHTML(), token.map[1]))
+            elif token.type == "blockquote_close":
+                contexts.pop()
+            literal, scope_end = contexts[-1]
+            if token.type != "html_block":
+                for child in token.children or []:
+                    if child.type == "html_inline":
+                        literal.feed(child.content)
+                continue
+            literal.feed(token.content)
+            if literal.tags or not literal.rawdata.startswith("<!--"):
+                continue
+
+            # CommonMark ends an HTML block at its first closer, even when a
+            # second comment on that line still hides subsequent Markdown.
+            source = "".join(lines[token.map[0]:token.map[1]])
+            opening = re.search(r"<!--(?:(?!-->).)*$", source, re.DOTALL)
+            assert opening is not None
+            prefix = source[:opening.start()]
+            start = token.map[0] + prefix.count("\n")
+            column = len(prefix.rsplit("\n", 1)[-1])
+            end = scope_end
+            closing_tail = None
+            for closing_line in range(token.map[1], scope_end):
+                _, closed, tail = lines[closing_line].partition("-->")
+                if not closed:
+                    continue
+                # Retain quoted context and multiline code spans after closure.
+                quote_prefix = re.match(r"^(?:[ \t]*>[ \t]?)*", lines[closing_line])[0]
+                tail_source = quote_prefix + "-->" + tail + "".join(lines[closing_line + 1:scope_end])
+                tail_tokens, tail_environment = parse(tail_source)
+                paragraph = next((item.content for item in tail_tokens if item.type == "inline"), "")
+                if not _has_open_comment(paragraph, tail_environment):
+                    end = closing_line + 1
+                    closing_tail = quote_prefix + "-->" + tail
+                    break
+            lines[start] = lines[start][:column] + "\n"
+            for line in range(start + 1, end):
+                quote_prefix = re.match(r"^(?:[ \t]*>[ \t]?)*", lines[line])[0]
+                lines[line] = quote_prefix + "\n"
+            if closing_tail is not None:
+                lines[end - 1] = closing_tail
+            # Reparse to resolve reference links against visible definitions only.
+            # Each iteration removes a comment opener, so the loop is finite.
+            break
+        else:
+            return tokens, environment
+
+
 class HTMLAnchors(LiteralHTML):
     def __init__(self) -> None:
         super().__init__()
@@ -90,7 +160,7 @@ class HTMLAnchors(LiteralHTML):
 
 
 def anchors(text: str) -> set[str]:
-    tokens, _ = parse(text)
+    tokens, _ = parse_visible(text)
     found: set[str] = set()
     explicit = HTMLAnchors()
     counts: Counter[str] = Counter()
@@ -113,7 +183,7 @@ def anchors(text: str) -> set[str]:
 
 def section_tokens(text: str, title: str) -> list[Token]:
     """Keep parsed section blocks and reference links resolved against the full document."""
-    tokens, _ = parse(text)
+    tokens, _ = parse_visible(text)
     start = None
     for index, token in enumerate(tokens):
         if token.type != "heading_open" or token.level != 0 or token.tag not in {"h1", "h2"}:
@@ -176,7 +246,7 @@ def layout_directories(tokens: list[Token]) -> list[str]:
 
 
 def links(text: str) -> list[tuple[str, int]]:
-    tokens, environment = parse(text)
+    tokens, environment = parse_visible(text)
     found = []
     for token in tokens:
         line = token.map[0] + 1 if token.map else 1

@@ -7,7 +7,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from unittest import mock
 
-from scripts.documentation import LiteralHTML, inline_text, parse
+from scripts.documentation import LiteralHTML, inline_text, parse_visible
 from scripts.repository_layout import discover_skill_names
 from scripts.test_content_trust_contracts import COMMON_PHRASES
 
@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def trust_section(content: str) -> str:
-    tokens, _ = parse(content)
+    tokens, _ = parse_visible(content)
     result = []
     quoted = 0
     literal = LiteralHTML()
@@ -90,6 +90,22 @@ class ContentTrustProseTests(unittest.TestCase):
             content = "\n".join(COMMON_PHRASES).replace(phrase, "") + f"\n\n```text\n{phrase}\n```\n"
             with self.subTest(phrase=phrase), self.assertRaises(AssertionError):
                 self.assert_contract(content)
+
+    def test_reopened_comments_cannot_supply_sections_or_prose_obligations(self) -> None:
+        rules = "\n".join(COMMON_PHRASES)
+        examples = (
+            f'<!-- closed --> <!--\n\n{rules}\n\n-->\n',
+            rules.replace('widen scope', '<!-- closed --> <!--\n\nwiden scope\n\n-->\n'),
+        )
+        for content in examples:
+            with self.subTest(content=content), self.assertRaises(AssertionError):
+                self.assert_contract(content)
+
+    def test_reopened_comments_preserve_real_trust_sections_after_literal_tails(self) -> None:
+        rules = "\n".join(COMMON_PHRASES)
+        for tail in ('`<!--`', r'\<!--', '`<pre>`', r'\<pre>', '`<!--\ncontinued`'):
+            with self.subTest(tail=tail):
+                self.assert_contract(f'<!-- closed --> <!--\n\n{rules}\n\n--> {tail}\n\n{rules}\n')
 
     def test_valid_list_continuations_and_inline_emphasis_remain_prose(self) -> None:
         content = "\n".join(COMMON_PHRASES).replace(

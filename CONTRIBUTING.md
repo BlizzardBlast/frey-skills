@@ -155,6 +155,11 @@ Catalog inventories count parsed links, rendered skill headings, and actual
 list entries. Reference-style links retain definitions from the full document;
 comments and code examples cannot stand in for catalog entries. The current-layout
 inventory still reads the intentional directory-tree code block.
+Trust prose, anchors, links, catalogs, and release headings share visibility checks
+for HTML comments reopened on a block's closing line. Hidden reference definitions
+cannot resolve visible links. Genuine Markdown after closure retains its line
+positions, code spans, and escaped markers; quoted comments remain inside their
+quote. Literal file references still use the original source for hygiene checks.
 `scripts.test_documentation` covers missing/escaping links, anchors,
 duplicates, inventories, and linked source rejection. Plugin contracts include
 `scripts.test_publish_outputs` for publication failure, rollback, and writer
@@ -175,6 +180,8 @@ Bundle validation shares the builder's symlink/junction guard for bundles and
 complete canonical skill trees. It stops before parity reads when a root,
 ancestor, or descendant is linked. Its
 regressions exercise native Windows junctions as well as symbolic links.
+Bundle paths accept ordinary parent-directory segments after inspecting each raw
+component for links; a linked parent followed by `..` still fails before reads.
 Parity comparisons read current bytes on every call, including same-size changes
 with preserved modification times. Release preparation validates changelog and
 manifest source paths before reading metadata. Regressions cover repeated
