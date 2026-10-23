@@ -65,6 +65,43 @@ class DocumentationTests(unittest.TestCase):
         self.assertEqual(anchors('# A!\n# A\n# A-1\n# A\n\nSetext\n======\n\n<a id="manual"></a>\n'),
                          {"a", "a-1", "a-1-1", "a-2", "setext", "manual"})
 
+    def test_inline_html_heading_text_preserves_slugs_and_duplicate_suffixes(self) -> None:
+        for tag in ('code', 'pre'):
+            for heading in (f'# Use <{tag}>debug</{tag}>', f'## Use <{tag}>debug</{tag}> ##',
+                            f'Use <{tag}>debug</{tag}>\n==='):
+                with self.subTest(heading=heading):
+                    content = (heading + '\n\n# Use debug\n\n# Use `debug`\n\n# Use **debug**\n\n'
+                               '[One](#use-debug) [Two](#use-debug-1) '
+                               '[Three](#use-debug-2) [Four](#use-debug-3)\n')
+                    self.assertEqual(anchors(content), {'use-debug', 'use-debug-1', 'use-debug-2', 'use-debug-3'})
+                    self.assertEqual(self.errors(self.write('source.md', content)), [])
+
+    def test_inline_html_heading_labels_resolve_only_visible_definitions(self) -> None:
+        self.write('real.md', '# Real\n')
+        hidden = 'Example <title>\n\n[ref]: missing.md\n\n</title>\n\n'
+        for definition, slug in (('', 'use-debugref'), ('\n\n[ref]: real.md\n', 'use-debug')):
+            with self.subTest(definition=definition):
+                content = hidden + f'# [Use <code>debug</code>][ref]\n\n[Self](#{slug})\n' + definition
+                self.assertEqual(anchors(content), {slug})
+                self.assertEqual(self.errors(self.write('source.md', content)), [])
+
+    def test_quoted_raw_html_keeps_following_headings_and_explicit_anchors(self) -> None:
+        for tag in ('script', 'style', 'textarea', 'title'):
+            for quote, following in (('> ', ''), ('> > ', ''), ('> > ', '> ')):
+                with self.subTest(tag=tag, quote=quote, following=following):
+                    example = '\n'.join(quote + line for line in (
+                        f'<{tag} id="container">', '', '# Hidden', '', '<a id="example-only"></a>',
+                    ))
+                    after = '\n'.join(following + line for line in (
+                        '# Visible', '', '<a id="after" name="legacy"></a>', '', '# Visible', '',
+                        '[One](#visible) [Two](#visible-1) [ID](#after) [Name](#legacy) [Container](#container)',
+                    ))
+                    content = example + '\n' + following + '\n' + after + '\n'
+                    self.assertEqual(anchors(content), {'container', 'visible', 'visible-1', 'after', 'legacy'})
+                    self.assertEqual(self.errors(self.write('source.md', content)), [])
+        self.assertEqual(anchors('> <a id="visible"></a>\n\n# Visible\n\n# Visible\n'),
+                         {'visible', 'visible-1'})
+
     def test_non_anchor_name_attributes_are_not_fragment_targets(self) -> None:
         for element in (
             '<div name="claimed-target"></div>', '<input name="claimed-target">',

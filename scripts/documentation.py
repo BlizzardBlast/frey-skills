@@ -91,15 +91,17 @@ def _has_open_comment(text: str, environment: dict[str, Any]) -> bool:
     return False
 
 
-def _mask_literal_html(lines: list[str], tokens: list[Token], environment: dict[str, Any]) -> str:
-    """Blank literal Markdown before reference resolution; retain real HTML tags."""
+def _mask_literal_html(lines: list[str], tokens: list[Token], environment: dict[str, Any]) -> tuple[str, str]:
+    """Blank literal Markdown, retaining its source for path hygiene and real tags."""
     source = "".join(lines)
     masked = list(source)
+    hidden = []
     offsets = [0]
     for line in lines:
         offsets.append(offsets[-1] + len(line))
 
     def mask(start: int, end: int) -> None:
+        hidden.append(source[start:end])
         masked[start:end] = ["\n" if char == "\n" else " " for char in source[start:end]]
 
     def located_html(state: StateInline, silent: bool) -> bool:
@@ -157,12 +159,13 @@ def _mask_literal_html(lines: list[str], tokens: list[Token], environment: dict[
     for index, line in enumerate(lines):
         prefix = re.match(r"^(?:[ \t]*>[ \t]?)*", line)[0]
         masked[offsets[index]:offsets[index] + len(prefix)] = prefix
-    return "".join(masked)
+    return "".join(masked), "\n".join(hidden)
 
 
 def parse_visible(text: str) -> tuple[list[Token], dict[str, Any]]:
     """Exclude literal HTML and reopened comments, retaining source line maps."""
     lines = [line.replace("\0", "\ufffd") + "\n" for line in text.splitlines()]
+    hidden = []
     while True:
         tokens, environment = parse("".join(lines))
         contexts = [(LiteralHTML(), len(lines))]
@@ -204,6 +207,11 @@ def parse_visible(text: str) -> tuple[list[Token], dict[str, Any]]:
                     end = closing_line + 1
                     closing_tail = quote_prefix + "-->" + tail
                     break
+            removed = lines[start:end]
+            removed[0] = removed[0][column:]
+            if closing_tail is not None:
+                removed[-1] = removed[-1].partition("-->")[0]
+            hidden.append("".join(removed))
             lines[start] = lines[start][:column] + "\n"
             for line in range(start + 1, end):
                 quote_prefix = re.match(r"^(?:[ \t]*>[ \t]?)*", lines[line])[0]
@@ -214,7 +222,14 @@ def parse_visible(text: str) -> tuple[list[Token], dict[str, Any]]:
             # Each iteration removes a comment opener, so the loop is finite.
             break
         else:
-            return parse(_mask_literal_html(lines, tokens, environment))
+            visible, literal_source = _mask_literal_html(lines, tokens, environment)
+            visible_tokens, visible_environment = parse(visible)
+            visible_environment["hidden_source"] = "\n".join((*hidden, literal_source))
+            visible_environment["heading_source"] = {
+                token.map[0]: tokens[index + 1].content for index, token in enumerate(tokens)
+                if token.type == "heading_open"
+            }
+            return visible_tokens, visible_environment
 
 
 class HTMLAnchors(LiteralHTML):
@@ -231,25 +246,34 @@ class HTMLAnchors(LiteralHTML):
 
 
 def anchors(text: str) -> set[str]:
-    tokens, _ = parse_visible(text)
+    tokens, environment = parse_visible(text)
     found: set[str] = set()
-    explicit = HTMLAnchors()
+    explicit_names: set[str] = set()
+    contexts = [HTMLAnchors()]
+    parser = MarkdownIt("commonmark")
     counts: Counter[str] = Counter()
     for index, token in enumerate(tokens):
+        if token.type == "blockquote_open":
+            contexts.append(HTMLAnchors())
+        elif token.type == "blockquote_close":
+            explicit_names.update(contexts.pop().names)
+        explicit = contexts[-1]
         if token.type == "html_block":
             explicit.feed(token.content)
         for child in token.children or []:
             if child.type == "html_inline":
                 explicit.feed(child.content)
         if token.type == "heading_open" and explicit.cdata_elem is None:
-            title = inline_text(tokens[index + 1].children or []).lower()
+            # Preserve rendered labels, resolving references against visible definitions.
+            source = environment["heading_source"].get(token.map[0], tokens[index + 1].content)
+            title = inline_text(parser.inline.parse(source, parser, environment, [])).lower()
             slug = re.sub(r"\s", "-", re.sub(r"[^\w\-\s]", "", title))
             candidate = slug
             while candidate in found:
                 counts[slug] += 1
                 candidate = f"{slug}-{counts[slug]}"
             found.add(candidate)
-    return found | explicit.names
+    return found | explicit_names | contexts[0].names
 
 
 def section_tokens(text: str, title: str) -> list[Token]:
@@ -337,10 +361,9 @@ def links(text: str) -> list[tuple[str, int]]:
 
 def bare_reference_text(text: str) -> str:
     """Keep literal/prose references; leave actual links to Markdown validation."""
-    tokens, environment = parse(text)
-    # parse() excludes closed mapping frontmatter; its literal paths still need
-    # the legacy skill-relative checks, unlike Markdown link destinations.
-    fragments = [environment["frontmatter_text"]]
+    tokens, environment = parse_visible(text)
+    # Frontmatter and hidden example destinations remain literal path evidence.
+    fragments = [environment["frontmatter_text"], environment["hidden_source"]]
     for token in tokens:
         if token.type in {"fence", "code_block", "html_block"}:
             fragments.append(token.content)

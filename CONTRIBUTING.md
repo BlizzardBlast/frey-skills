@@ -144,7 +144,9 @@ contributor source list against canonical discovery. External URLs are not
 fetched. Only closed YAML mapping frontmatter is excluded. Fenced/indented code,
 escaped syntax, and HTML comments cannot create links or heading anchors.
 Explicit HTML fragment targets use `id` on any element or `name` on `<a>`;
-other `name` attributes do not create anchors.
+other `name` attributes do not create anchors. Genuine heading slugs retain
+rendered inline HTML text and duplicate suffixes. HTML anchor state ends at each
+quote boundary, preserving heading and explicit fragment targets after examples.
 Skill Markdown destinations use that same validation, including URL decoding,
 fragments, and reference-style links, relative to the containing document.
 Local links within canonical skill Markdown must remain inside that skill so
@@ -161,7 +163,10 @@ Hidden reference definitions cannot resolve visible links. Genuine Markdown afte
 closure retains its line positions, code spans, and escaped markers; quoted
 examples remain inside their quote. Comment masking uses the parser's line-splitting
 rules, including Unicode separators. Explicit HTML anchors remain available.
-Literal file references still use the original source for hygiene checks.
+Literal file references still use the original source for hygiene checks,
+including link/image destinations and reference definitions hidden in HTML or
+reopened comments. Visible Markdown destinations retain their URL-aware checks;
+hidden example paths retain literal filename and skill-boundary checks.
 `scripts.test_documentation` covers missing/escaping links, anchors,
 duplicates, inventories, and linked source rejection. Plugin contracts include
 `scripts.test_publish_outputs` for publication failure, rollback, and writer

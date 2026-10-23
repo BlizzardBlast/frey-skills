@@ -385,6 +385,45 @@ class RepositoryValidatorTests(unittest.TestCase):
         self.write("sample-skill/agents/openai.yaml", (self.repo / "sample-skill/agents/openai.yaml").read_text(encoding="utf-8") + "example: references/missing.md\n")
         self.assert_validation_fails_with("references/missing.md")
 
+    def test_hidden_link_destinations_and_definitions_retain_literal_path_guards(self) -> None:
+        self.write_valid_skill()
+        self.write('outside.md', '# Outside the skill\n')
+        skill = self.repo / 'sample-skill/SKILL.md'
+        original = skill.read_text(encoding='utf-8')
+        for path in ('references/missing.md', 'references/../../outside.md'):
+            examples = []
+            for tag in ('code', 'pre', 'script', 'style', 'textarea', 'title'):
+                examples.extend((
+                    f'Example <{tag}>[Example]({path})</{tag}>',
+                    f'Example <{tag}>![Example]({path})</{tag}>',
+                    f'Example <{tag}>\n\n[guide]: {path}\n\n</{tag}>',
+                ))
+            examples.extend((
+                f'<!-- closed --> <!--\n\n[guide]: {path}\n\n--> ',
+                f'> <!-- closed --> <!--\n>\n> [guide]: {path}',
+            ))
+            for example in examples:
+                with self.subTest(path=path, example=example):
+                    skill.write_text(original + '\n' + example + '\n', encoding='utf-8')
+                    output = self.assert_validation_fails_with(f"local reference '{path}'")
+                    self.assertIn('does not exist' if 'missing' in path else 'must stay below', output)
+
+    def test_hidden_literal_paths_and_visible_links_on_the_same_line_stay_distinct(self) -> None:
+        self.write_valid_skill()
+        self.write('sample-skill/references/literal%67#part.md', '# Literal filename\n')
+        skill = self.repo / 'sample-skill/SKILL.md'
+        original = skill.read_text(encoding='utf-8')
+        hidden = '[Example](references/literal%67#part.md)'
+        visible = '[Visible](references/%67uide.md#guide) [Ref][guide]'
+        for example in (f'Example <code>{hidden}</code> {visible}',
+                        f'{visible} Example <code>{hidden}</code>',
+                        f'Example <title>\n\n{hidden}\n\n</title>\n\n{visible}',
+                        f'<!-- closed --> <!--\n\n{hidden}\n\n--> {visible}'):
+            with self.subTest(example=example):
+                skill.write_text(original + '\n' + example + '\n\n[guide]: references/%67uide.md#guide\n', encoding='utf-8')
+                result = run_validator(self.repo)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_invalid_and_missing_eval_fixture_fails(self) -> None:
         self.write_valid_skill("eval-skill")
         self.write(

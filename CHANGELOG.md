@@ -8,6 +8,12 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Fixed
 
+- Hidden HTML and reopened-comment link/image destinations and reference
+  definitions retain missing-file and escaping-path checks as literal source.
+- Genuine headings retain inline HTML text in fragment slugs and duplicate
+  suffixes, resolving heading labels against visible reference definitions.
+- Quoted raw-text HTML no longer suppresses heading or explicit HTML anchors
+  after the quote, including nested quoted examples.
 - Shared Markdown visibility excludes literal HTML examples from all four skill
   inventories, links, images, and reference definitions before resolving visible
   links, while retaining explicit HTML anchors and original path-hygiene checks.
