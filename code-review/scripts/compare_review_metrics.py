@@ -36,6 +36,8 @@ def load_pairs(path: Path) -> list[tuple[dict, dict]]:
         document = json.loads(raw)
     except (ValueError, UnicodeDecodeError) as exc:
         raise InvalidMetrics("input must be UTF-8 JSON") from exc
+    except RecursionError as exc:
+        raise InvalidMetrics("input JSON is nested too deeply") from exc
     if not isinstance(document, dict) or set(document) != {"version", "runs"}:
         raise InvalidMetrics("expected only version and runs at the document root")
     if type(document["version"]) is not int or document["version"] != 1:

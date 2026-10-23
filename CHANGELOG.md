@@ -8,6 +8,7 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 - Add optional, local paired review-efficiency measurement with privacy-limited numeric aggregates and explicit quality safeguards; document evidence-based finding-to-prevention decisions (no new required model evals).
 - Recognize CI-time, tool-call, and repeated-read savings in the comparator's summary; reject counters above the documented numeric limit with a controlled validation error.
+- Reject excessively nested aggregate JSON with a controlled validation error instead of a traceback.
 
 ### Changed
 

@@ -102,6 +102,23 @@ class ComparisonTests(unittest.TestCase):
                         self.assertIn("Invalid aggregate metrics:", result.stderr)
                         self.assertEqual(result.stdout, "")
 
+    def test_cli_rejects_deeply_nested_json_without_traceback(self):
+        nested = b"[" * 5000 + b"0" + b"]" * 5000
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "metrics.json"
+            for payload in (nested, b'{"version":1,"runs":[' + nested + b']}'):
+                with self.subTest(payload_bytes=len(payload)):
+                    self.assertLess(len(payload), review_metrics.MAX_BYTES)
+                    path.write_bytes(payload)
+                    result = subprocess.run(
+                        [sys.executable, "-B", str(MODULE), "--input", str(path)],
+                        capture_output=True, text=True, check=False,
+                    )
+                    self.assertEqual(result.returncode, 2)
+                    self.assertEqual(result.stdout, "")
+                    self.assertIn("Invalid aggregate metrics:", result.stderr)
+                    self.assertNotIn("Traceback", result.stderr)
+
     def test_strict_schema_rejects_sensitive_or_fake_fields(self):
         for extra in ({"raw_prompt": "secret"}, {"outcome_passed": 1}, {"input_tokens": -1}):
             record = run("task", "baseline", **extra)
