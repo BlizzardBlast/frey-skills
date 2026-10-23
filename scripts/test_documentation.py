@@ -8,7 +8,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from unittest import mock
 
-from scripts.documentation import anchors, bare_reference_text, validate_documentation
+from scripts.documentation import anchors, bare_reference_text, links, validate_documentation
 
 
 class DocumentationTests(unittest.TestCase):
@@ -249,6 +249,94 @@ class DocumentationTests(unittest.TestCase):
                 paths = self.write_inventories(**{key: entries})
                 errors = self.errors(*paths, names=("sample",))
                 self.assertTrue(any(f"{label} inventory" in error and "duplicates=['sample']" in error for error in errors))
+
+    def test_literal_html_cannot_replace_or_duplicate_catalog_entries(self) -> None:
+        entries = {"choose": '[Sample](sample/SKILL.md)', "available": '### sample',
+                   "layout": '```text\nsample/\n```', "sources": '- `sample/`'}
+        for tag in ("code", "pre", "script", "style", "textarea", "title"):
+            for prefix in ("", "Example "):
+                for key, entry in entries.items():
+                    with self.subTest(tag=tag, prefix=prefix, inventory=key):
+                        hidden = f'{prefix}<{tag}>\n\n{entry}\n\n</{tag}>\n\n'
+                        paths = self.write_inventories(**{key: hidden})
+                        self.assertTrue(any("missing=['sample']" in error
+                                            for error in self.errors(*paths, names=("sample",))))
+                        paths = self.write_inventories(**{key: hidden + entry})
+                        self.assertEqual(self.errors(*paths, names=("sample",)), [])
+
+    def test_literal_html_excludes_links_images_and_reference_definitions(self) -> None:
+        self.write("real.md", "# Real\n")
+        for tag in ("code", "pre", "script", "style", "textarea", "title"):
+            for prefix in ("", "Example "):
+                with self.subTest(tag=tag, prefix=prefix):
+                    content = (f'{prefix}<{tag} id="container">\n\n'
+                               '[Hidden](missing.md) ![Hidden](missing.png)\n\n'
+                               '[guide]: missing-reference.md\n\n'
+                               f'references/hidden.md\n\n</{tag}>\n\n'
+                               '<a id="after"></a>\n\n[Guide][guide]\n\n[guide]: real.md#real\n')
+                    source = self.write("source.md", content)
+                    self.assertEqual(self.errors(source), [])
+                    self.assertEqual(anchors(content), {"container", "after"})
+                    self.assertIn("references/hidden.md", bare_reference_text(content))
+
+    def test_inline_literal_html_and_matching_closers_preserve_visible_links(self) -> None:
+        for tag in ("code", "pre", "script", "style", "textarea", "title"):
+            with self.subTest(tag=tag):
+                content = (f'Before [One](one.md) <{tag} id="container">'
+                           f'[Hidden](missing.md) ![Hidden](missing.png)</{tag}> '
+                           '<a id="after"></a> [Two](two.md)\n')
+                self.assertEqual(links(content), [("one.md", 1), ("two.md", 1)])
+                self.assertEqual(anchors(content), {"container", "after"})
+                heading = (f'# Before <{tag} id="container">Hidden</{tag}> '
+                           '<a id="after"></a> After ##\n\n# Genuine\n')
+                self.assertTrue({"container", "after", "genuine"}.issubset(anchors(heading)))
+        for example in ('`<code>`', r'\<code>', '`<code>\ncontinued`', '<!-- <code> -->'):
+            with self.subTest(example=example):
+                self.assertEqual(links(example + '\n\n[Visible](real.md)\n'), [("real.md", 4 if '\n' in example else 3)])
+
+    def test_nested_mismatched_and_quoted_literals_keep_their_visibility_scope(self) -> None:
+        for opening, misleading in (
+            ('Example <code><pre>', '</pre>'),
+            ('Example <code><code>', '</code>'),
+            ('Example <code>', '</pre>'),
+            ('Example <title>', '</code>'),
+            ('Example <code>', r'\</code>'),
+            ('Example <code>', '`</code>`'),
+            ('Example <code>', '```html\n</code>\n```'),
+        ):
+            with self.subTest(opening=opening, misleading=misleading):
+                closing = '</title>' if '<title>' in opening else '</code>'
+                content = (f'{opening}\n\n{misleading}\n\n[Hidden](missing.md)\n\n'
+                           f'{closing}\n\n[Visible](real.md)\n')
+                self.assertEqual([target for target, _ in links(content)], ['real.md'])
+        for tag in ("code", "pre", "script", "style", "textarea", "title"):
+            with self.subTest(quoted=tag):
+                content = f'> Example <{tag}>\n>\n> [Hidden](missing.md)\n\n[Visible](real.md)\n'
+                self.assertEqual(links(content), [('real.md', 5)])
+
+    def test_literal_html_source_positions_survive_markdown_prefixes(self) -> None:
+        for opening, closing, after in (
+            ('# Example <code>', '</code>', '[Visible](real.md)'),
+            ('# Example <code> ##', '</code>', '[Visible](real.md)'),
+            ('## Example\x00<code> ###', '</code>', '[Visible](real.md)'),
+            ('- Example <code>', '  </code>', '[Visible](real.md)'),
+            ('-\tExample <code>', '  </code>', '[Visible](real.md)'),
+            ('> Example <code>', '> </code>', '> [Visible](real.md)'),
+            ('Example <code\n  id="container">', '</code>', '[Visible](real.md)'),
+        ):
+            with self.subTest(opening=opening):
+                hidden = '> [Hidden](missing.md)' if opening.startswith('>') else '[Hidden](missing.md)'
+                gap = '\n>\n' if opening.startswith('>') else '\n\n'
+                content = gap.join((opening, hidden, closing, after)) + '\n'
+                self.assertEqual([target for target, _ in links(content)], ['real.md'])
+
+    def test_comment_line_separators_preserve_link_locations_and_anchors(self) -> None:
+        for separator in ('\n', '\r\n', '\r', '\x85', '\f', '\v', '\x1c', '\x1d', '\x1e', '\u2028', '\u2029'):
+            with self.subTest(separator=repr(separator)):
+                content = (f'<!-- first{separator}line --> <!--\n\n# Hidden\n\n-->\n\n'
+                           '# Visible\n\n[Visible](#visible)\n\n[unused]: missing.md\n')
+                self.assertEqual(anchors(content), {"visible"})
+                self.assertEqual(links(content), [("#visible", 10), ("missing.md", 12)])
 
 
 if __name__ == "__main__":

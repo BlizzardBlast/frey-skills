@@ -8,6 +8,11 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Fixed
 
+- Shared Markdown visibility excludes literal HTML examples from all four skill
+  inventories, links, images, and reference definitions before resolving visible
+  links, while retaining explicit HTML anchors and original path-hygiene checks.
+- Comment masking preserves parser line maps with Unicode line separators,
+  retaining release-section boundaries, duplicate detection, and original notes.
 - Trust prose, anchors, links, catalog inventories, and release headings share
   reopened-comment visibility checks. Hidden content and reference definitions
   cannot satisfy visible documentation requirements; real content after closure

@@ -12,6 +12,8 @@ from urllib.parse import unquote, urlsplit
 
 import yaml
 from markdown_it import MarkdownIt
+from markdown_it.rules_inline import html_inline
+from markdown_it.rules_inline.state_inline import StateInline
 from markdown_it.token import Token
 
 try:
@@ -89,9 +91,78 @@ def _has_open_comment(text: str, environment: dict[str, Any]) -> bool:
     return False
 
 
+def _mask_literal_html(lines: list[str], tokens: list[Token], environment: dict[str, Any]) -> str:
+    """Blank literal Markdown before reference resolution; retain real HTML tags."""
+    source = "".join(lines)
+    masked = list(source)
+    offsets = [0]
+    for line in lines:
+        offsets.append(offsets[-1] + len(line))
+
+    def mask(start: int, end: int) -> None:
+        masked[start:end] = ["\n" if char == "\n" else " " for char in source[start:end]]
+
+    def located_html(state: StateInline, silent: bool) -> bool:
+        start = state.pos
+        if not html_inline(state, silent):
+            return False
+        if not silent:
+            state.tokens[-1].meta["source_span"] = (start, state.pos)
+        return True
+
+    parser = MarkdownIt("commonmark")
+    parser.inline.ruler.at("html_inline", located_html)
+    contexts = [(LiteralHTML(), 0, len(source))]
+    for token in tokens:
+        if token.type == "blockquote_open":
+            contexts.append((LiteralHTML(), offsets[token.map[0]], offsets[token.map[1]]))
+        elif token.type == "blockquote_close":
+            literal, cursor, end = contexts.pop()
+            if literal.tags:
+                mask(cursor, end)
+        if token.map is None:
+            continue
+
+        fragments = []
+        if token.type == "html_block":
+            fragments.append((offsets[token.map[0]], offsets[token.map[1]], token.content))
+        elif token.type == "inline":
+            inline_lines = token.content.split("\n")
+
+            def position(offset: int) -> int:
+                prefix = token.content[:offset]
+                row = prefix.count("\n")
+                column = len(prefix.rsplit("\n", 1)[-1])
+                line = token.map[0] + row
+                # CommonMark strips prefixes, indentation, and closing ATX hashes.
+                content = inline_lines[row]
+                indent = lines[line].find(content.strip()) - (len(content) - len(content.lstrip()))
+                return offsets[line] + indent + column
+
+            children = parser.inline.parse(token.content, parser, environment, [])
+            for child in children:
+                if child.type == "html_inline":
+                    start, end = child.meta["source_span"]
+                    fragments.append((position(start), position(end), child.content))
+        for start, end, content in fragments:
+            literal, cursor, scope_end = contexts[-1]
+            if literal.tags:
+                mask(cursor, start)
+            literal.feed(content)
+            contexts[-1] = (literal, end, scope_end)
+    literal, cursor, end = contexts[0]
+    if literal.tags:
+        mask(cursor, end)
+    # Keep quoted examples scoped when reparsing the blanked source.
+    for index, line in enumerate(lines):
+        prefix = re.match(r"^(?:[ \t]*>[ \t]?)*", line)[0]
+        masked[offsets[index]:offsets[index] + len(prefix)] = prefix
+    return "".join(masked)
+
+
 def parse_visible(text: str) -> tuple[list[Token], dict[str, Any]]:
-    """Exclude reopened HTML comments, preserving source lines and Markdown tails."""
-    lines = text.splitlines(keepends=True)
+    """Exclude literal HTML and reopened comments, retaining source line maps."""
+    lines = [line.replace("\0", "\ufffd") + "\n" for line in text.splitlines()]
     while True:
         tokens, environment = parse("".join(lines))
         contexts = [(LiteralHTML(), len(lines))]
@@ -143,7 +214,7 @@ def parse_visible(text: str) -> tuple[list[Token], dict[str, Any]]:
             # Each iteration removes a comment opener, so the loop is finite.
             break
         else:
-            return tokens, environment
+            return parse(_mask_literal_html(lines, tokens, environment))
 
 
 class HTMLAnchors(LiteralHTML):

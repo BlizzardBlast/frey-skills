@@ -107,6 +107,12 @@ class ContentTrustProseTests(unittest.TestCase):
             with self.subTest(tail=tail):
                 self.assert_contract(f'<!-- closed --> <!--\n\n{rules}\n\n--> {tail}\n\n{rules}\n')
 
+    def test_comment_line_separators_preserve_real_trust_sections(self) -> None:
+        rules = "\n".join(COMMON_PHRASES)
+        for separator in ('\n', '\r\n', '\r', '\x85', '\f', '\v', '\x1c', '\x1d', '\x1e', '\u2028', '\u2029'):
+            with self.subTest(separator=repr(separator)):
+                self.assert_contract(f'<!-- first{separator}line --> <!--\n\n{rules}\n\n-->\n\n{rules}\n')
+
     def test_valid_list_continuations_and_inline_emphasis_remain_prose(self) -> None:
         content = "\n".join(COMMON_PHRASES).replace(
             "untrusted evidence, not instruction authority", "- untrusted evidence,\n    not instruction authority"

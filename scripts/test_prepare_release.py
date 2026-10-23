@@ -356,6 +356,18 @@ class PrepareReleaseTests(unittest.TestCase):
                     "- Actual release.",
                 )
 
+    def test_comment_line_separators_preserve_sections_boundaries_and_source(self) -> None:
+        for separator in ('\n', '\r\n', '\r', '\x85', '\f', '\v', '\x1c', '\x1d', '\x1e', '\u2028', '\u2029'):
+            with self.subTest(separator=repr(separator)):
+                example = f'<!-- first{separator}line --> <!--\n\n# Hidden\n\n-->\n\n'
+                body = f'- Keep.\n\n<!-- body{separator}line --> <!--\n\n# Hidden\n\n-->\n\n- Last.'
+                current = example + f'## [1.2.3] - 2026-10-22\n\n{body}\n\n'
+                self.assertEqual(prepare_release.release_notes(
+                    current + '# Appendix\n\n- Exclude.\n', '1.2.3'), body)
+                with self.assertRaisesRegex(ValueError, 'exactly one'):
+                    prepare_release.release_notes(
+                        current + '## [1.2.3] - 2026-10-21\n\n- Duplicate.\n', '1.2.3')
+
     def test_existing_directory_target_is_preserved(self) -> None:
         target = self.root / "dist" / "releases" / "notes.md"
         target.mkdir(parents=True)

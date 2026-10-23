@@ -156,10 +156,12 @@ list entries. Reference-style links retain definitions from the full document;
 comments and code examples cannot stand in for catalog entries. The current-layout
 inventory still reads the intentional directory-tree code block.
 Trust prose, anchors, links, catalogs, and release headings share visibility checks
-for HTML comments reopened on a block's closing line. Hidden reference definitions
-cannot resolve visible links. Genuine Markdown after closure retains its line
-positions, code spans, and escaped markers; quoted comments remain inside their
-quote. Literal file references still use the original source for hygiene checks.
+for literal HTML containers and comments reopened on a block's closing line.
+Hidden reference definitions cannot resolve visible links. Genuine Markdown after
+closure retains its line positions, code spans, and escaped markers; quoted
+examples remain inside their quote. Comment masking uses the parser's line-splitting
+rules, including Unicode separators. Explicit HTML anchors remain available.
+Literal file references still use the original source for hygiene checks.
 `scripts.test_documentation` covers missing/escaping links, anchors,
 duplicates, inventories, and linked source rejection. Plugin contracts include
 `scripts.test_publish_outputs` for publication failure, rollback, and writer
