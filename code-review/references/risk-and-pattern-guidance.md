@@ -46,6 +46,13 @@ When explicitly asked to analyze a batch/cluster of PRs or review ledgers:
 4. Propose a narrowly scoped verification improvement (test, static rule, harness check, documentation, or review checklist) with a counterexample and a way to measure false positives and cost.
 5. Report sanitized pattern candidates to the user. Do not write a memory lesson, edit CI, post comments, label/approve/merge PRs, or promote a global rule; those actions require separate user authorization and applicable source consent.
 
+
+## Turn recurring findings into prevention candidates
+
+When a verified issue recurs across permitted reviews, decide whether a **focused regression test, architectural/static check, contract test, scoped review checklist, or candidate Agent Brain lesson** would actually catch its root cause. Record the affected invariant, reproducer or negative case, false-positive risk, ongoing maintenance/CI cost, and applicability limits. Avoid adding a broad check for a rare low-impact anecdote. A repeated AI comment is not independently verified evidence, and this analysis remains read-only until separately authorized.
+
+For owner-requested efficiency experiments, follow [the optional paired measurement protocol](review-efficiency-experiment.md). Compare complete task cost and independently verified outcomes, not input-token counts alone. Never weaken coverage, source permissions, mandatory checks, or protected reviews to improve a benchmark.
+
 ## Efficient handoff and success measures
 
 Pass deduplicated, evidence-backed IDs, affected invariants, and checked or unverified variants to `iterative-self-review`. Prefer one local verification batch before an authorized push, without suppressing required CI. Track user round trips, related defects found after a repair, repair-induced regressions, review time, and CI minutes per merged PR; reduction in review effort is not success if regressions rise.
