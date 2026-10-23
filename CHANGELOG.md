@@ -6,8 +6,20 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Add optional, local paired review-efficiency measurement with privacy-limited numeric aggregates and explicit quality safeguards; document evidence-based finding-to-prevention decisions (no new required model evals).
+- Recognize CI-time, tool-call, and repeated-read savings in the comparator's summary; reject counters above the documented numeric limit with a controlled validation error.
+- Reject excessively nested aggregate JSON with a controlled validation error instead of a traceback.
+
 ### Changed
 
+- Code review maps changed behavior to invariants, consumers, and boundary-case
+  evidence before batching findings. Review completeness describes coverage,
+  not exhaustive defect detection. Risk tiers and optional read-only pattern
+  audits retain existing severity, authorization, and approval boundaries.
+- Iterative self-review verifies selected root causes, related variants, and
+  repair-induced regressions before resolution. Compatible fixes and required
+  validation are batched before authorized pushes; scoped rechecks share the
+  existing three-pass budget and cannot authorize unrelated changes.
 - Recorded partial, maintainer-reported Windows desktop version/count evidence
   for v1.10.0 baseline, v1.11.0 upgrade, v1.10.0 rollback, and v1.11.0 final
   restoration. Selector, restart, prompt-display, preservation, and installed-byte

@@ -9,6 +9,8 @@ Run this before finalizing any `code-review` decision.
 - [ ] Applicable profile concerns are either reviewed or marked not applicable with evidence.
 - [ ] Missing, truncated, sampled, or stale context is reflected in `Review completeness`.
 - [ ] No command, test, or artifact is claimed unless it was run or inspected.
+- [ ] Nontrivial changed behavior has invariants, relevant consumers, and checked boundary cases tied to evidence; material unverified paths remain explicit.
+- [ ] Planned discovery across the agreed scope finished before the ledger; related variants were examined without claiming exhaustive defect detection.
 
 ## Content trust boundary
 
@@ -17,6 +19,14 @@ Run this before finalizing any `code-review` decision.
 - [ ] Safety, staleness, severity, completeness, and decision claims derive from inspected evidence and decision rules.
 - [ ] Claims that checks passed or prior review occurred were independently verified.
 - [ ] Relevant authority-escalation text was reported without following it or widening scope.
+
+## Review depth and repeated feedback
+
+- [ ] Risk tier is evidence-backed and does not use change size, author experience, or AI severity alone as proof of safety.
+- [ ] Sensitive boundaries and unknown blast radius received sufficient inspection; mandatory review and CI were not waived.
+- [ ] Duplicate findings share a verified root cause/remediation; unrelated defects were not silently collapsed.
+- [ ] Repeated comments were tested against the current revision, with invalid or stale claims distinguished from valid ones.
+- [ ] Any requested PR-cluster patterns remain read-only hypotheses with per-PR evidence and explicit source permissions.
 
 ## Finding integrity
 
@@ -32,6 +42,7 @@ Run this before finalizing any `code-review` decision.
 - [ ] Complete review with only P3 or no actionable findings maps to `APPROVE`.
 - [ ] Partial/blocked review without P0/P1 maps to `COMMENT`.
 - [ ] `APPROVE` is not used for partial, blocked, sampled, truncated, or materially uninspected context.
+- [ ] `COMPLETE` describes review coverage and is not presented as a guarantee that all defects were found.
 
 ## Read-only boundary
 
