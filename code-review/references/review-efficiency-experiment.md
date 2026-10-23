@@ -27,7 +27,7 @@ The JSON document has version=1 and a runs array. Each anonymous task_id must ha
 - confirmed_findings, invalid_findings, missed_critical: independently adjudicated counters under fixed criteria
 - outcome_passed: independently checked Boolean for the scoped task
 
-All counts and durations must be nonnegative integers. Model prices are intentionally excluded: cached tokens may have different prices, and different providers expose different accounting semantics. The helper reports **relative aggregate consumption**, not currency savings. CI seconds are wall durations; billing multipliers and concurrency need separate analysis.
+All counts and durations must be integers from 0 through 2^63 - 1 (9,223,372,036,854,775,807). Larger values are rejected before comparison so percentage calculations remain finite. Model prices are intentionally excluded: cached tokens may have different prices, and different providers expose different accounting semantics. The helper reports **relative aggregate consumption**, not currency savings. CI seconds are wall durations; billing multipliers and concurrency need separate analysis.
 
 Example pair (synthetic data only):
 
@@ -56,6 +56,7 @@ Example pair (synthetic data only):
 ## Interpreting output and limits
 
 - Reductions are directional aggregated percentages, not per-task medians or significance tests. Negative reductions mean increased usage.
+- After quality and sample checks, `promising_not_certified` means lower combined input/output tokens, tool calls, repeated reads, elapsed time, or CI time. A gain in one dimension may accompany increases in others; inspect all reported totals and reductions before recommending a change.
 - A decline in a verified outcome, reduction in confirmed findings on matched test cases, increase in invalid findings, or newly missed critical finding is explicitly flagged.
 - Equal observed critical-miss counts, even when zero, do **not** prove safety. Assess risk-specific recall on separate held-out cases.
 - Inspect tail behavior and full task cost separately: averages can obscure enormous contexts, retries, or fallback model calls. If the provider does not expose reliable tokens, document the measurement gap.

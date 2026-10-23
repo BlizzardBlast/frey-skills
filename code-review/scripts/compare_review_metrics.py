@@ -17,6 +17,7 @@ FIELDS = (
 KEYS = set(FIELDS) | {"task_id", "arm", "outcome_passed"}
 ARM_NAMES = ("baseline", "candidate")
 MAX_BYTES = 1_000_000
+MAX_COUNT = 2**63 - 1
 
 
 class InvalidMetrics(ValueError):
@@ -54,8 +55,8 @@ def load_pairs(path: Path) -> list[tuple[dict, dict]]:
             raise InvalidMetrics("arm must be baseline or candidate")
         if type(record["outcome_passed"]) is not bool:
             raise InvalidMetrics("outcome_passed must be a boolean")
-        if any(type(record[k]) is not int or record[k] < 0 for k in FIELDS):
-            raise InvalidMetrics("aggregate counts and durations must be nonnegative integers")
+        if any(type(record[k]) is not int or not 0 <= record[k] <= MAX_COUNT for k in FIELDS):
+            raise InvalidMetrics(f"aggregate counts and durations must be integers between 0 and {MAX_COUNT}")
         if record["cached_input_tokens"] > record["input_tokens"]:
             raise InvalidMetrics("cached input cannot exceed total input tokens")
         group = groups.setdefault(task_id, {})
@@ -90,7 +91,10 @@ def compare(pairs: list[tuple[dict, dict]], min_pairs: int = 5) -> dict:
     elif (
         sums["candidate"]["input_tokens"] + sums["candidate"]["output_tokens"]
         < sums["baseline"]["input_tokens"] + sums["baseline"]["output_tokens"]
-        or sums["candidate"]["elapsed_seconds"] < sums["baseline"]["elapsed_seconds"]
+        or any(
+            sums["candidate"][key] < sums["baseline"][key]
+            for key in ("tool_calls", "repeated_reads", "elapsed_seconds", "ci_seconds")
+        )
     ):
         status = "promising_not_certified"
     else:
