@@ -306,6 +306,8 @@ readiness, repository risk review, targeted audit, or review-comment triage.
   report limits.
 - `review-comment triage` — decide whether review comments still apply to the
   current code.
+- `review-pattern audit` — when explicitly requested, compare permitted reviews
+  for verified recurring defects and potential systematic checks.
 
 **What it enforces:**
 
@@ -314,6 +316,8 @@ readiness, repository risk review, targeted audit, or review-comment triage.
 - A coverage matrix for every requested or materially applicable concern.
 - Explicit review completeness: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
 - Severity-ranked finding ledger with stable IDs and verification guidance.
+- Risk-guided review depth without waiving required coverage, CI or approvals.
+- Deduplicated, current-state findings and opt-in, read-only pattern analysis.
 - Decision semantics: `APPROVE`, `COMMENT`, or `REQUEST_CHANGES`.
 - A handoff ledger when the user asks for fixes; remediation is delegated
   explicitly to `iterative-self-review` instead of performed during review.
@@ -333,6 +337,8 @@ post-review repair, or repeated fix-and-recheck remediation.
 - A default maximum of 3 review/fix/verify passes.
 - Early stop when scoped issues are resolved and focused verification is
   recorded.
+- Compatible fixes batched for local verification before authorized pushes;
+  required CI is never skipped or represented as passing without evidence.
 - A required user follow-up before any pass 4 or later pass.
 - Honest `RESOLVED`, `PARTIAL`, or `BLOCKED` status without whole-repository
   clean claims.

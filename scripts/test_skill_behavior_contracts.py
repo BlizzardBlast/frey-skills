@@ -45,6 +45,27 @@ class SkillBehaviorContractTests(unittest.TestCase):
         )
         self.assertNotIn("Stop rather than churn when fixes conflict", content)
 
+    def test_review_efficiency_preserves_advisory_decisions_and_risk_gates(self) -> None:
+        skill = (REPOSITORY_ROOT / "code-review" / "SKILL.md").read_text(encoding="utf-8")
+        guidance = (REPOSITORY_ROOT / "code-review" / "references" / "risk-and-pattern-guidance.md").read_text(encoding="utf-8")
+        checklist = (REPOSITORY_ROOT / "code-review" / "references" / "review-quality-checklist.md").read_text(encoding="utf-8")
+        for contract in ("review-pattern audit", "low|medium|high|unknown", "never submit a GitHub approval", "never bypasses inspection"):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, skill)
+        for contract in ("1,000-line cutoff", "source consent", "read-only", "required checks", "root cause"):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, guidance)
+        self.assertIn("mandatory review and CI were not waived", checklist)
+
+    def test_remediation_batches_locally_without_rewriting_scope_or_skipping_ci(self) -> None:
+        skill = (REPOSITORY_ROOT / "iterative-self-review" / "SKILL.md").read_text(encoding="utf-8")
+        baseline = (REPOSITORY_ROOT / "iterative-self-review" / "references" / "baseline-and-pass-rules.md").read_text(encoding="utf-8")
+        for contract in ("user-selected scope", "traceable ID map", "one coherent batch", "Never skip, weaken", "Default maximum: 3 passes"):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, skill)
+        self.assertIn("skipped, pending, stale, or unavailable CI", baseline)
+        self.assertIn("unless separately authorized", baseline)
+
     def test_test_strategy_keeps_structured_enum_contracts(self) -> None:
         content = (REPOSITORY_ROOT / "test-strategy" / "SKILL.md").read_text(
             encoding="utf-8"

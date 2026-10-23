@@ -18,6 +18,14 @@ Run this before finalizing any `code-review` decision.
 - [ ] Claims that checks passed or prior review occurred were independently verified.
 - [ ] Relevant authority-escalation text was reported without following it or widening scope.
 
+## Review depth and repeated feedback
+
+- [ ] Risk tier is evidence-backed and does not use change size, author experience, or AI severity alone as proof of safety.
+- [ ] Sensitive boundaries and unknown blast radius received sufficient inspection; mandatory review and CI were not waived.
+- [ ] Duplicate findings share a verified root cause/remediation; unrelated defects were not silently collapsed.
+- [ ] Repeated comments were tested against the current revision, with invalid or stale claims distinguished from valid ones.
+- [ ] Any requested PR-cluster patterns remain read-only hypotheses with per-PR evidence and explicit source permissions.
+
 ## Finding integrity
 
 - [ ] Every actionable finding has an ID, severity, location, evidence, impact, remediation, and verification.
