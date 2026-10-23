@@ -55,15 +55,34 @@ def inline_text(tokens: list[Token]) -> str:
     return "".join(result)
 
 
-class HTMLAnchors(HTMLParser):
+class LiteralHTML(HTMLParser):
+    """Track matched literal containers across Markdown token boundaries."""
+
     # Older Python patch releases lack native RCDATA handling.
     CDATA_CONTENT_ELEMENTS = HTMLParser.CDATA_CONTENT_ELEMENTS + ("textarea", "title")
 
     def __init__(self) -> None:
         super().__init__()
+        self.tags: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag in {"code", "pre", "script", "style", "textarea", "title"}:
+            self.tags.append(tag)
+
+    def handle_endtag(self, tag: str) -> None:
+        for index in range(len(self.tags) - 1, -1, -1):
+            if self.tags[index] == tag:
+                del self.tags[index:]
+                break
+
+
+class HTMLAnchors(LiteralHTML):
+    def __init__(self) -> None:
+        super().__init__()
         self.names: set[str] = set()
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        super().handle_starttag(tag, attrs)
         self.names.update(
             value for key, value in attrs
             if value is not None and (key == "id" or (tag == "a" and key == "name"))

@@ -280,6 +280,29 @@ class PrepareReleaseTests(unittest.TestCase):
         _, notes, _ = prepare_release.prepare_release("v1.2.3")
         self.assertIn("Leap day.", notes.read_text(encoding="utf-8"))
 
+    def test_literal_html_cannot_supply_or_end_release_sections(self) -> None:
+        section = "## [1.2.3] - 2026-10-22\n\n- Example only.\n"
+        actual = "## [1.2.3] - 2026-10-22\n\n- Actual release.\n"
+        for tag in ("code", "pre", "script", "style", "textarea", "title"):
+            for prefix in ("", "Example: "):
+                example = f"{prefix}<{tag}>\n\n{section}\n</{tag}>\n\n"
+                with self.subTest(tag=tag, prefix=prefix):
+                    with self.assertRaisesRegex(ValueError, "non-empty dated section"):
+                        prepare_release.release_notes(example, "1.2.3")
+                    self.assertEqual(prepare_release.release_notes(example + actual, "1.2.3"), "- Actual release.")
+                    self.assertEqual(
+                        prepare_release.release_notes(actual + "\n" + example + "## [1.2.2] - 2026-10-21\n\n- Older.\n", "1.2.3"),
+                        "- Actual release.\n\n" + example.strip(),
+                    )
+
+    def test_quoted_literal_html_does_not_hide_release_sections(self) -> None:
+        for tag in ("code", "pre", "script", "style", "textarea", "title"):
+            with self.subTest(tag=tag):
+                self.assertEqual(
+                    prepare_release.release_notes(f"> <{tag}>\n> Example.\n\n## [1.2.3] - 2026-10-22\n\n- Actual release.\n", "1.2.3"),
+                    "- Actual release.",
+                )
+
     def test_existing_directory_target_is_preserved(self) -> None:
         target = self.root / "dist" / "releases" / "notes.md"
         target.mkdir(parents=True)
@@ -356,6 +379,8 @@ class ReleaseIntegrationTests(unittest.TestCase):
         outputs = prepare_release.prepare_release("v1.2.3")
         before = {path.name: path.read_bytes() for path in outputs}
         changelogs = (
+            "<title>\n\n## [1.2.3] - 2026-10-22\n\n- Example only.\n\n</title>\n",
+            "Example: <textarea>\n\n## [1.2.3] - 2026-10-22\n\n- Example only.\n\n</textarea>\n",
             "[details]: https://example.invalid\n<custom-panel>\n"
             "## [1.2.3] - 2026-10-22\n\n- Example only.\n",
             "1.\n<custom-panel>\n## [1.2.3] - 2026-10-22\n\n- Example only.\n",

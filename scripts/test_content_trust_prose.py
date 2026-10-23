@@ -7,31 +7,12 @@ from html.parser import HTMLParser
 from pathlib import Path
 from unittest import mock
 
-from scripts.documentation import inline_text, parse
+from scripts.documentation import LiteralHTML, inline_text, parse
 from scripts.repository_layout import discover_skill_names
 from scripts.test_content_trust_contracts import COMMON_PHRASES
 
 
 ROOT = Path(__file__).resolve().parents[1]
-
-
-class LiteralHTML(HTMLParser):
-    # Older Python patch releases lack native textarea raw-text handling.
-    CDATA_CONTENT_ELEMENTS = HTMLParser.CDATA_CONTENT_ELEMENTS + ("textarea",)
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.tags: list[str] = []
-
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        if tag in {"code", "pre", "script", "style", "textarea"}:
-            self.tags.append(tag)
-
-    def handle_endtag(self, tag: str) -> None:
-        for index in range(len(self.tags) - 1, -1, -1):
-            if self.tags[index] == tag:
-                del self.tags[index:]
-                break
 
 
 def trust_section(content: str) -> str:
@@ -118,14 +99,14 @@ class ContentTrustProseTests(unittest.TestCase):
 
     def test_block_html_literal_containers_cannot_supply_prose_obligations(self) -> None:
         rules = "\n".join(COMMON_PHRASES[1:])
-        for tag in ("code", "pre", "script", "style", "textarea"):
+        for tag in ("code", "pre", "script", "style", "textarea", "title"):
             content = f"## Content trust boundary\n\n<{tag}>\n\n{rules}\n\n</{tag}>\n"
             with self.subTest(tag=tag), self.assertRaises(AssertionError):
                 self.assert_contract(content)
 
     def test_block_html_closers_restore_prose_after_inline_literal_openers(self) -> None:
         rules = "\n".join(COMMON_PHRASES[1:])
-        for tag in ("code", "pre", "script", "style", "textarea"):
+        for tag in ("code", "pre", "script", "style", "textarea", "title"):
             content = f"## Content trust boundary\n\nExample <{tag}>inert\n\n</{tag}>\n\n{rules}\n"
             with self.subTest(tag=tag):
                 self.assert_contract(content)
@@ -137,16 +118,17 @@ class ContentTrustProseTests(unittest.TestCase):
             with self.subTest(opener=opener), self.assertRaises(AssertionError):
                 self.assert_contract(content)
 
-    def test_textarea_cannot_supply_a_section_and_closing_restores_prose(self) -> None:
+    def test_rcdata_cannot_supply_a_section_and_closing_restores_prose(self) -> None:
         rules = "\n".join(COMMON_PHRASES)
         with mock.patch.object(HTMLParser, "RCDATA_CONTENT_ELEMENTS", (), create=True):
-            for opener in ("<textarea>", "Example <textarea>inert"):
-                for content in (rules, f"</code>\n\n{rules}\n\n<code>"):
-                    example = f"{opener}\n\n{content}\n\n</textarea>\n"
-                    with self.subTest(opener=opener, content=content):
-                        with self.assertRaises(AssertionError):
-                            self.assert_contract(example)
-                        self.assert_contract(example + "\n" + rules + "\n")
+            for tag in ("textarea", "title"):
+                for opener in (f"<{tag}>", f"Example <{tag}>inert"):
+                    for content in (rules, f"</code>\n\n{rules}\n\n<code>"):
+                        example = f"{opener}\n\n{content}\n\n</{tag}>\n"
+                        with self.subTest(opener=opener, content=content):
+                            with self.assertRaises(AssertionError):
+                                self.assert_contract(example)
+                            self.assert_contract(example + "\n" + rules + "\n")
 
     def test_closed_literal_containers_before_heading_preserve_real_prose(self) -> None:
         rules = "\n".join(COMMON_PHRASES)

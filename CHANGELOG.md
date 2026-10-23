@@ -8,6 +8,9 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Fixed
 
+- Trust-prose validation and release preparation share literal HTML tracking,
+  excluding title contents and inline-opened examples while restoring genuine
+  sections after closing tags. Invalid example-only notes preserve prior artifacts.
 - Release preparation reuses the pinned CommonMark parser for section boundaries,
   excluding HTML examples after reference definitions and empty lists. Its tests
   now run in the repository gate; standalone plugin checks retain their

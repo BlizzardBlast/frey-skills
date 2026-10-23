@@ -14,12 +14,12 @@ from datetime import date
 from pathlib import Path
 
 try:
-    from scripts.documentation import parse
+    from scripts.documentation import LiteralHTML, parse
     from scripts.publish_outputs import publish_outputs
     from scripts.repository_layout import validate_source_path
     from scripts.validate_plugin_bundle import validate_bundle
 except ModuleNotFoundError:
-    from documentation import parse
+    from documentation import LiteralHTML, parse
     from publish_outputs import publish_outputs
     from repository_layout import validate_source_path
     from validate_plugin_bundle import validate_bundle
@@ -36,12 +36,18 @@ def release_notes(changelog: str, version: str) -> str:
     lines = changelog.splitlines(keepends=True)
     headings: list[tuple[int, int, str]] = []
     tokens, _ = parse(changelog)
+    literal = LiteralHTML()
+    quoted = 0
     comment_until = 0
     for index, token in enumerate(tokens):
-        if token.map is None or token.map[0] < comment_until:
+        if token.type == "blockquote_open":
+            quoted += 1
+        elif token.type == "blockquote_close":
+            quoted -= 1
+        if quoted or token.map is None or token.map[0] < comment_until:
             continue
         # Preserve exclusion of comments reopened on an HTML block's closing line.
-        if token.type == "html_block" and token.content.lstrip().startswith("<!--") and re.search(
+        if not literal.tags and token.type == "html_block" and token.content.lstrip().startswith("<!--") and re.search(
             r"<!--(?:(?!-->).)*$", token.content, re.DOTALL
         ):
             comment_until = token.map[1]
@@ -50,7 +56,13 @@ def release_notes(changelog: str, version: str) -> str:
                 comment_until += 1
                 if "-->" in line and not re.search(r"<!--(?:(?!-->).)*$", line.split("-->", 1)[1]):
                     break
-        if token.type == "heading_open" and token.level == 0 and token.tag in {"h1", "h2"}:
+            literal.feed("".join(lines[token.map[0]:comment_until]))
+        elif token.type == "html_block":
+            literal.feed(token.content)
+        for child in token.children or []:
+            if child.type == "html_inline":
+                literal.feed(child.content)
+        if token.type == "heading_open" and token.level == 0 and token.tag in {"h1", "h2"} and not literal.tags:
             start = token.map[0]
             if lines[start].startswith("#"):
                 headings.append((start, int(token.tag[1]), tokens[index + 1].content.strip()))
