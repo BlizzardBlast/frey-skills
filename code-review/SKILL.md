@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Use when the user asks to review code, a PR, diff, current changes, merge readiness, repository risks, targeted files, CI/tooling changes, or stale review comments. Produces a read-only evidence-backed review with coverage, severity-ranked findings, and an APPROVE/COMMENT/REQUEST_CHANGES decision. If fixes are requested, emit the ledger first and hand remediation to iterative-self-review.
+description: Use when the user asks to review code, a PR, diff, current changes, merge readiness, repository risks, targeted files, CI/tooling changes, stale review comments, or recurring findings across permitted PRs. Produces a read-only evidence-backed review with coverage, severity-ranked findings, and an APPROVE/COMMENT/REQUEST_CHANGES decision. If fixes are requested, emit the ledger first and hand remediation to iterative-self-review.
 license: MIT
 metadata:
   author: BlizzardBlast

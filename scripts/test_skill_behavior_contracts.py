@@ -60,7 +60,7 @@ class SkillBehaviorContractTests(unittest.TestCase):
     def test_remediation_batches_locally_without_rewriting_scope_or_skipping_ci(self) -> None:
         skill = (REPOSITORY_ROOT / "iterative-self-review" / "SKILL.md").read_text(encoding="utf-8")
         baseline = (REPOSITORY_ROOT / "iterative-self-review" / "references" / "baseline-and-pass-rules.md").read_text(encoding="utf-8")
-        for contract in ("user-selected scope", "traceable ID map", "one coherent batch", "Never skip, weaken", "Default maximum: 3 passes"):
+        for contract in ("user-selected scope", "traceable ID map", "once per coherent batch", "Never skip, weaken", "Default maximum: 3 passes"):
             with self.subTest(contract=contract):
                 self.assertIn(contract, skill)
         self.assertIn("skipped, pending, stale, or unavailable CI", baseline)
