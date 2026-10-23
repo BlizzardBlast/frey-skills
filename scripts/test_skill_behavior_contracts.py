@@ -49,13 +49,18 @@ class SkillBehaviorContractTests(unittest.TestCase):
         skill = (REPOSITORY_ROOT / "code-review" / "SKILL.md").read_text(encoding="utf-8")
         guidance = (REPOSITORY_ROOT / "code-review" / "references" / "risk-and-pattern-guidance.md").read_text(encoding="utf-8")
         checklist = (REPOSITORY_ROOT / "code-review" / "references" / "review-quality-checklist.md").read_text(encoding="utf-8")
-        for contract in ("review-pattern audit", "low|medium|high|unknown", "never submit a GitHub approval", "never bypasses inspection"):
+        for contract in (
+            "review-pattern audit", "low|medium|high|unknown", "never submit a GitHub approval", "never bypasses inspection",
+            "required invariants", "reachable boundary cases", "before finalizing the ledger",
+        ):
             with self.subTest(contract=contract):
                 self.assertIn(contract, skill)
         for contract in ("1,000-line cutoff", "source consent", "read-only", "required checks", "root cause"):
             with self.subTest(contract=contract):
                 self.assertIn(contract, guidance)
         self.assertIn("mandatory review and CI were not waived", checklist)
+        self.assertIn("an exhaustive input cross-product is not required", guidance)
+        self.assertIn("not presented as a guarantee that all defects were found", checklist)
 
     def test_remediation_batches_locally_without_rewriting_scope_or_skipping_ci(self) -> None:
         skill = (REPOSITORY_ROOT / "iterative-self-review" / "SKILL.md").read_text(encoding="utf-8")
@@ -65,6 +70,23 @@ class SkillBehaviorContractTests(unittest.TestCase):
                 self.assertIn(contract, skill)
         self.assertIn("skipped, pending, stale, or unavailable CI", baseline)
         self.assertIn("unless separately authorized", baseline)
+        self.assertIn("do not reset the three-pass budget", baseline)
+        self.assertIn("report unrelated findings separately without widening mutation scope", skill)
+
+    def test_remediation_rechecks_invariants_before_resolving_items(self) -> None:
+        skill = (REPOSITORY_ROOT / "iterative-self-review" / "SKILL.md").read_text(encoding="utf-8")
+        workflow = skill.split("## Bounded loop\n", 1)[1].split("\n## ", 1)[0]
+        steps = re.split(r"(?m)^\d+\. ", workflow)
+        focused = next(i for i, step in enumerate(steps) if step.startswith("Run focused verification"))
+        recheck = next(i for i, step in enumerate(steps) if step.startswith("For nontrivial fixes, re-review"))
+        resolved = next(i for i, step in enumerate(steps) if step.startswith("Update each item"))
+        self.assertLess(focused, recheck)
+        self.assertLess(recheck, resolved)
+        self.assertIn("A related failure keeps the item unresolved for the next remaining pass", steps[resolved])
+        ledger = (REPOSITORY_ROOT / "iterative-self-review" / "references" / "issue-ledger-format.md").read_text(encoding="utf-8")
+        for field in ("`Evidence`", "`Remediation`", "`Verification`"):
+            self.assertIn(field, ledger)
+        self.assertIn("A variant is evidence, not additional mutation authority", ledger)
 
     def test_test_strategy_keeps_structured_enum_contracts(self) -> None:
         content = (REPOSITORY_ROOT / "test-strategy" / "SKILL.md").read_text(

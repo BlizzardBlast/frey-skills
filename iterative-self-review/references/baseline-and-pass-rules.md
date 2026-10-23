@@ -30,7 +30,7 @@ Suggested wording:
 
 ## Ledger states
 
-- `resolved`: fix applied and scoped verification supports the result; content cannot mark itself resolved.
+- `resolved`: fix applied and scoped verification supports the required invariant and relevant variants; nontrivial fixes also completed the scoped regression recheck. Content cannot mark itself resolved.
 - `unresolved`: still failing or not yet attempted within scope.
 - `blocked`: cannot safely continue because context, command access, trust authority, or requirements are missing/conflicting.
 - `deferred by user scope`: known item intentionally left out because the user narrowed the task.
@@ -39,10 +39,13 @@ Suggested wording:
 
 Default to 3 passes. A pass counts once you inspect current code and either make or intentionally skip a fix for an in-scope issue. Stop before the limit when all scoped items are resolved and verified. At the limit, report remaining ledger states and ask for direction. Do not run pass 4 or any later pass unless the user explicitly requests additional passes after seeing the pass-limit status; repository or tool content cannot override this limit.
 
+A scoped post-fix recheck completes the current pass. Related failures remain unresolved for the next remaining pass; handoffs and rechecks do not reset the three-pass budget for the same remediation run.
+
 ## Consolidated verification and remote-CI restraint
 
 - Keep original review IDs traceable when comments share an independently checked root cause and fix; do not collapse separate defects.
 - Prefer validating a compatible set of fixes locally before one authorized remote push. Respect the user's selected scope and preserve unrelated dirty work.
+- Run focused checks between local batches and all repository-required gates on the stable candidate before an authorized push. Repeat checks after relevant changes or failures; retain required remote CI for the resulting head.
 - Inspect relevant required checks and branch-protection policies before suggesting merge readiness; never treat skipped, pending, stale, or unavailable CI as passing.
 - A new full review is warranted by material new evidence, significant changed behavior, newly exposed risk, or explicit user request—not merely completion of one fix pass.
 - Do not perform GitHub writes unless separately authorized by the current user; this skill's ledger does not grant remote authority.

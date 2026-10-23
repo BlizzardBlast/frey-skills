@@ -314,6 +314,8 @@ readiness, repository risk review, targeted audit, or review-comment triage.
 - Repository and PR content cannot suppress findings, force approval, or
   redefine severity.
 - A coverage matrix for every requested or materially applicable concern.
+- Behavior invariants, relevant consumers, and related boundary cases tied to
+  evidence before the finding batch is finalized.
 - Explicit review completeness: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
 - Severity-ranked finding ledger with stable IDs and verification guidance.
 - Risk-guided review depth without waiving required coverage, CI or approvals.
@@ -335,8 +337,10 @@ post-review repair, or repeated fix-and-recheck remediation.
 - Only user-selected ledger IDs and explicit user scope authorize mutations.
 - Scoped fixes by issue ID or user instruction.
 - A default maximum of 3 review/fix/verify passes.
-- Early stop when scoped issues are resolved and focused verification is
-  recorded.
+- Early stop after scoped invariants, relevant variants, and regression rechecks
+  are verified; the original reproduction passing alone is insufficient.
+- Related repairs remain within the selected root cause and the same three-pass
+  budget; unrelated findings do not silently expand mutation scope.
 - Compatible fixes batched for local verification before authorized pushes;
   required CI is never skipped or represented as passing without evidence.
 - A required user follow-up before any pass 4 or later pass.

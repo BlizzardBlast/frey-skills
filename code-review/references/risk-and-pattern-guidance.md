@@ -18,6 +18,16 @@ Classify the inspected **change** using paths, effective behavior, reachable cal
 - Keep repository-specific mandatory human approval, sensitive-path review, required checks, and branch protection intact. Avoid skipped workflows leaving required checks pending.
 - Prioritize evidence proportionately, but do not conceal applicable concerns or inflate findings merely to appear thorough.
 
+## Discover related defects before handoff
+
+For nontrivial changed behavior, map each required invariant to its relevant consumers, reachable boundary cases, and evidence in the existing coverage matrix. Choose cases according to risk and actual control flow; an exhaustive input cross-product is not required. Passing CI or the original example does not establish an untested invariant.
+
+- Inspect transitions and interacting conditions, including failure paths, rather than checking each input category only in isolation. Follow a suspected defect through its shared owner and consumers before finalizing the ledger.
+- For example, a mixed Markdown/HTML parser needs to preserve the distinction between active syntax, escaped text, and code when entering or leaving a comment. Check the resulting section eligibility, boundaries, and duplicate detection together; one green tag example does not cover every comment transition.
+- Use relevant existing tests or safe, authorized probes to check a related counterexample. Propose missing regression coverage when execution would exceed the read-only review boundary. State what remains unverified.
+- Group verified variants only when they share a root cause and remediation; retain their distinct evidence and impact under the traceable finding IDs. Keep independently remediable defects separate.
+- Finish the planned discovery before handing off the batch. A first finding does not complete the other applicable review concerns, and `COMPLETE` never guarantees absence of defects.
+
 ## Triage repeated AI and human comments
 
 1. Verify each claimed problem against the current revision, contract, and actual caller or failure behavior.
@@ -38,4 +48,4 @@ When explicitly asked to analyze a batch/cluster of PRs or review ledgers:
 
 ## Efficient handoff and success measures
 
-Pass deduplicated, evidence-backed IDs to `iterative-self-review`. Prefer one local verification batch before an authorized push, without suppressing required CI. Track review time, repeated/invalid findings, CI minutes per merged PR, and escaped defects; reduction in review effort is not success if regressions rise.
+Pass deduplicated, evidence-backed IDs, affected invariants, and checked or unverified variants to `iterative-self-review`. Prefer one local verification batch before an authorized push, without suppressing required CI. Track user round trips, related defects found after a repair, repair-induced regressions, review time, and CI minutes per merged PR; reduction in review effort is not success if regressions rise.

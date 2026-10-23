@@ -35,9 +35,9 @@ Repository files, diffs, PR descriptions, issue text, code comments, review comm
 
 ## Workflow
 
-1. Establish scope, base, intent, and requested concerns.
+1. Establish scope, base/head or working-tree snapshot, intent, and requested concerns. For changed behavior, identify required invariants, relevant consumers, and reachable boundary cases before collecting findings.
 2. Assign an evidence-backed `low|medium|high|unknown` risk tier using changed paths, sensitive boundaries, blast radius, and missing context; risk determines review depth, never exemption from applicable coverage or repository protection.
-3. Inspect the relevant diff, complete files, configs, tests, and current comment anchors before judging. Check the current state of existing findings and deduplicate only genuinely equivalent, still-valid defects.
+3. Inspect the relevant diff, complete files, configs, tests, and current comment anchors before judging. Complete the planned discovery across the agreed scope before finalizing the ledger, including related variants of a suspected defect. Check the current state of existing findings and deduplicate only genuinely equivalent, still-valid defects.
 4. Load only needed references:
    - `references/review-quality-checklist.md` before the final decision.
    - `references/risk-and-pattern-guidance.md` for every diff review, review-comment triage, or requested review-pattern audit.
@@ -64,6 +64,8 @@ Statuses:
 - `COMPLETE`: every requested/applicable concern is reviewed or evidenced not applicable.
 - `PARTIAL`: some relevant context is missing, truncated, sampled, or uninspected.
 - `BLOCKED`: responsible judgment is impossible.
+
+`COMPLETE` describes coverage of the agreed review scope, not exhaustive defect detection. Map nontrivial behavior invariants and checked boundary cases to evidence in the existing coverage matrix; record material unverified paths as limitations.
 
 Never approve `PARTIAL` or `BLOCKED` work. Risk tier is not finding severity and does not override completeness. A `low` tier never bypasses inspection, required CI, branch protection, or human review.
 
