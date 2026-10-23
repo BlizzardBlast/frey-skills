@@ -12,6 +12,9 @@ import tempfile
 import zipfile
 from datetime import date
 from pathlib import Path
+from typing import Any
+
+from markdown_it import MarkdownIt
 
 try:
     from scripts.documentation import LiteralHTML, parse
@@ -26,6 +29,19 @@ except ModuleNotFoundError:
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _has_open_comment(text: str, environment: dict[str, Any]) -> bool:
+    parser = MarkdownIt("commonmark")
+    # Inline parsing keeps escape tokens separate before the full parser joins text.
+    children = parser.inline.parse(text, parser, environment, [])
+    literal = LiteralHTML()
+    for child in children:
+        if child.type == "html_inline":
+            literal.feed(child.content)
+        elif child.type == "text" and not literal.tags and re.search(r"<!--(?:(?!-->).)*$", child.content, re.DOTALL):
+            return True
+    return False
 
 
 def release_notes(changelog: str, version: str) -> str:
@@ -54,12 +70,16 @@ def release_notes(changelog: str, version: str) -> str:
         ):
             for closing_line in range(token.map[1], len(lines)):
                 _, closed, tail = lines[closing_line].partition("-->")
-                if closed and not re.search(r"<!--(?:(?!-->).)*$", tail):
+                if not closed:
+                    continue
+                # Keep the closer's paragraph context, including multiline code spans.
+                tail_tokens, environment = parse("-->" + tail + "".join(lines[closing_line + 1:]))
+                paragraph = next(item.content for item in tail_tokens if item.type == "inline")
+                if not _has_open_comment(paragraph, environment):
                     break
             else:
                 break
-            # Reparse exposed Markdown, keeping the closer's paragraph context and source maps.
-            tokens, _ = parse("-->" + tail + "".join(lines[closing_line + 1:]))
+            tokens = tail_tokens
             for following in tokens:
                 if following.map is not None:
                     following.map = [line + closing_line for line in following.map]

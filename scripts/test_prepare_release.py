@@ -248,13 +248,21 @@ class PrepareReleaseTests(unittest.TestCase):
             "<!-- closed --> <!--\nExample.\n--> <!-- again\nMore.\n-->",
             "<!-- closed --> <!--\nFirst.\n--> `<pre>`\n\n<!-- closed --> <!--\nSecond.\n-->",
         ):
-            for example in ("`<pre>`", r"\<pre>", "`<pre>\ncode continues`", "`<title>`"):
+            for example in (
+                "`<pre>`", r"\<pre>", "`<pre>\ncode continues`", "`<title>`",
+                "`<!--`", r"\<!--", "``x`<!--``", "`<!--\ncode continues`",
+                "<!-- complete --> `<!--`", '<span title="<!--">Details</span>',
+                "<script><!-- example\n</script>",
+            ):
                 with self.subTest(comment=comment, example=example):
                     prefix = f"{comment} {example}\n\n"
                     self.assertEqual(prepare_release.release_notes(prefix + actual, "1.2.3"), "- Actual release.")
 
     def test_markdown_after_reopened_comments_preserves_boundaries_and_duplicates(self) -> None:
-        for example in ("`<pre>`", r"\<pre>", "`<pre>\ncode continues`"):
+        for example in (
+            "`<pre>`", r"\<pre>", "`<pre>\ncode continues`",
+            "`<!--`", r"\<!--", "``x`<!--``", "`<!--\ncode continues`",
+        ):
             with self.subTest(example=example):
                 body = f"- Current release.\n\n<!-- closed --> <!--\nExample comment.\n--> {example}"
                 current = f"## [1.2.3] - 2026-10-22\n\n{body}\n\n"
@@ -271,6 +279,16 @@ class PrepareReleaseTests(unittest.TestCase):
         for tag in ("code", "pre", "script", "style", "textarea", "title"):
             with self.subTest(tag=tag):
                 example = f"<!-- closed --> <!--\nExample comment.\n-->    <{tag}>\n\n{section}</{tag}>\n\n"
+                with self.assertRaisesRegex(ValueError, "non-empty dated section"):
+                    prepare_release.release_notes(example, "1.2.3")
+                self.assertEqual(prepare_release.release_notes(example + actual, "1.2.3"), "- Actual release.")
+
+    def test_genuine_reopened_comments_still_exclude_release_examples(self) -> None:
+        section = "## [1.2.3] - 2026-10-22\n\n- Example only.\n"
+        actual = "## [1.2.3] - 2026-10-22\n\n- Actual release.\n"
+        for opening in ("<!-- again", "<!-- complete --> <!-- again", r"\`<!--", r"\\<!--", "<!-- again `<!--`"):
+            with self.subTest(opening=opening):
+                example = f"<!-- closed --> <!--\nFirst comment.\n--> {opening}\n\n{section}-->\n\n"
                 with self.assertRaisesRegex(ValueError, "non-empty dated section"):
                     prepare_release.release_notes(example, "1.2.3")
                 self.assertEqual(prepare_release.release_notes(example + actual, "1.2.3"), "- Actual release.")

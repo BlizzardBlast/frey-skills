@@ -9,7 +9,8 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 ### Fixed
 
 - Release-note parsing preserves Markdown code and escaped tags after reopened
-  comments close, retaining real section boundaries and duplicate-version checks.
+  comments close, including literal comment markers, while retaining real section
+  boundaries and duplicate-version checks. Active reopened comments remain excluded.
 - Trust-prose validation and release preparation share literal HTML tracking,
   excluding title contents and inline-opened examples while restoring genuine
   sections after closing tags. Invalid example-only notes preserve prior artifacts.
