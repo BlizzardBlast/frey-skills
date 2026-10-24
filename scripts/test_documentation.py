@@ -8,7 +8,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from unittest import mock
 
-from scripts.documentation import anchors, bare_reference_text, links, validate_documentation
+from scripts.documentation import LiteralHTML, anchors, bare_reference_text, links, validate_documentation
 
 
 class DocumentationTests(unittest.TestCase):
@@ -273,6 +273,77 @@ class DocumentationTests(unittest.TestCase):
                         self.assertEqual(anchors(source), {'after'})
                         self.assertEqual(self.errors(self.write('source.md', source)), [])
         self.assertEqual(anchors('[image]: real.png\n\n' + body), {'hidden', 'after'})
+
+    def test_comments_in_literal_html_preserve_following_content(self) -> None:
+        self.write('real.md', '# Real\n')
+        comments = ('<!-- first --> <!-- second -->', '`<!--` and ' + r'\<!--',
+                    '<!-- first --> <!-- second\n\nHidden\n\n-->',
+                    '<!-- first --> <!-- second\n\nHidden\n\n--> <!-- third\n\nHidden\n\n-->')
+        for tag in ('code', 'pre', 'script', 'style', 'textarea', 'title'):
+            for prefix in ('', 'Example '):
+                for comment in comments:
+                    for quote in ('', '> ', '> > '):
+                        with self.subTest(tag=tag, prefix=prefix, comment=comment, quote=quote):
+                            content = (f'{prefix}<{tag} id="container">\n\n{comment}\n\n'
+                                       f'[Hidden](missing.md)\n\n</{tag}>\n\n# After\n\n'
+                                       '<a id="after-html" name="legacy"></a>\n\n[Visible](real.md#real)\n')
+                            content = '\n'.join(quote + line for line in content.splitlines()) + '\n'
+                            # Raw pre blocks do not interpret Markdown escapes or code spans.
+                            expected = {'container'} if tag == 'pre' and not prefix and comment == comments[1] else {
+                                'container', 'after', 'after-html', 'legacy'
+                            }
+                            self.assertEqual(anchors(content), expected)
+                            self.assertEqual(self.errors(self.write('source.md', content)), [])
+
+    def test_literal_comment_tails_preserve_same_line_container_closers(self) -> None:
+        for tag in ('code', 'pre', 'script', 'style', 'textarea', 'title'):
+            for gap in (' ', '    '):
+                with self.subTest(tag=tag, gap=gap):
+                    content = (f'Example <{tag}>\n\n<!-- first --> <!-- second\n\nHidden\n\n'
+                               f'-->{gap}</{tag}>\n\n# After\n')
+                    self.assertEqual(anchors(content), {'after'})
+        for quote in ('', '> ', '> > '):
+            content = ('Example <code>\n\n<!-- first --> <!-- second\n\nHidden\n\n'
+                       '    -->    </code>\n\n# After\n')
+            content = '\n'.join(quote + line for line in content.splitlines()) + '\n'
+            self.assertEqual(anchors(content), {'after'})
+
+    def test_literal_html_state_is_current_after_short_closing_chunks(self) -> None:
+        for tag in ('code', 'pre', 'script', 'style', 'textarea', 'title'):
+            with self.subTest(tag=tag):
+                literal = LiteralHTML()
+                literal.feed(f'<{tag}>')
+                literal.feed('<!-- ' + 'inert ' * 100 + '-->')
+                literal.feed(f'</{tag}>')
+                self.assertEqual(literal.tags, [])
+        literal = LiteralHTML()
+        for fragment in ('<code>', '<!-- pending', '</code>'):
+            literal.feed(fragment)
+        self.assertEqual(literal.tags, ['code'])
+        literal.feed('-->')
+        literal.feed('</code>')
+        self.assertEqual(literal.tags, [])
+
+    def test_pending_literal_comments_keep_hidden_closers_and_paths_inert(self) -> None:
+        opening = 'Example <code>\n\n<!-- first --> <!-- second\n\n'
+        hidden = '</code>\n\n# Hidden\n\n[Hidden](references/hidden.md)\n\n'
+        self.assertEqual(anchors(opening + hidden), set())
+        content = opening + hidden + '-->\n\n[Still hidden](missing.md)\n\n</code>\n\n# After\n'
+        self.assertEqual(anchors(content), {'after'})
+        self.assertEqual(self.errors(self.write('source.md', content)), [])
+        self.assertIn('references/hidden.md', bare_reference_text(content))
+
+    def test_comments_in_literal_html_preserve_all_genuine_catalog_entries(self) -> None:
+        entries = {'choose': '[Sample](sample/SKILL.md)', 'available': '### sample',
+                   'layout': '```text\nsample/\n```', 'sources': '- `sample/`'}
+        for key, entry in entries.items():
+            for tag in ('code', 'pre', 'script', 'style', 'textarea', 'title'):
+                for prefix in ('', 'Example '):
+                    with self.subTest(key=key, tag=tag, prefix=prefix):
+                        example = (f'{prefix}<{tag}>\n\n<!-- first --> <!-- second\n\nHidden\n\n-->'
+                                   f'\n\n{entry}\n\n</{tag}>\n\n')
+                        paths = self.write_inventories(**{key: example + entry})
+                        self.assertEqual(self.errors(*paths, names=('sample',)), [])
 
     def test_hidden_definitions_cannot_change_literal_container_visibility(self) -> None:
         definition = 'Example <code>\n\n[image]: real.png\n\n</code>\n\n'

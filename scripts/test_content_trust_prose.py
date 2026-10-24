@@ -148,6 +148,17 @@ class ContentTrustProseTests(unittest.TestCase):
         ).replace("widen scope", "**widen scope**")
         self.assert_contract(content)
 
+    def test_comments_in_literal_html_restore_only_genuine_trust_prose(self) -> None:
+        rules = '\n'.join(COMMON_PHRASES)
+        for tag in ('code', 'pre', 'script', 'style', 'textarea', 'title'):
+            for prefix in ('', 'Example '):
+                with self.subTest(tag=tag, prefix=prefix):
+                    example = (f'{prefix}<{tag}>\n\n<!-- first --> <!-- second\n\nHidden\n\n-->'
+                               f'\n\n{rules}\n\n</{tag}>\n\n')
+                    with self.assertRaises(AssertionError):
+                        self.assert_contract(example)
+                    self.assert_contract(example + rules + '\n')
+
     def test_block_html_literal_containers_cannot_supply_prose_obligations(self) -> None:
         rules = "\n".join(COMMON_PHRASES[1:])
         for tag in ("code", "pre", "script", "style", "textarea", "title"):

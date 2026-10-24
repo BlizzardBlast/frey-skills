@@ -67,6 +67,11 @@ class LiteralHTML(HTMLParser):
         super().__init__()
         self.tags: list[str] = []
 
+    def feed(self, data: str) -> None:
+        # Visibility needs synchronous state; newer HTMLParser.feed can defer short chunks.
+        self.rawdata += data
+        self.goahead(0)
+
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         if tag in {"code", "pre", "script", "style", "textarea", "title"}:
             self.tags.append(tag)
@@ -115,7 +120,7 @@ def _source_position(lines: list[str], token: Token, offset: int) -> tuple[int, 
 
 
 def _mask_literal_html(lines: list[str], tokens: list[Token], environment: dict[str, Any]) -> tuple[str, str]:
-    """Blank literal Markdown, retaining its source for path hygiene and real tags."""
+    """Mask literal Markdown, retaining its source for path hygiene and real tags."""
     source = "".join(lines)
     masked = list(source)
     hidden = []
@@ -125,7 +130,8 @@ def _mask_literal_html(lines: list[str], tokens: list[Token], environment: dict[
 
     def mask(start: int, end: int) -> None:
         hidden.append(source[start:end])
-        masked[start:end] = ["\n" if char == "\n" else " " for char in source[start:end]]
+        # Inert text preserves paragraph context before a same-line HTML closer.
+        masked[start:end] = [char if char.isspace() else "\ufffd" for char in source[start:end]]
 
     def located_html(state: StateInline, silent: bool) -> bool:
         start = state.pos
@@ -138,6 +144,7 @@ def _mask_literal_html(lines: list[str], tokens: list[Token], environment: dict[
     parser = MarkdownIt("commonmark")
     parser.inline.ruler.at("html_inline", located_html)
     contexts = [(LiteralHTML(), 0, len(source))]
+    masked_comment = False
     for token in tokens:
         if token.type == "blockquote_open":
             contexts.append((LiteralHTML(), offsets[token.map[0]], offsets[token.map[1]]))
@@ -150,7 +157,7 @@ def _mask_literal_html(lines: list[str], tokens: list[Token], environment: dict[
 
         fragments = []
         if token.type == "html_block":
-            fragments.append((offsets[token.map[0]], offsets[token.map[1]], token.content))
+            fragments.append((offsets[token.map[0]], offsets[token.map[1]], token.content, 0))
         elif token.type == "inline":
             def position(offset: int) -> int:
                 line, column = _source_position(lines, token, offset)
@@ -160,15 +167,29 @@ def _mask_literal_html(lines: list[str], tokens: list[Token], environment: dict[
             for child in children:
                 if child.type == "html_inline":
                     start, end = child.meta["source_span"]
-                    fragments.append((position(start), position(end), child.content))
-        for start, end, content in fragments:
+                    fragments.append((position(start), position(end), child.content, start))
+        for start, end, content, content_offset in fragments:
             literal, cursor, scope_end = contexts[-1]
             if literal.tags:
                 mask(cursor, start)
             literal.feed(content)
+            if literal.tags and literal.cdata_elem is None and literal.rawdata.startswith("<!--"):
+                line, column = _source_position(lines, token, content_offset + len(content) - len(literal.rawdata))
+                opening = offsets[line] + column
+                closing = source.find("-->", opening + 4, scope_end)
+                # Remove the whole comment before reparsing, including any inert closers.
+                mask(opening, scope_end if closing < 0 else closing + 3)
+                if closing >= 0:
+                    line_start = source.rfind("\n", opening, closing) + 1
+                    masked[max(opening, line_start):closing] = [""] * (closing - max(opening, line_start))
+                    masked[closing:closing + 3] = "-->"
+                masked_comment = True
+                break
             contexts[-1] = (literal, end, scope_end)
+        if masked_comment:
+            break
     literal, cursor, end = contexts[0]
-    if literal.tags:
+    if literal.tags and not masked_comment:
         mask(cursor, end)
     # Keep quoted examples scoped when reparsing the blanked source.
     for index, line in enumerate(lines):

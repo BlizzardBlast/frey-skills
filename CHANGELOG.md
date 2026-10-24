@@ -12,6 +12,10 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Fixed
 
+- Literal HTML examples containing reopened comments preserve genuine following
+  links, anchors, catalogs, trust prose, and release sections. Shared HTML state
+  remains synchronous across Python patch versions; closing tails retain Markdown
+  context and duplicate-release checks while comment-contained closers stay inert.
 - Markdown visibility settles against visible reference definitions, rechecking
   retained comment tails and literal HTML after hidden definitions disappear.
   Hidden image definitions cannot expose example links, headings, catalogs,

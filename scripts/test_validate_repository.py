@@ -122,6 +122,13 @@ class RepositoryValidatorTests(unittest.TestCase):
         self.assertIn("Available Skills inventory", output)
         self.assertIn("Current layout inventory", output)
 
+    def test_visible_links_after_comments_in_literal_html_are_still_validated(self) -> None:
+        self.write_valid_skill()
+        self.write('sample-skill/references/example.md',
+                   'Example <code>\n\n<!-- first --> <!-- second\n\nHidden\n\n-->\n\n</code>\n\n'
+                   '[Missing](missing.md)\n')
+        self.assert_validation_fails_with('invalid local Markdown link')
+
     def test_current_repository_passes(self) -> None:
         result = run_validator(REPOSITORY_ROOT)
 

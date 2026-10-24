@@ -170,7 +170,11 @@ reference resolution within the current quote scope.
 Visibility is reparsed after each masking change. Hidden reference definitions
 cannot turn comment or literal-container markers into image-alt text; retained
 comment tails are checked again when later definitions disappear. Each iteration
-blanks source or removes a pending opener, preserving finite termination.
+masks source or removes a pending opener, preserving finite termination.
+Pending comments inside literal HTML are masked as source spans before reparsing;
+comment-contained container closers stay inert, and real closing tails retain
+their Markdown context. HTML tracking processes each fragment synchronously
+across Python patch versions. Raw HTML blocks retain native comment semantics.
 Literal file references still use the original source for hygiene checks,
 including link/image destinations and reference definitions hidden in HTML or
 reopened comments. Visible Markdown destinations retain their URL-aware checks;

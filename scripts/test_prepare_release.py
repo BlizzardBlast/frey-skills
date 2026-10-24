@@ -343,6 +343,20 @@ class PrepareReleaseTests(unittest.TestCase):
                     "- Real release.",
                 )
 
+    def test_comments_in_literal_html_preserve_release_sections_and_boundaries(self) -> None:
+        actual = '## [1.2.3] - 2026-10-24\n\n- Actual.\n\n'
+        for tag in ('code', 'pre', 'script', 'style', 'textarea', 'title'):
+            for prefix in ('', 'Example '):
+                with self.subTest(tag=tag, prefix=prefix):
+                    example = (f'{prefix}<{tag}>\n\n<!-- first --> <!-- second\n\nHidden\n\n-->'
+                               f'\n\n## [1.2.3] - 2026-10-23\n\n- Inert.\n\n</{tag}>\n\n')
+                    self.assertEqual(prepare_release.release_notes(example + actual, '1.2.3'), '- Actual.')
+                    current = actual + example
+                    self.assertEqual(prepare_release.release_notes(current + '# Appendix\n\n- Exclude.\n', '1.2.3'),
+                                     '- Actual.\n\n' + example.strip())
+                    with self.assertRaisesRegex(ValueError, 'exactly one'):
+                        prepare_release.release_notes(current + actual, '1.2.3')
+
     def test_release_dates_require_ascii_calendar_dates(self) -> None:
         for day in ("2026-99-99", "2026-02-29", "2026-04-31", "0000-01-01", "2026-1-01", "202\u0666-10-22"):
             with self.subTest(day=day):
@@ -468,6 +482,9 @@ class ReleaseIntegrationTests(unittest.TestCase):
         outputs = prepare_release.prepare_release("v1.2.3")
         before = {path.name: path.read_bytes() for path in outputs}
         changelogs = (
+            '## [1.2.3] - 2026-10-24\n\n- First.\n\nExample <code>\n\n'
+            '<!-- first --> <!-- second\n\nHidden\n\n-->\n\n</code>\n\n'
+            '## [1.2.3] - 2026-10-23\n\n- Duplicate.\n',
             'Example <code>\n\n[image]: real.png\n\n</code>\n\n'
             '<!-- closed --> <!-- first\n\nHidden\n\n--> ![<!--][image]\n\n'
             '## [1.2.3] - 2026-10-22\n\n- Example only.\n\n-->\n',
