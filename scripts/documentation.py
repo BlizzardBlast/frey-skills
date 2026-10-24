@@ -78,17 +78,40 @@ class LiteralHTML(HTMLParser):
                 break
 
 
-def _has_open_comment(text: str, environment: dict[str, Any]) -> bool:
+def _open_comment_offset(text: str, environment: dict[str, Any]) -> int | None:
     parser = MarkdownIt("commonmark")
-    # Inline parsing keeps escape tokens separate before the full parser joins text.
+
+    def located_html(state: StateInline, silent: bool) -> bool:
+        start = state.pos
+        if html_inline(state, silent):
+            return True
+        if silent or not state.src.startswith("<!--", start):
+            return False
+        token = state.push("comment_open", "", 0)
+        token.meta["source_start"] = start
+        state.pos += 4
+        return True
+
+    # Native rules consume code spans, escapes, attributes, and closed comments first.
+    parser.inline.ruler.at("html_inline", located_html)
     children = parser.inline.parse(text, parser, environment, [])
     literal = LiteralHTML()
     for child in children:
         if child.type == "html_inline":
             literal.feed(child.content)
-        elif child.type == "text" and not literal.tags and re.search(r"<!--(?:(?!-->).)*$", child.content, re.DOTALL):
-            return True
-    return False
+        elif child.type == "comment_open" and not literal.tags:
+            return child.meta["source_start"]
+    return None
+
+
+def _source_position(lines: list[str], token: Token, offset: int) -> tuple[int, int]:
+    prefix = token.content[:offset]
+    row = prefix.count("\n")
+    line = token.map[0] + row
+    content = token.content.split("\n")[row]
+    # CommonMark strips prefixes, indentation, and closing ATX hashes.
+    indent = lines[line].find(content.strip()) - (len(content) - len(content.lstrip()))
+    return line, indent + len(prefix.rsplit("\n", 1)[-1])
 
 
 def _mask_literal_html(lines: list[str], tokens: list[Token], environment: dict[str, Any]) -> tuple[str, str]:
@@ -129,17 +152,9 @@ def _mask_literal_html(lines: list[str], tokens: list[Token], environment: dict[
         if token.type == "html_block":
             fragments.append((offsets[token.map[0]], offsets[token.map[1]], token.content))
         elif token.type == "inline":
-            inline_lines = token.content.split("\n")
-
             def position(offset: int) -> int:
-                prefix = token.content[:offset]
-                row = prefix.count("\n")
-                column = len(prefix.rsplit("\n", 1)[-1])
-                line = token.map[0] + row
-                # CommonMark strips prefixes, indentation, and closing ATX hashes.
-                content = inline_lines[row]
-                indent = lines[line].find(content.strip()) - (len(content) - len(content.lstrip()))
-                return offsets[line] + indent + column
+                line, column = _source_position(lines, token, offset)
+                return offsets[line] + column
 
             children = parser.inline.parse(token.content, parser, environment, [])
             for child in children:
@@ -186,38 +201,42 @@ def parse_visible(text: str) -> tuple[list[Token], dict[str, Any]]:
 
             # CommonMark ends an HTML block at its first closer, even when a
             # second comment on that line still hides subsequent Markdown.
-            source = "".join(lines[token.map[0]:token.map[1]])
-            opening = re.search(r"<!--(?:(?!-->).)*$", source, re.DOTALL)
-            assert opening is not None
-            prefix = source[:opening.start()]
-            start = token.map[0] + prefix.count("\n")
-            column = len(prefix.rsplit("\n", 1)[-1])
-            end = scope_end
-            closing_tail = None
-            for closing_line in range(token.map[1], scope_end):
-                _, closed, tail = lines[closing_line].partition("-->")
-                if not closed:
-                    continue
-                # Retain quoted context and multiline code spans after closure.
-                quote_prefix = re.match(r"^(?:[ \t]*>[ \t]?)*", lines[closing_line])[0]
-                tail_source = quote_prefix + "-->" + tail + "".join(lines[closing_line + 1:scope_end])
-                tail_tokens, tail_environment = parse(tail_source)
-                paragraph = next((item.content for item in tail_tokens if item.type == "inline"), "")
-                if not _has_open_comment(paragraph, tail_environment):
-                    end = closing_line + 1
-                    closing_tail = quote_prefix + "-->" + tail
+            start, column = _source_position(lines, token, len(token.content) - len(literal.rawdata))
+            search_start = token.map[1]
+            while True:
+                end = scope_end
+                closing_tail = None
+                for closing_line in range(search_start, scope_end):
+                    _, closed, tail = lines[closing_line].partition("-->")
+                    if closed:
+                        end = closing_line + 1
+                        quote_prefix = re.match(r"^(?:[ \t]*>[ \t]?)*", lines[closing_line])[0]
+                        closing_tail = quote_prefix + "-->" + tail
+                        break
+                removed = lines[start:end]
+                removed[0] = removed[0][column:]
+                if closing_tail is not None:
+                    removed[-1] = removed[-1].partition("-->")[0]
+                hidden.append("".join(removed))
+                lines[start] = lines[start][:column] + "\n"
+                for line in range(start + 1, end):
+                    quote_prefix = re.match(r"^(?:[ \t]*>[ \t]?)*", lines[line])[0]
+                    lines[line] = quote_prefix + "\n"
+                if closing_tail is None:
                     break
-            removed = lines[start:end]
-            removed[0] = removed[0][column:]
-            if closing_tail is not None:
-                removed[-1] = removed[-1].partition("-->")[0]
-            hidden.append("".join(removed))
-            lines[start] = lines[start][:column] + "\n"
-            for line in range(start + 1, end):
-                quote_prefix = re.match(r"^(?:[ \t]*>[ \t]?)*", lines[line])[0]
-                lines[line] = quote_prefix + "\n"
-            if closing_tail is not None:
                 lines[end - 1] = closing_tail
+                # Mask the next pending comment separately, preserving visible tails.
+                current_tokens, current_environment = parse("".join(lines))
+                paragraph = next((item for item in current_tokens if item.type == "inline"
+                                  and item.map[0] <= end - 1 < item.map[1]), None)
+                if paragraph is None:
+                    break
+                content = "\n".join(paragraph.content.split("\n")[:scope_end - paragraph.map[0]])
+                opening = _open_comment_offset(content, current_environment)
+                if opening is None:
+                    break
+                start, column = _source_position(lines, paragraph, opening)
+                search_start = paragraph.map[1]
             # Reparse to resolve reference links against visible definitions only.
             # Each iteration removes a comment opener, so the loop is finite.
             break

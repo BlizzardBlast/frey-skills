@@ -418,7 +418,8 @@ class RepositoryValidatorTests(unittest.TestCase):
         for example in (f'Example <code>{hidden}</code> {visible}',
                         f'{visible} Example <code>{hidden}</code>',
                         f'Example <title>\n\n{hidden}\n\n</title>\n\n{visible}',
-                        f'<!-- closed --> <!--\n\n{hidden}\n\n--> {visible}'):
+                        f'<!-- closed --> <!--\n\n{hidden}\n\n--> {visible}',
+                        f'<!-- closed --> <!--\n\n{hidden}\n\n--> {visible} <!-- again\n\n{hidden}\n\n-->'):
             with self.subTest(example=example):
                 skill.write_text(original + '\n' + example + '\n\n[guide]: references/%67uide.md#guide\n', encoding='utf-8')
                 result = run_validator(self.repo)

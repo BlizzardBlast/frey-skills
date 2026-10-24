@@ -12,6 +12,9 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Fixed
 
+- Comment masking preserves real HTML around attribute markers and between
+  successive comments, retaining full-document reference context for closing
+  tails, quote scopes, literal guards, and original path-hygiene evidence.
 - Hidden HTML and reopened-comment link/image destinations and reference
   definitions retain missing-file and escaping-path checks as literal source.
 - Genuine headings retain inline HTML text in fragment slugs and duplicate

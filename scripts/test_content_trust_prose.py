@@ -107,6 +107,24 @@ class ContentTrustProseTests(unittest.TestCase):
             with self.subTest(tail=tail):
                 self.assert_contract(f'<!-- closed --> <!--\n\n{rules}\n\n--> {tail}\n\n{rules}\n')
 
+    def test_comment_attribute_markers_preserve_literal_trust_guards(self) -> None:
+        rules = '\n'.join(COMMON_PHRASES[1:])
+        prefix = '<!-- closed --> <a title="<!--" id="before"></a> <!-- next\n\nHidden.\n\n-->\n\n'
+        for tag in ('code', 'pre', 'script', 'style', 'textarea', 'title'):
+            with self.subTest(tag=tag):
+                content = f'## Content trust boundary\n\n{prefix}Example <{tag}>\n\n{rules}\n\n</{tag}>\n\n'
+                with self.assertRaises(AssertionError):
+                    self.assert_contract(content)
+                self.assert_contract(content + rules + '\n')
+
+    def test_visible_prose_between_comments_can_supply_an_obligation(self) -> None:
+        rules = '\n'.join(COMMON_PHRASES).replace('widen scope', '')
+        before = '<!-- closed --> <!-- first\n\nHidden.\n\n-->'
+        after = '<!-- next\n\nHidden.\n\n-->\n'
+        self.assert_contract(f'{rules}\n\n{before} widen scope {after}')
+        with self.assertRaises(AssertionError):
+            self.assert_contract(f'{rules}\n\n{before} {after.replace("Hidden.", "widen scope")}')
+
     def test_comment_line_separators_preserve_real_trust_sections(self) -> None:
         rules = "\n".join(COMMON_PHRASES)
         for separator in ('\n', '\r\n', '\r', '\x85', '\f', '\v', '\x1c', '\x1d', '\x1e', '\u2028', '\u2029'):

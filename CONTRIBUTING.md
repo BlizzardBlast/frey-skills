@@ -163,6 +163,10 @@ Hidden reference definitions cannot resolve visible links. Genuine Markdown afte
 closure retains its line positions, code spans, and escaped markers; quoted
 examples remain inside their quote. Comment masking uses the parser's line-splitting
 rules, including Unicode separators. Explicit HTML anchors remain available.
+Pending comments use parser-derived source positions, so markers inside HTML
+attributes stay literal. Each successive comment is masked separately, retaining
+visible HTML and prose between spans. Closing-tail analysis keeps full-document
+reference resolution within the current quote scope.
 Literal file references still use the original source for hygiene checks,
 including link/image destinations and reference definitions hidden in HTML or
 reopened comments. Visible Markdown destinations retain their URL-aware checks;

@@ -199,6 +199,65 @@ class DocumentationTests(unittest.TestCase):
                            f'--> {tail}\n\n# After\n')
                 self.assertEqual(anchors(content), {"before", "after"})
 
+    def test_attribute_markers_do_not_move_real_comment_openers(self) -> None:
+        elements = (
+            '<a id="before" title="<!--"></a>', '<a title="<!--" id="before"></a>',
+            "<a id='before' title='<!--'></a>", "<a title='<!--' id='before'></a>",
+            '<div id="before" title="<!--">Example</div>',
+            '<a title="first\n<!--" id="before"></a>',
+        )
+        for element in elements:
+            for quote in ('', '> ', '> > '):
+                with self.subTest(element=element, quote=quote):
+                    example = (f'<!-- closed --> {element} <!-- actual\n\n# Hidden\n\n'
+                               '[Hidden](missing.md)\n\n[unused]: missing.md\n\n-->')
+                    content = '\n'.join(quote + line for line in example.splitlines())
+                    content += '\n\n# After\n\n[Before](#before) [After](#after)\n'
+                    self.assertEqual(anchors(content), {'before', 'after'})
+                    self.assertEqual(self.errors(self.write('source.md', content)), [])
+
+    def test_visible_fragments_between_successive_comments_are_preserved(self) -> None:
+        for quote in ('', '> ', '> > '):
+            for reopen in ('<!-- next', '<!-- complete --> <!-- next'):
+                with self.subTest(quote=quote, reopen=reopen):
+                    content = '<!-- closed --> <!-- first\n\n# Hidden\n\n[hidden]: missing.md\n\n'
+                    for name in ('middle', 'last'):
+                        content += (f'<!-- finish --> <a id="{name}" title="<!--"></a> '
+                                    f'[Visible](#{name}) {reopen}\n\n[Hidden](missing.md)\n\n')
+                    content += '-->'
+                    content = '\n'.join(quote + line for line in content.splitlines())
+                    content += '\n\n# After\n\n[Middle](#middle) [Last](#last)\n'
+                    self.assertEqual(anchors(content), {'middle', 'last', 'after'})
+                    self.assertEqual(self.errors(self.write('source.md', content)), [])
+                    self.assertIn('missing.md', bare_reference_text(content))
+
+    def test_catalog_links_between_comments_stay_visible(self) -> None:
+        choose = ('<!-- closed --> <!-- first\n\n[Hidden](missing.md)\n\n'
+                  '--> [Sample](sample/SKILL.md) <!-- next\n\n[Hidden](missing.md)\n\n-->')
+        paths = self.write_inventories(choose=choose)
+        self.assertEqual(self.errors(*paths, names=('sample',)), [])
+
+    def test_comment_tail_analysis_uses_full_document_reference_context(self) -> None:
+        self.write('real.png', 'fixture\n')
+        body = ('<!-- closed --> <!-- first\n\n[image]: missing.png\n\n'
+                '--> ![<!--][image]\n\n# After\n\n[After](#after)\n')
+        definition = '[image]: real.png\n\n'
+        for content in (definition + body, body + '\n' + definition):
+            with self.subTest(content=content):
+                self.assertEqual(anchors(content), {'after'})
+                self.assertEqual(self.errors(self.write('source.md', content)), [])
+
+    def test_inert_markers_before_real_reopeners_keep_visible_content(self) -> None:
+        self.write('real.png', 'fixture\n')
+        for marker in ('`<!--`', r'\<!--', '&lt;!--', '![<!--](real.png)',
+                       '<code><!-- literal</code>', '<title><!-- literal</title>', '`<!--\ncontinued`'):
+            with self.subTest(marker=marker):
+                content = ('<!-- closed --> <!-- first\n\nHidden\n\n'
+                           f'--> {marker} <a id="middle"></a> <!-- actual\n\n'
+                           '[Hidden](missing.md)\n\n-->\n\n# After\n')
+                self.assertEqual(anchors(content), {'middle', 'after'})
+                self.assertEqual(self.errors(self.write('source.md', content)), [])
+
     def test_hidden_reference_definitions_cannot_override_visible_links(self) -> None:
         source = self.write("source.md", '<!-- closed --> <!--\n\n[guide]: missing.md\n\n-->\n\n'
                             '[Guide][guide]\n\n[guide]: real.md#real\n')

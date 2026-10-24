@@ -293,6 +293,19 @@ class PrepareReleaseTests(unittest.TestCase):
                     prepare_release.release_notes(example, "1.2.3")
                 self.assertEqual(prepare_release.release_notes(example + actual, "1.2.3"), "- Actual release.")
 
+    def test_comment_attribute_markers_preserve_literal_release_guards(self) -> None:
+        prefix = '<!-- closed --> <a title="<!--" id="before"></a> <!-- next\n\nHidden.\n\n-->\n\n'
+        actual = '## [1.2.3] - 2026-10-22\n\n- Actual.\n\n'
+        for tag in ('code', 'pre', 'script', 'style', 'textarea', 'title'):
+            with self.subTest(tag=tag):
+                example = f'Example <{tag}>\n\n## [1.2.3] - 2026-10-21\n\n- Inert.\n\n</{tag}>\n\n'
+                with self.assertRaisesRegex(ValueError, 'non-empty dated section'):
+                    prepare_release.release_notes(prefix + example, '1.2.3')
+                self.assertEqual(prepare_release.release_notes(prefix + example + actual, '1.2.3'), '- Actual.')
+                body = '- Actual.\n\n' + prefix + example
+                changelog = actual + prefix + example + '## [1.2.2] - 2026-10-20\n\n- Older.\n'
+                self.assertEqual(prepare_release.release_notes(changelog, '1.2.3'), body.strip())
+
     def test_real_html_blocks_still_hide_example_headings(self) -> None:
         for opening in (
             '<div>Block content follows.', '<section class="release">',
@@ -444,6 +457,8 @@ class ReleaseIntegrationTests(unittest.TestCase):
         outputs = prepare_release.prepare_release("v1.2.3")
         before = {path.name: path.read_bytes() for path in outputs}
         changelogs = (
+            '<!-- closed --> <a title="<!--"></a> <!-- next\n\nHidden\n\n-->\n\n'
+            '<pre>\n\n## [1.2.3] - 2026-10-22\n\n- Example only.\n\n</pre>\n',
             "<title>\n\n## [1.2.3] - 2026-10-22\n\n- Example only.\n\n</title>\n",
             "Example: <textarea>\n\n## [1.2.3] - 2026-10-22\n\n- Example only.\n\n</textarea>\n",
             "[details]: https://example.invalid\n<custom-panel>\n"
