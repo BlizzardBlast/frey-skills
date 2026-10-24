@@ -181,8 +181,19 @@ def parse_visible(text: str) -> tuple[list[Token], dict[str, Any]]:
     """Exclude literal HTML and reopened comments, retaining source line maps."""
     lines = [line.replace("\0", "\ufffd") + "\n" for line in text.splitlines()]
     hidden = []
+    heading_source = {}
+    comment_tails: set[int] = set()
     while True:
-        tokens, environment = parse("".join(lines))
+        source = "".join(lines)
+        tokens, environment = parse(source)
+        for index, token in enumerate(tokens):
+            if token.type == "heading_open":
+                heading_source.setdefault(token.map[0], tokens[index + 1].content)
+        visible, literal_source = _mask_literal_html(lines, tokens, environment)
+        if visible != source:
+            hidden.append(literal_source)
+            lines = visible.splitlines(keepends=True)
+            continue
         contexts = [(LiteralHTML(), len(lines))]
         for token in tokens:
             if token.type == "blockquote_open":
@@ -190,65 +201,53 @@ def parse_visible(text: str) -> tuple[list[Token], dict[str, Any]]:
             elif token.type == "blockquote_close":
                 contexts.pop()
             literal, scope_end = contexts[-1]
-            if token.type != "html_block":
+            opening = None
+            if token.type == "html_block":
+                literal.feed(token.content)
+                if not literal.tags and literal.rawdata.startswith("<!--"):
+                    opening = len(token.content) - len(literal.rawdata)
+            else:
+                if token.type == "inline" and not literal.tags and any(
+                    token.map[0] <= line < token.map[1] for line in comment_tails
+                ):
+                    content = "\n".join(token.content.split("\n")[:scope_end - token.map[0]])
+                    opening = _open_comment_offset(content, environment)
                 for child in token.children or []:
                     if child.type == "html_inline":
                         literal.feed(child.content)
-                continue
-            literal.feed(token.content)
-            if literal.tags or not literal.rawdata.startswith("<!--"):
+            if opening is None:
                 continue
 
             # CommonMark ends an HTML block at its first closer, even when a
             # second comment on that line still hides subsequent Markdown.
-            start, column = _source_position(lines, token, len(token.content) - len(literal.rawdata))
-            search_start = token.map[1]
-            while True:
-                end = scope_end
-                closing_tail = None
-                for closing_line in range(search_start, scope_end):
-                    _, closed, tail = lines[closing_line].partition("-->")
-                    if closed:
-                        end = closing_line + 1
-                        quote_prefix = re.match(r"^(?:[ \t]*>[ \t]?)*", lines[closing_line])[0]
-                        closing_tail = quote_prefix + "-->" + tail
-                        break
-                removed = lines[start:end]
-                removed[0] = removed[0][column:]
-                if closing_tail is not None:
-                    removed[-1] = removed[-1].partition("-->")[0]
-                hidden.append("".join(removed))
-                lines[start] = lines[start][:column] + "\n"
-                for line in range(start + 1, end):
-                    quote_prefix = re.match(r"^(?:[ \t]*>[ \t]?)*", lines[line])[0]
-                    lines[line] = quote_prefix + "\n"
-                if closing_tail is None:
+            start, column = _source_position(lines, token, opening)
+            end = scope_end
+            closing_tail = None
+            for closing_line in range(token.map[1], scope_end):
+                _, closed, tail = lines[closing_line].partition("-->")
+                if closed:
+                    end = closing_line + 1
+                    quote_prefix = re.match(r"^(?:[ \t]*>[ \t]?)*", lines[closing_line])[0]
+                    closing_tail = quote_prefix + "-->" + tail
                     break
+            removed = lines[start:end]
+            removed[0] = removed[0][column:]
+            if closing_tail is not None:
+                removed[-1] = removed[-1].partition("-->")[0]
+            hidden.append("".join(removed))
+            lines[start] = lines[start][:column] + "\n"
+            for line in range(start + 1, end):
+                quote_prefix = re.match(r"^(?:[ \t]*>[ \t]?)*", lines[line])[0]
+                lines[line] = quote_prefix + "\n"
+            if closing_tail is not None:
                 lines[end - 1] = closing_tail
-                # Mask the next pending comment separately, preserving visible tails.
-                current_tokens, current_environment = parse("".join(lines))
-                paragraph = next((item for item in current_tokens if item.type == "inline"
-                                  and item.map[0] <= end - 1 < item.map[1]), None)
-                if paragraph is None:
-                    break
-                content = "\n".join(paragraph.content.split("\n")[:scope_end - paragraph.map[0]])
-                opening = _open_comment_offset(content, current_environment)
-                if opening is None:
-                    break
-                start, column = _source_position(lines, paragraph, opening)
-                search_start = paragraph.map[1]
-            # Reparse to resolve reference links against visible definitions only.
-            # Each iteration removes a comment opener, so the loop is finite.
+                comment_tails.add(end - 1)
+            # Removed definitions can expose HTML in image labels, including retained tails.
             break
         else:
-            visible, literal_source = _mask_literal_html(lines, tokens, environment)
-            visible_tokens, visible_environment = parse(visible)
-            visible_environment["hidden_source"] = "\n".join((*hidden, literal_source))
-            visible_environment["heading_source"] = {
-                token.map[0]: tokens[index + 1].content for index, token in enumerate(tokens)
-                if token.type == "heading_open"
-            }
-            return visible_tokens, visible_environment
+            environment["hidden_source"] = "\n".join(hidden)
+            environment["heading_source"] = heading_source
+            return tokens, environment
 
 
 class HTMLAnchors(LiteralHTML):

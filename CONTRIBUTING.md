@@ -167,6 +167,10 @@ Pending comments use parser-derived source positions, so markers inside HTML
 attributes stay literal. Each successive comment is masked separately, retaining
 visible HTML and prose between spans. Closing-tail analysis keeps full-document
 reference resolution within the current quote scope.
+Visibility is reparsed after each masking change. Hidden reference definitions
+cannot turn comment or literal-container markers into image-alt text; retained
+comment tails are checked again when later definitions disappear. Each iteration
+blanks source or removes a pending opener, preserving finite termination.
 Literal file references still use the original source for hygiene checks,
 including link/image destinations and reference definitions hidden in HTML or
 reopened comments. Visible Markdown destinations retain their URL-aware checks;

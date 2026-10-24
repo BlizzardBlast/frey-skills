@@ -258,6 +258,62 @@ class DocumentationTests(unittest.TestCase):
                 self.assertEqual(anchors(content), {'middle', 'after'})
                 self.assertEqual(self.errors(self.write('source.md', content)), [])
 
+    def test_hidden_definitions_cannot_change_comment_tail_visibility(self) -> None:
+        body = ('<!-- closed --> <!-- first\n\nHidden\n\n--> ![<!--][image]\n\n'
+                '# Hidden\n\n[Hidden](missing.md)\n\n-->\n\n# After\n')
+        self.write('real.png', 'fixture\n')
+        definitions = [f'Example <{tag}>\n\n[image]: real.png\n\n</{tag}>\n\n'
+                       for tag in ('code', 'pre', 'script', 'style', 'textarea', 'title')]
+        definitions.append('<!-- closed --> <!-- next\n\n[image]: real.png\n\n-->\n\n')
+        for definition in definitions:
+            for content in (definition + body, body + '\n' + definition):
+                for quote in ('', '> ', '> > '):
+                    with self.subTest(definition=definition, content=content, quote=quote):
+                        source = '\n'.join(quote + line for line in content.splitlines()) + '\n'
+                        self.assertEqual(anchors(source), {'after'})
+                        self.assertEqual(self.errors(self.write('source.md', source)), [])
+        self.assertEqual(anchors('[image]: real.png\n\n' + body), {'hidden', 'after'})
+
+    def test_hidden_definitions_cannot_change_literal_container_visibility(self) -> None:
+        definition = 'Example <code>\n\n[image]: real.png\n\n</code>\n\n'
+        self.write('real.png', 'fixture\n')
+        for tag in ('code', 'pre', 'script', 'style', 'textarea', 'title'):
+            body = (f'![<{tag}>][image]\n\n# Hidden\n\n[Hidden](references/hidden.md)\n\n'
+                    f'</{tag}>\n\n# After\n')
+            for content in (definition + body, body + '\n' + definition):
+                with self.subTest(tag=tag, content=content):
+                    self.assertEqual(anchors(content), {'after'})
+                    self.assertEqual(self.errors(self.write('source.md', content)), [])
+                    self.assertIn('references/hidden.md', bare_reference_text(content))
+            self.assertEqual([target for target, _ in links('[image]: real.png\n\n' + body)],
+                             ['real.png', 'references/hidden.md', 'real.png'])
+
+    def test_hidden_reference_images_cannot_supply_catalog_entries(self) -> None:
+        definition = 'Example <code>\n\n[image]: real.png\n\n</code>\n\n'
+        entries = {'choose': '[Sample](sample/SKILL.md)', 'available': '### sample',
+                   'layout': '```text\nsample/\n```', 'sources': '- `sample/`'}
+        for key, entry in entries.items():
+            for opening, closing in (('<!-- closed --> <!-- first\n\nHidden\n\n--> ![<!--][image]', '-->'),
+                                     ('![<code>][image]', '</code>')):
+                hidden = definition + f'{opening}\n\n{entry}\n\n{closing}\n\n'
+                with self.subTest(key=key, opening=opening):
+                    paths = self.write_inventories(**{key: hidden})
+                    self.assertTrue(any("missing=['sample']" in error
+                                        for error in self.errors(*paths, names=('sample',))))
+                    paths = self.write_inventories(**{key: hidden + entry})
+                    self.assertEqual(self.errors(*paths, names=('sample',)), [])
+
+    def test_chained_hidden_definitions_preserve_visible_images_and_path_evidence(self) -> None:
+        content = 'Example <code>\n\n[image0]: real.png\n\n</code>\n\n'
+        for index in range(3):
+            content += f'![<code>][image{index}]\n\n[image{index + 1}]: real.png\n\n</code>\n\n'
+        content += ('<!-- closed --> <!-- first\n\nHidden\n\n--> ![<!--][image3]\n\n'
+                    '# Hidden\n\n[Hidden](references/hidden.md)\n\n-->\n\n# After\n\n'
+                    '![<!--][visible]\n\n[visible]: real.png\n')
+        self.assertEqual(anchors(content), {'after'})
+        self.assertEqual([target for target, _ in links(content)], ['real.png', 'real.png'])
+        self.assertIn('references/hidden.md', bare_reference_text(content))
+
     def test_hidden_reference_definitions_cannot_override_visible_links(self) -> None:
         source = self.write("source.md", '<!-- closed --> <!--\n\n[guide]: missing.md\n\n-->\n\n'
                             '[Guide][guide]\n\n[guide]: real.md#real\n')

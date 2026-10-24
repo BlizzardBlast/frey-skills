@@ -12,6 +12,10 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ### Fixed
 
+- Markdown visibility settles against visible reference definitions, rechecking
+  retained comment tails and literal HTML after hidden definitions disappear.
+  Hidden image definitions cannot expose example links, headings, catalogs,
+  trust obligations, or release sections; original path evidence stays intact.
 - Comment masking preserves real HTML around attribute markers and between
   successive comments, retaining full-document reference context for closing
   tails, quote scopes, literal guards, and original path-hygiene evidence.

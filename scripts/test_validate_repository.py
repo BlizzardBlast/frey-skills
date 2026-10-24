@@ -399,6 +399,8 @@ class RepositoryValidatorTests(unittest.TestCase):
                     f'Example <{tag}>\n\n[guide]: {path}\n\n</{tag}>',
                 ))
             examples.extend((
+                'Example <code>\n\n[image]: real.png\n\n</code>\n\n'
+                f'<!-- closed --> <!-- first\n\nHidden\n\n--> ![<!--][image]\n\n[Example]({path})\n\n-->\n',
                 f'<!-- closed --> <!--\n\n[guide]: {path}\n\n--> ',
                 f'> <!-- closed --> <!--\n>\n> [guide]: {path}',
             ))
@@ -416,6 +418,8 @@ class RepositoryValidatorTests(unittest.TestCase):
         hidden = '[Example](references/literal%67#part.md)'
         visible = '[Visible](references/%67uide.md#guide) [Ref][guide]'
         for example in (f'Example <code>{hidden}</code> {visible}',
+                        'Example <code>\n\n[image]: real.png\n\n</code>\n\n'
+                        f'<!-- closed --> <!-- first\n\nHidden\n\n--> ![<!--][image]\n\n{hidden}\n\n-->\n\n{visible}',
                         f'{visible} Example <code>{hidden}</code>',
                         f'Example <title>\n\n{hidden}\n\n</title>\n\n{visible}',
                         f'<!-- closed --> <!--\n\n{hidden}\n\n--> {visible}',

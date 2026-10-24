@@ -316,6 +316,17 @@ class PrepareReleaseTests(unittest.TestCase):
             with self.subTest(opening=opening), self.assertRaisesRegex(ValueError, "non-empty dated section"):
                 prepare_release.release_notes(content, "1.2.3")
 
+    def test_hidden_reference_images_cannot_supply_release_sections(self) -> None:
+        actual = '## [1.2.3] - 2026-10-22\n\n- Actual.\n'
+        for tag in ('code', 'pre', 'script', 'style', 'textarea', 'title'):
+            definition = f'Example <{tag}>\n\n[image]: real.png\n\n</{tag}>\n\n'
+            example = '<!-- closed --> <!-- first\n\nHidden\n\n--> ![<!--][image]\n\n' + actual + '\n-->\n\n'
+            for content in (definition + example, example + definition):
+                with self.subTest(tag=tag, content=content):
+                    with self.assertRaisesRegex(ValueError, 'non-empty dated section'):
+                        prepare_release.release_notes(content, '1.2.3')
+                    self.assertEqual(prepare_release.release_notes(content + actual, '1.2.3'), '- Actual.')
+
     def test_nonparagraph_blocks_before_html_cannot_supply_release_headings(self) -> None:
         for prefix in (
             "[details]: https://example.invalid\n",
@@ -457,6 +468,9 @@ class ReleaseIntegrationTests(unittest.TestCase):
         outputs = prepare_release.prepare_release("v1.2.3")
         before = {path.name: path.read_bytes() for path in outputs}
         changelogs = (
+            'Example <code>\n\n[image]: real.png\n\n</code>\n\n'
+            '<!-- closed --> <!-- first\n\nHidden\n\n--> ![<!--][image]\n\n'
+            '## [1.2.3] - 2026-10-22\n\n- Example only.\n\n-->\n',
             '<!-- closed --> <a title="<!--"></a> <!-- next\n\nHidden\n\n-->\n\n'
             '<pre>\n\n## [1.2.3] - 2026-10-22\n\n- Example only.\n\n</pre>\n',
             "<title>\n\n## [1.2.3] - 2026-10-22\n\n- Example only.\n\n</title>\n",
