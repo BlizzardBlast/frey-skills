@@ -10,6 +10,116 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 - Recognize CI-time, tool-call, and repeated-read savings in the comparator's summary; reject counters above the documented numeric limit with a controlled validation error.
 - Reject excessively nested aggregate JSON with a controlled validation error instead of a traceback.
 
+### Fixed
+
+- Literal HTML examples containing reopened comments preserve genuine following
+  links, anchors, catalogs, trust prose, and release sections. Shared HTML state
+  remains synchronous across Python patch versions; closing tails retain Markdown
+  context and duplicate-release checks while comment-contained closers stay inert.
+- Markdown visibility settles against visible reference definitions, rechecking
+  retained comment tails and literal HTML after hidden definitions disappear.
+  Hidden image definitions cannot expose example links, headings, catalogs,
+  trust obligations, or release sections; original path evidence stays intact.
+- Comment masking preserves real HTML around attribute markers and between
+  successive comments, retaining full-document reference context for closing
+  tails, quote scopes, literal guards, and original path-hygiene evidence.
+- Hidden HTML and reopened-comment link/image destinations and reference
+  definitions retain missing-file and escaping-path checks as literal source.
+- Genuine headings retain inline HTML text in fragment slugs and duplicate
+  suffixes, resolving heading labels against visible reference definitions.
+- Quoted raw-text HTML no longer suppresses heading or explicit HTML anchors
+  after the quote, including nested quoted examples.
+- Shared Markdown visibility excludes literal HTML examples from all four skill
+  inventories, links, images, and reference definitions before resolving visible
+  links, while retaining explicit HTML anchors and original path-hygiene checks.
+- Comment masking preserves parser line maps with Unicode line separators,
+  retaining release-section boundaries, duplicate detection, and original notes.
+- Trust prose, anchors, links, catalog inventories, and release headings share
+  reopened-comment visibility checks. Hidden content and reference definitions
+  cannot satisfy visible documentation requirements; real content after closure
+  and literal source-reference checks remain intact.
+- Bundle validation accepts safe parent-directory segments through its CLI and
+  API while rejecting linked components before collapsing `..` or reading files.
+- Release-note parsing preserves Markdown code and escaped tags after reopened
+  comments close, including literal comment markers, while retaining real section
+  boundaries and duplicate-version checks. Active reopened comments remain excluded.
+- Trust-prose validation and release preparation share literal HTML tracking,
+  excluding title contents and inline-opened examples while restoring genuine
+  sections after closing tags. Invalid example-only notes preserve prior artifacts.
+- Release preparation reuses the pinned CommonMark parser for section boundaries,
+  excluding HTML examples after reference definitions and empty lists. Its tests
+  now run in the repository gate; standalone plugin checks retain their
+  standard-library-only dependencies.
+- Markdown anchor validation excludes textarea/title contents on older Python
+  patch releases while retaining anchors on the containers and after their closers.
+- Release-note parsing distinguishes inline HTML from block HTML, preserving
+  following release boundaries and duplicate-version checks.
+- Trust-prose validation ignores unmatched literal-container closing tags and
+  restores prose only after closing a matching container.
+- POSIX subprocess cleanup reaps exited leaders before signalling their groups,
+  preserving output-limit errors on macOS without ignoring permission failures.
+- Release-note parsing keeps literal and escaped HTML-comment markers from hiding
+  following sections or duplicate versions.
+- Trust-prose validation excludes textarea contents across block and inline HTML
+  tokens on supported Python patch releases, including containers opened before
+  the trust heading.
+- Review-context collection includes changed submodule pointers and dirty
+  submodule worktrees despite Git or `.gitmodules` ignore settings in every mode.
+- Release-note extraction retains section boundaries and duplicate-version checks
+  after URI autolinks.
+- Markdown fragment validation accepts HTML `name` targets only on anchor elements,
+  while retaining `id` targets on all elements.
+- Release preparation reads real changelog sections, rejects duplicate versions
+  and invalid calendar dates, and preserves fenced examples in release notes.
+- Skill Markdown links accept anchors, encoded paths, and reference syntax through
+  the shared link validator while literal file references retain their checks.
+- Semantic-version checks now require ASCII digits, rejecting Unicode decimal
+  digits before release packaging.
+- JSON scorecards without their eval definition now fail validation; skills with
+  no JSON scorecards, including README-only directories, remain valid.
+- Documentation inventories use parsed Markdown entries, accepting reference
+  links and rendered headings while rejecting comment/code-only catalogs and
+  duplicate entries. The intentional directory-tree code block remains supported.
+- Repository validation rejects JSON `null` eval definitions instead of
+  silently bypassing eval and dependent scorecard checks.
+- Repository validation reports non-string frontmatter keys and malformed
+  scorecard enum values as diagnostics without aborting later checks.
+- Release downloads require HTTPS before opening the initial URL or following
+  any redirect, including chains that return to HTTPS after an HTTP hop.
+- Bundle parity reads current bytes on every validation, including repeated
+  release preparation after changes that preserve file size and modification time.
+- Release preparation rejects linked changelog and manifest inputs, including
+  linked manifest parents, before reading release metadata or touching outputs.
+- Bundle validation now shares the builder's symlink/junction guard and rejects
+  linked roots, ancestors, and descendants in bundles and canonical skill trees
+  before parity reads.
+- Trust-prose checks track literal HTML containers across block and inline
+  tokens in one full-document pass, including containers opened before the trust
+  heading, excluding code examples while restoring prose after closing tags.
+- Codex metadata RPC output is rechecked after reads and owned-process cleanup,
+  so a final response cannot bypass the stdout/stderr size limits.
+- Markdown validation now uses a pinned CommonMark parser for balanced link
+  destinations, escaped/indented examples, rendered heading labels, comments,
+  and closed mapping frontmatter. The repository gate also checks required
+  trust rules in actual section prose while plugin contracts stay dependency-free.
+- Smoke commands bound stdout/stderr output and reuse the Codex process-tree
+  supervisor for cleanup after output failure, timeout, or an early parent exit.
+- CI actions are pinned to verified official-repository commit SHAs, and both
+  validation dependency sets include exact transitive runtime pins.
+
+- Bundle and release artifact publication now retain prior outputs for rollback,
+  serialize cooperating writers, and preserve recovery backups after an
+  incomplete rollback instead of losing bundles or mixing ZIP/checksum versions.
+- Installation smoke child processes receive an explicit environment allowlist
+  and disposable application-data paths, excluding inherited credentials and
+  interpreter, proxy, and Git command injection settings.
+- Codex compatibility CI now also builds and tests the checkout candidate using
+  the existing isolated discovery, upgrade, rollback, ownership, and byte checks.
+- Release ZIP entries use platform-independent relative POSIX ordering, and
+  text checkouts use LF; raw reproducibility still depends on Python/zlib versions.
+- Repository validation now checks local Markdown targets/anchors and all skill
+  catalog inventories. Corrected the roadmap's current published-skill wording.
+
 ### Changed
 
 - Code review maps changed behavior to invariants, consumers, and boundary-case

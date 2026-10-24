@@ -19,6 +19,11 @@ from scripts import check
 
 
 class CheckTests(unittest.TestCase):
+    def test_release_preparation_stays_in_the_dependency_equipped_repository_gate(self) -> None:
+        module = "scripts.test_prepare_release"
+        self.assertEqual(sum(command.count(module) for command in check.group_commands("repository")), 1)
+        self.assertNotIn(module, check.CONTRACT_TESTS)
+
     def test_missing_dependencies_stop_before_any_command(self) -> None:
         with mock.patch.object(check.importlib.util, "find_spec", return_value=None), mock.patch.object(
             check.shutil, "which", return_value="git"
@@ -50,6 +55,7 @@ class CheckTests(unittest.TestCase):
         script = (
             "import importlib.util\nimport unittest\nfrom scripts import check\n"
             "assert importlib.util.find_spec('yaml') is None, 'PyYAML must be unavailable'\n"
+            "assert importlib.util.find_spec('markdown_it') is None, 'Markdown parser must be unavailable'\n"
             "loader = unittest.TestLoader()\n"
             "loader.loadTestsFromNames(check.CONTRACT_TESTS)\n"
             "if loader.errors:\n"
@@ -84,6 +90,15 @@ class CheckTests(unittest.TestCase):
         run.assert_not_called()
         self.assertIn("ps must be available on PATH", errors.getvalue())
         self.assertNotIn("checks passed", output.getvalue())
+
+    def test_missing_markdown_parser_stops_only_repository_checks(self) -> None:
+        with mock.patch.object(check.importlib.util, "find_spec", side_effect=lambda name: None if name == "markdown_it" else object()), mock.patch.object(
+            check.shutil, "which", return_value="fixture-command"
+        ):
+            errors = check.preflight(("repository",))
+            self.assertEqual(len(errors), 1)
+            self.assertIn("Missing markdown-it-py", errors[0])
+            self.assertEqual(check.preflight(("plugin",)), [])
 
     def test_ps_requirement_is_scoped_to_posix_repository_checks(self) -> None:
         for platform in ("posix", "nt"):

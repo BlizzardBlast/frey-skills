@@ -247,6 +247,84 @@ class CollectReviewContextTests(unittest.TestCase):
         self.assertEqual(files["added.txt"]["status"], "A")
         self.assertEqual(files["added.txt"]["added_lines"], 1)
 
+    def submodule_fixture(self, ignore_source: str) -> tuple[Path, Path, str]:
+        repo = self.repo / ignore_source
+        vendor = repo / "vendor"
+        vendor.mkdir(parents=True)
+        for root in (repo, vendor):
+            run(["git", "init", "-q"], root)
+            run(["git", "config", "user.email", "review@example.com"], root)
+            run(["git", "config", "user.name", "Review Tests"], root)
+        source = vendor / "source.txt"
+        source.write_bytes(b"first\n")
+        run(["git", "add", "."], vendor)
+        run(["git", "commit", "-qm", "first"], vendor)
+        first = run(["git", "rev-parse", "HEAD"], vendor).stdout.strip()
+        source.write_bytes(b"second\n")
+        run(["git", "commit", "-qam", "second"], vendor)
+        second = run(["git", "rev-parse", "HEAD"], vendor).stdout.strip()
+        run(["git", "checkout", "-q", first], vendor)
+        modules = '[submodule "vendor"]\n\tpath = vendor\n\turl = ../fixture\n'
+        if ignore_source == "gitmodules":
+            modules += "\tignore = all\n"
+        else:
+            key = "diff.ignoreSubmodules" if ignore_source == "diff" else "submodule.vendor.ignore"
+            run(["git", "config", key, "all"], repo)
+        (repo / ".gitmodules").write_text(modules, encoding="utf-8")
+        run(["git", "add", ".gitmodules"], repo)
+        run(["git", "update-index", "--add", "--cacheinfo", f"160000,{first},vendor"], repo)
+        return repo, vendor, second
+
+    def test_submodule_pointer_changes_override_ignore_settings_in_every_mode(self) -> None:
+        for ignore_source in ("diff", "submodule", "gitmodules"):
+            repo, vendor, second = self.submodule_fixture(ignore_source)
+
+            def assert_scope(args: tuple[str, ...], mode: str, status: str) -> None:
+                with self.subTest(ignore_source=ignore_source, mode=mode, status=status):
+                    data = json.loads(run([sys.executable, str(SCRIPT), *args], repo).stdout)
+                    files = self.files_by_path(data)
+                    expected = {"vendor", ".gitmodules"} if status == "A" else {"vendor"}
+                    self.assertEqual(data["mode"], mode)
+                    self.assertEqual(set(files), expected)
+                    self.assertEqual(files["vendor"]["status"], status)
+                    self.assertEqual(files["vendor"]["added_lines"], 1)
+                    self.assertEqual(files["vendor"]["deleted_lines"], 0 if status == "A" else 1)
+                    self.assertTrue(files["vendor"]["stats_available"])
+                    self.assertFalse(files["vendor"]["binary"])
+                    self.assertEqual(data["overall_totals"]["files"], len(expected))
+                    self.assertEqual(data["overall_totals"]["unknown_stats_files"], 0)
+                    self.assertEqual(data["included_totals"], data["overall_totals"])
+                    self.assertFalse(data["truncated"])
+                    self.assertEqual(data["omitted_files"], 0)
+
+            assert_scope((), "working-tree", "A")
+            assert_scope(("--staged",), "staged", "A")
+            run(["git", "commit", "-qm", "add vendor"], repo)
+            run(["git", "checkout", "-q", second], vendor)
+            assert_scope((), "working-tree", "M")
+            run(["git", "update-index", "--cacheinfo", f"160000,{second},vendor"], repo)
+            assert_scope(("--staged",), "staged", "M")
+            run(["git", "commit", "-qm", "update vendor"], repo)
+            assert_scope(("--base", "HEAD^", "--head", "HEAD"), "range", "M")
+
+    def test_dirty_submodule_worktrees_override_ignore_settings(self) -> None:
+        for ignore_source in ("diff", "submodule", "gitmodules"):
+            repo, vendor, _ = self.submodule_fixture(ignore_source)
+            run(["git", "commit", "-qm", "add vendor"], repo)
+            for dirty_state in ("tracked", "untracked"):
+                with self.subTest(ignore_source=ignore_source, dirty_state=dirty_state):
+                    source = vendor / "source.txt"
+                    source.write_bytes(b"modified\n" if dirty_state == "tracked" else b"first\n")
+                    if dirty_state == "untracked":
+                        (vendor / "new.txt").write_bytes(b"untracked\n")
+                    data = json.loads(run([sys.executable, str(SCRIPT)], repo).stdout)
+                    files = self.files_by_path(data)
+                    self.assertEqual(set(files), {"vendor"})
+                    self.assertEqual(files["vendor"]["status"], "M")
+                    self.assertTrue(files["vendor"]["stats_available"])
+                    self.assertEqual(data["overall_totals"]["files"], 1)
+                    self.assertEqual(data["overall_totals"]["unknown_stats_files"], 0)
+
     def test_invalid_range_refs_fail_without_writing_or_reporting_empty_scope(self) -> None:
         self.write("tracked.txt", "before\n")
         self.commit_all("initial")

@@ -5,15 +5,16 @@ from __future__ import annotations
 
 import argparse
 import os
-import shutil
 import sys
 import tempfile
 from pathlib import Path
 from typing import Iterable, Optional
 
 try:
+    from scripts.publish_outputs import publish_outputs
     from scripts.repository_layout import SourcePathError, discover_skill_names, is_runtime_artifact, validate_source_path
 except ModuleNotFoundError:
+    from publish_outputs import publish_outputs
     from repository_layout import SourcePathError, discover_skill_names, is_runtime_artifact, validate_source_path
 
 
@@ -72,20 +73,14 @@ def build_bundle(output: Path, *, force: bool = False) -> None:
 
         validate_output_path(output)
         try:
-            if force:
-                if output.is_dir():
-                    shutil.rmtree(output)
-                elif output.exists():
-                    output.unlink()
-            else:
+            if not force:
                 # rmdir refuses populated directories, including files added during staging.
                 try:
                     output.rmdir()
                 except FileNotFoundError:
                     pass
-            # A directory rename cannot replace a populated directory or a regular file.
-            staged_output.rename(output)
-        except OSError as exc:
+            publish_outputs(Path(temp_name), (output,), replace=force)
+        except (OSError, ValueError) as exc:
             raise BuildError(f"could not publish bundle at {output}: {exc}") from exc
 
 

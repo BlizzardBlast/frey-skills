@@ -56,6 +56,36 @@ class PluginBundleTests(unittest.TestCase):
         # Check the current template without rejecting historical release bytes.
         self.assertLessEqual(len(manifest["interface"]["defaultPrompt"]), 3)
 
+    def test_manifest_versions_keep_ascii_semver_contract(self) -> None:
+        manifest = json.loads((REPOSITORY_ROOT / "plugin-template/.codex-plugin/plugin.json").read_bytes())
+        valid_versions = (
+            "0.0.0", "1.2.3", "10.20.30", "1.2.3-alpha.1", "1.2.3-0",
+            "1.2.3-01a", "1.2.3+build.01", "1.2.3-rc.1+build.0123",
+        )
+        invalid_versions = ("01.2.3", "1.02.3", "1.2.03", "1.2.3-01", "1.2.3-alpha.01", "1.2.3+", "1.2")
+        for version in valid_versions + invalid_versions:
+            with self.subTest(version=version):
+                manifest["version"] = version
+                errors: list[str] = []
+                self.validate_plugin_bundle.validate_manifest(manifest, errors)
+                if version in valid_versions:
+                    self.assertEqual(errors, [])
+                else:
+                    self.assertTrue(any("strict semantic versioning" in error for error in errors), errors)
+
+    def test_manifest_versions_reject_unicode_digits(self) -> None:
+        manifest = json.loads((REPOSITORY_ROOT / "plugin-template/.codex-plugin/plugin.json").read_bytes())
+        for digit in ("\u0662", "\u06f2", "\uff12", "\u0968"):
+            for version in (
+                f"1{digit}.2.3", f"1.2{digit}.3", f"1.2.3{digit}",
+                f"1.2.3-{digit}", f"1.2.3-rc.1{digit}", f"1.2.3-{digit}rc", f"1.2.3+build.{digit}",
+            ):
+                with self.subTest(version=version):
+                    manifest["version"] = version
+                    errors: list[str] = []
+                    self.validate_plugin_bundle.validate_manifest(manifest, errors)
+                    self.assertTrue(any("strict semantic versioning" in error for error in errors), errors)
+
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
         self.temp_root = Path(self.temp_dir.name).resolve()
@@ -199,6 +229,26 @@ class PluginBundleTests(unittest.TestCase):
                     self.assertEqual({path.name for path in output.iterdir()}, {"concurrent.txt"})
                 self.assertEqual(list(self.temp_root.glob(f".{output.name}.tmp-*")), [])
 
+    def test_forced_build_restores_previous_bundle_when_publication_fails(self) -> None:
+        self.build_plugin.build_bundle(self.output)
+        before = {path: (self.output / path).read_bytes() for path in relative_files(self.output)}
+        original = Path.rename
+
+        def fail_staged_publication(source: Path, destination: Path) -> Path:
+            if source.parent.name.startswith(f".{self.output.name}.tmp-"):
+                raise PermissionError("injected publication failure")
+            return original(source, destination)
+
+        with mock.patch.object(Path, "rename", fail_staged_publication):
+            with self.assertRaisesRegex(self.build_plugin.BuildError, "could not publish"):
+                self.build_plugin.build_bundle(self.output, force=True)
+        self.assertEqual({path: (self.output / path).read_bytes() for path in relative_files(self.output)}, before)
+
+    def test_reserved_recovery_directory_is_reported_as_a_build_error(self) -> None:
+        output = self.temp_root / ".frey-publish"
+        self.assertEqual(self.build_plugin.main([str(output)]), 1)
+        self.assertFalse(output.exists())
+
     def test_nonforced_build_accepts_empty_output_and_lexical_parent_segments(self) -> None:
         self.output.mkdir()
         sibling = self.temp_root / "sibling"
@@ -208,6 +258,20 @@ class PluginBundleTests(unittest.TestCase):
         self.assertEqual(self.validate(), 0)
         self.build_plugin.build_bundle(requested, force=True)
         self.assertEqual(self.validate(), 0)
+
+    def test_validator_accepts_safe_parent_segments_through_api_and_cli(self) -> None:
+        self.build_plugin.build_bundle(self.output)
+        sibling = self.temp_root / "existing"
+        sibling.mkdir()
+        requested = sibling / ".." / self.output.name
+        self.assertEqual(self.validate_plugin_bundle.validate_bundle(requested), [])
+        for argument in (requested, requested.relative_to(self.temp_root)):
+            with self.subTest(argument=argument):
+                result = subprocess.run(
+                    [sys.executable, "-B", str(VALIDATE_SCRIPT), str(argument)],
+                    cwd=self.temp_root, capture_output=True, encoding="utf-8", check=False,
+                )
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_link_before_parent_segment_preserves_both_candidate_destinations(self) -> None:
         for case, target_parts in (("same-parent", ("target",)), ("different-parent", ("external", "target"))):
@@ -332,6 +396,54 @@ class PluginBundleTests(unittest.TestCase):
         self.make_symlink_or_skip(self.output, symlink_root, target_is_directory=True)
 
         self.assertEqual(self.validate_plugin_bundle.main([str(symlink_root)]), 1)
+
+    def assert_bundle_links_are_rejected_before_reads(self, *, junction: bool = False) -> None:
+        self.assertEqual(self.build(), 0)
+        for location in ("root", "root-parent-segment", "ancestor", "skill"):
+            with self.subTest(location=location):
+                if location in {"root", "root-parent-segment"}:
+                    target, link = self.output, self.temp_root / "bundle-link"
+                    candidate = link if location == "root" else link / ".." / self.output.name
+                elif location == "ancestor":
+                    target, link = self.temp_root, self.temp_root / "parent-link"
+                    candidate = link / self.output.name
+                else:
+                    link = self.output / "skills" / "code-review"
+                    target = self.temp_root / "external-skill"
+                    link.resolve().relative_to(self.temp_root.resolve())
+                    target.parent.resolve().relative_to(self.temp_root.resolve())
+                    link.rename(target)
+                    candidate = self.output
+                if junction:
+                    result = subprocess.run(
+                        ["cmd", "/c", "mklink", "/J", str(link), str(target)],
+                        capture_output=True, text=True, check=False,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                else:
+                    self.make_symlink_or_skip(target, link, target_is_directory=True)
+                try:
+                    with mock.patch.object(Path, "read_text", side_effect=AssertionError("linked bundle files must not be read")), mock.patch.object(
+                        Path, "read_bytes", side_effect=AssertionError("linked bundle files must not be compared")
+                    ):
+                        errors = self.validate_plugin_bundle.validate_bundle(candidate)
+                    self.assertTrue(any("symlink" in error for error in errors), errors)
+                finally:
+                    if junction:
+                        link.rmdir()
+                    else:
+                        link.unlink()
+                    if location == "skill":
+                        target.resolve().relative_to(self.temp_root.resolve())
+                        link.parent.resolve().relative_to(self.temp_root.resolve())
+                        target.rename(link)
+
+    def test_validator_rejects_linked_roots_ancestors_and_skills_before_reads(self) -> None:
+        self.assert_bundle_links_are_rejected_before_reads()
+
+    @unittest.skipUnless(os.name == "nt", "directory junctions are Windows-specific")
+    def test_validator_rejects_junction_roots_ancestors_and_skills_before_reads(self) -> None:
+        self.assert_bundle_links_are_rejected_before_reads(junction=True)
 
     def test_build_rejects_symlink_output_before_resolving_or_replacing_it(self) -> None:
         target = self.temp_root / "real-output"

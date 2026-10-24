@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import unittest
+import re
 from pathlib import Path
 
 import yaml
@@ -17,6 +18,32 @@ ROOT = Path(__file__).resolve().parents[1]
 class WorkflowContractTests(unittest.TestCase):
     def read_workflow(self, name: str) -> dict:
         return yaml.load((ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+
+    def test_every_executable_action_is_pinned_to_a_full_commit(self) -> None:
+        for filename in ("ci.yml", "release.yml"):
+            for name, job in self.read_workflow(filename)["jobs"].items():
+                for step in job["steps"]:
+                    if "uses" in step:
+                        with self.subTest(workflow=filename, job=name, action=step["uses"]):
+                            self.assertRegex(step["uses"], r"^[^@\s]+/[^@\s]+@[0-9a-f]{40}$")
+
+    def test_validation_requirements_have_no_floating_runtime_dependencies(self) -> None:
+        expected = {
+            "requirements-dev.txt": {"PyYAML", "markdown-it-py", "mdurl"},
+            "requirements-spec.txt": {"skills-ref", "click", "strictyaml", "python-dateutil", "six"},
+        }
+        for filename, names in expected.items():
+            actual = set()
+            for line in (ROOT / filename).read_text(encoding="utf-8").splitlines():
+                if not line or line.startswith("#"):
+                    continue
+                if line.startswith("skills-ref @ "):
+                    self.assertRegex(line, r"^skills-ref @ git\+https://github.com/agentskills/agentskills\.git@[0-9a-f]{40}#subdirectory=skills-ref$")
+                    actual.add("skills-ref")
+                else:
+                    self.assertRegex(line, r"^[A-Za-z0-9_.-]+==[0-9][A-Za-z0-9_.+-]*$")
+                    actual.add(line.split("==")[0])
+            self.assertEqual(actual, names)
 
     def test_windows_and_macos_run_all_gates_with_read_only_ci_permissions(self) -> None:
         ci = self.read_workflow("ci.yml")
@@ -82,6 +109,7 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertIn(f"@openai/codex@{smoke_codex.CLI_VERSION}", commands[0])
         self.assertIn("--ignore-scripts", commands[0])
         self.assertEqual(commands[1], 'python scripts/smoke_codex.py --cli "${{ runner.temp }}/frey-codex-cli/node_modules/@openai/codex/bin/codex.js"')
+        self.assertTrue(any("checkout candidate" in step.get("name", "") for step in steps))
         for step in steps:
             self.assertNotIn("env", step)
 

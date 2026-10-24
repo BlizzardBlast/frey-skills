@@ -7,16 +7,18 @@ import argparse
 import os
 import re
 import shutil
-import signal
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 try:
+    from scripts.process_tree import owned_process, stop_process_tree
     from scripts.build_plugin import BuildError, copy_tree_bytes, iter_files, reject_symlinks
     from scripts.repository_layout import SourcePathError, discover_skill_names
 except ModuleNotFoundError:
+    from process_tree import owned_process, stop_process_tree
     from build_plugin import BuildError, copy_tree_bytes, iter_files, reject_symlinks
     from repository_layout import SourcePathError, discover_skill_names
 
@@ -27,49 +29,39 @@ SOURCE_TAG = "v1.11.0"
 SOURCE_COMMIT = "7e7a535ca9f19fc8514c368cb00d5c4e8288dfcf"
 REPOSITORY_URL = "https://github.com/BlizzardBlast/frey-skills"
 SOURCE_URL = f"{REPOSITORY_URL}/tree/{SOURCE_TAG}"
+MAX_OUTPUT_BYTES = 2 * 1024 * 1024
 
 
 class SmokeError(ValueError):
     """An installer command or installed-file assertion failed."""
 
 
-def stop_process_tree(process: subprocess.Popen[bytes]) -> None:
-    """Stop only this command's owned tree, with bounded cleanup waits."""
-    try:
-        if os.name == "nt":
-            taskkill = Path(os.environ["SystemRoot"]) / "System32" / "taskkill.exe"
-            result = subprocess.run(
-                [str(taskkill), "/PID", str(process.pid), "/T", "/F"],
-                stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                timeout=5, check=False,
-            )
-            if result.returncode:
-                raise SmokeError(f"could not confirm process-tree cleanup for PID {process.pid}")
-        else:
-            try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-    finally:
-        # Reap the immediate child even if tree cleanup itself reports failure.
-        if process.poll() is None:
-            process.kill()
-        process.wait(timeout=5)
 
 
 def run(command: list[str], cwd: Path, environment: dict[str, str], *, timeout: float = 180) -> str:
     print(f"Running: {subprocess.list2cmdline(command)}", flush=True)
     # Regular files avoid pipe readers waiting for descendants to close handles.
     with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
-        process = subprocess.Popen(
-            command, cwd=cwd, env=environment, stdin=subprocess.DEVNULL,
-            stdout=stdout, stderr=stderr, start_new_session=os.name != "nt",
-        )
-        try:
-            returncode = process.wait(timeout=timeout)
-        except BaseException:
-            stop_process_tree(process)
-            raise
+        with owned_process(command, cwd, environment, stdout, stderr, stdin=subprocess.DEVNULL) as process:
+            deadline = time.monotonic() + timeout
+            while True:
+                if max(os.fstat(stdout.fileno()).st_size, os.fstat(stderr.fileno()).st_size) > MAX_OUTPUT_BYTES:
+                    raise SmokeError("command output exceeded its size limit")
+                returncode = process.poll()
+                if returncode is not None:
+                    # Recheck after exit: a short-lived process may fill its output
+                    # between the size check and poll. Never read an oversized file.
+                    if max(os.fstat(stdout.fileno()).st_size, os.fstat(stderr.fileno()).st_size) > MAX_OUTPUT_BYTES:
+                        raise SmokeError("command output exceeded its size limit")
+                    break
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise subprocess.TimeoutExpired(command, timeout)
+                time.sleep(min(0.02, remaining))
+        # Cleanup owns descendants even if the immediate child exited first.
+        # Check their final writes before reading either output file.
+        if max(os.fstat(stdout.fileno()).st_size, os.fstat(stderr.fileno()).st_size) > MAX_OUTPUT_BYTES:
+            raise SmokeError("command output exceeded its size limit")
         if returncode:
             tails = []
             for stream in (stdout, stderr):
@@ -78,16 +70,23 @@ def run(command: list[str], cwd: Path, environment: dict[str, str], *, timeout: 
                 tails.append(stream.read().decode("utf-8", errors="replace"))
             raise SmokeError(f"command failed ({returncode}):\n{''.join(tails)[-8000:]}")
         stdout.seek(0)
-        return stdout.read().decode("utf-8", errors="replace").strip()
+        content = stdout.read(MAX_OUTPUT_BYTES + 1)
+        if len(content) > MAX_OUTPUT_BYTES:
+            raise SmokeError("command output exceeded its size limit")
+        return content.decode("utf-8", errors="replace").strip()
 
 
 def isolated_environment(home_dir: Path) -> dict[str, str]:
-    environment = dict(os.environ)
+    allowed = {
+        "PATH", "SYSTEMROOT", "WINDIR", "COMSPEC", "PATHEXT", "TEMP", "TMP", "TMPDIR",
+        "LANG", "LC_ALL", "LC_CTYPE", "PYTHONUTF8", "PYTHONIOENCODING", "PYTHONDONTWRITEBYTECODE",
+    }
+    environment = {key: value for key, value in os.environ.items() if key.upper() in allowed}
     # Only child processes receive these paths; the caller's home is unchanged.
-    for name in ("CODEX_HOME", "CLAUDE_CONFIG_DIR", "GIT_CONFIG_COUNT", "GIT_CONFIG_PARAMETERS"):
-        environment.pop(name, None)
     environment.update({
         "HOME": str(home_dir), "USERPROFILE": str(home_dir),
+        "APPDATA": str(home_dir / "AppData" / "Roaming"),
+        "LOCALAPPDATA": str(home_dir / "AppData" / "Local"),
         "XDG_CONFIG_HOME": str(home_dir / ".config"),
         "XDG_STATE_HOME": str(home_dir / ".state"),
         "XDG_CACHE_HOME": str(home_dir / ".cache"),

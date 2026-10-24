@@ -44,7 +44,7 @@ class ContentTrustContractTests(unittest.TestCase):
     def read_skill(self, name: str) -> str:
         return (REPOSITORY_ROOT / name / "SKILL.md").read_text(encoding="utf-8")
 
-    def test_every_canonical_skill_declares_common_trust_contract(self) -> None:
+    def test_every_canonical_skill_includes_common_trust_wording(self) -> None:
         skill_names = discover_skill_names(REPOSITORY_ROOT)
         self.assertTrue(skill_names)
 
@@ -53,6 +53,7 @@ class ContentTrustContractTests(unittest.TestCase):
             for phrase in COMMON_PHRASES:
                 with self.subTest(skill=skill_name, phrase=phrase):
                     self.assertIn(phrase, content)
+
 
     def test_debug_separates_diagnostic_evidence_from_command_authority(self) -> None:
         content = self.read_skill("debug")

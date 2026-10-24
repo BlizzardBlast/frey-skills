@@ -30,7 +30,10 @@ Range semantics:
 
 Repository scope:
         Every mode inspects the full repository from its root, including when
-        invoked from a nested directory or with diff.relative enabled. An
+        invoked from a nested directory or with diff.relative enabled.
+        Submodule ignore settings cannot suppress changed gitlinks or dirty
+        submodule worktrees. Submodules are summarized at their gitlink paths;
+        their contents still require separate inspection. An
         explicitly requested relative --output path uses the invoking directory.
         NUL-delimited UTF-8 filenames retain control characters without newline conversion.
         Non-UTF-8 Git output fails with exit code 2 instead of replacing filename
@@ -438,34 +441,36 @@ def collect_context(
     git_root_path = Path(run_git(["rev-parse", "--show-toplevel"]).removesuffix("\n"))
     git_root = git_root_path.name
     has_head = git_has_head(cwd=git_root_path)
+    # Review scope must not inherit user or .gitmodules submodule exclusions.
+    diff_args = ["diff", "--ignore-submodules=none", "-z", "--find-renames"]
 
     if base and head:
         mode = "range"
         base_commit = run_git(["rev-parse", "--verify", "--end-of-options", f"{base}^{{commit}}"], cwd=git_root_path).strip()
         head_commit = run_git(["rev-parse", "--verify", "--end-of-options", f"{head}^{{commit}}"], cwd=git_root_path).strip()
         diff_target = f"{base_commit}...{head_commit}"
-        name_status = run_git(["diff", "-z", "--name-status", "--find-renames", diff_target, "--"], cwd=git_root_path)
-        numstat = run_git(["diff", "-z", "--numstat", "--find-renames", diff_target, "--"], cwd=git_root_path)
+        name_status = run_git([*diff_args, "--name-status", diff_target, "--"], cwd=git_root_path)
+        numstat = run_git([*diff_args, "--numstat", diff_target, "--"], cwd=git_root_path)
         base_ref, head_ref = base, head
     elif staged:
         mode = "staged"
-        name_status = run_git(["diff", "--cached", "-z", "--name-status", "--find-renames"], cwd=git_root_path)
-        numstat = run_git(["diff", "--cached", "-z", "--numstat", "--find-renames"], cwd=git_root_path)
+        name_status = run_git([*diff_args, "--cached", "--name-status"], cwd=git_root_path)
+        numstat = run_git([*diff_args, "--cached", "--numstat"], cwd=git_root_path)
         base_ref, head_ref = ("HEAD" if has_head else "EMPTY_TREE"), "INDEX"
     else:
         mode = "working-tree"
         if has_head:
-            name_status = run_git(["diff", "-z", "--name-status", "--find-renames", "HEAD"], cwd=git_root_path)
-            numstat = run_git(["diff", "-z", "--numstat", "--find-renames", "HEAD"], cwd=git_root_path)
+            name_status = run_git([*diff_args, "--name-status", "HEAD"], cwd=git_root_path)
+            numstat = run_git([*diff_args, "--numstat", "HEAD"], cwd=git_root_path)
             base_ref = "HEAD"
         else:
             # Hash an empty tree using this repository's object format without writing it.
             empty_tree = run_git(["hash-object", "-t", "tree", "--stdin"], cwd=git_root_path, input_text="").strip()
             name_status = run_git(
-                ["diff", "-z", "--name-status", "--find-renames", empty_tree], cwd=git_root_path
+                [*diff_args, "--name-status", empty_tree], cwd=git_root_path
             )
             numstat = run_git(
-                ["diff", "-z", "--numstat", "--find-renames", empty_tree], cwd=git_root_path
+                [*diff_args, "--numstat", empty_tree], cwd=git_root_path
             )
             base_ref = "EMPTY_TREE"
         head_ref = "WORKTREE"

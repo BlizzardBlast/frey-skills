@@ -80,7 +80,7 @@ No third-party skills were installed or executed for this research.
 
 The table below records the original eight-skill portfolio at the research
 baseline. The [README selection table](../README.md#choose-a-skill) now also
-includes the unreleased skills delivered after that baseline. The original
+includes the published skills delivered after that baseline. The original
 boundaries and opportunities informing the roadmap were:
 
 | Existing skill | Established coverage | Remaining opportunity |

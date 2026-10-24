@@ -10,30 +10,88 @@ import re
 import sys
 import tempfile
 import zipfile
+from datetime import date
 from pathlib import Path
 
 try:
+    from scripts.documentation import LiteralHTML, parse_visible
+    from scripts.publish_outputs import publish_outputs
+    from scripts.repository_layout import validate_source_path
     from scripts.validate_plugin_bundle import validate_bundle
 except ModuleNotFoundError:
+    from documentation import LiteralHTML, parse_visible
+    from publish_outputs import publish_outputs
+    from repository_layout import validate_source_path
     from validate_plugin_bundle import validate_bundle
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 
 
+def release_notes(changelog: str, version: str) -> str:
+    """Read the documented column-zero ATX sections, preserving their source text.
+
+    Share CommonMark block context with repository documentation validation.
+    """
+    lines = changelog.splitlines(keepends=True)
+    headings: list[tuple[int, int, str]] = []
+    tokens, _ = parse_visible(changelog)
+    literal = LiteralHTML()
+    quoted = 0
+    for index, token in enumerate(tokens):
+        if token.type == "blockquote_open":
+            quoted += 1
+        elif token.type == "blockquote_close":
+            quoted -= 1
+        if quoted or token.map is None:
+            continue
+        if token.type == "html_block":
+            literal.feed(token.content)
+        for child in token.children or []:
+            if child.type == "html_inline":
+                literal.feed(child.content)
+        if token.type == "heading_open" and token.level == 0 and token.tag in {"h1", "h2"} and not literal.tags:
+            start = token.map[0]
+            if lines[start].startswith("#"):
+                headings.append((start, int(token.tag[1]), tokens[index + 1].content.strip()))
+
+    matching = [position for position, (_, level, title) in enumerate(headings)
+                if level == 2 and re.match(rf"\[{re.escape(version)}\](?:[ \t]|$)", title)]
+    if not matching:
+        raise ValueError(f"CHANGELOG.md needs a non-empty dated section for {version}")
+    if len(matching) != 1:
+        raise ValueError(f"CHANGELOG.md must contain exactly one section for {version}")
+    position = matching[0]
+    start, _, title = headings[position]
+    dated = re.fullmatch(rf"\[{re.escape(version)}\] - ([0-9]{{4}}-[0-9]{{2}}-[0-9]{{2}})", title)
+    if dated is None:
+        raise ValueError(f"CHANGELOG.md needs a non-empty dated section for {version}")
+    try:
+        date.fromisoformat(dated[1])
+    except ValueError as exc:
+        raise ValueError(f"CHANGELOG.md has an invalid calendar date for {version}") from exc
+    end = headings[position + 1][0] if position + 1 < len(headings) else len(lines)
+    notes = "".join(lines[start + 1:end]).strip()
+    if not notes:
+        raise ValueError(f"CHANGELOG.md needs a non-empty dated section for {version}")
+    return notes
+
+
 def prepare_release(tag: str) -> tuple[Path, Path, Path]:
     root = REPOSITORY_ROOT.resolve()
-    manifest = json.loads((root / "plugin-template" / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
+    manifest_path = root / "plugin-template" / ".codex-plugin" / "plugin.json"
+    changelog_path = root / "CHANGELOG.md"
+    validate_source_path(manifest_path, root)
+    validate_source_path(changelog_path, root)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     version = manifest.get("version") if isinstance(manifest, dict) else None
-    if not isinstance(version, str) or re.fullmatch(r"\d+\.\d+\.\d+", version) is None:
+    if not isinstance(version, str) or re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version) is None:
         raise ValueError("the plugin manifest must have a stable semantic version")
     if tag != f"v{version}":
         raise ValueError(f"tag must match the plugin manifest: v{version}")
 
-    changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
-    match = re.search(rf"^## \[{re.escape(version)}\] - \d{{4}}-\d{{2}}-\d{{2}}\s*\n(.*?)(?=^## |\Z)", changelog, re.MULTILINE | re.DOTALL)
-    if match is None or not match.group(1).strip():
-        raise ValueError(f"CHANGELOG.md needs a non-empty dated section for {version}")
+    changelog = changelog_path.read_text(encoding="utf-8")
+    notes_content = release_notes(changelog, version)
 
     bundle = root / "dist" / "frey-skills"
     errors = validate_bundle(bundle)
@@ -61,7 +119,7 @@ def prepare_release(tag: str) -> tuple[Path, Path, Path]:
         files = [(license_path, "LICENSE")]
         files.extend(
             (path, "frey-skills/" + path.relative_to(bundle).as_posix())
-            for path in sorted(bundle.rglob("*")) if path.is_file()
+            for path in sorted(bundle.rglob("*"), key=lambda item: item.relative_to(bundle).as_posix()) if path.is_file()
         )
         with zipfile.ZipFile(staged_archive, "w", compression=zipfile.ZIP_DEFLATED) as packaged:
             for path, name in files:
@@ -72,11 +130,10 @@ def prepare_release(tag: str) -> tuple[Path, Path, Path]:
                 packaged.writestr(info, license_bytes if path == license_path else path.read_bytes())
         digest = hashlib.sha256(staged_archive.read_bytes()).hexdigest()
         (staging / notes.name).write_bytes(
-            (match.group(1).strip() + "\n\nDeterministic validation only; behavioral model evals were not run and no model-behavior certification is claimed.\n").encode("utf-8")
+            (notes_content + "\n\nDeterministic validation only; behavioral model evals were not run and no model-behavior certification is claimed.\n").encode("utf-8")
         )
         (staging / checksums.name).write_bytes(f"{digest}  {archive.name}\n".encode("utf-8"))
-        for target in (archive, notes, checksums):
-            (staging / target.name).replace(target)
+        publish_outputs(staging, (archive, notes, checksums), replace=True)
     return archive, notes, checksums
 
 

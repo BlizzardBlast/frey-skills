@@ -15,7 +15,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest import mock
 
-from scripts import smoke_install
+from scripts import process_tree, smoke_install
 
 
 class InstallationSmokeTests(unittest.TestCase):
@@ -83,6 +83,21 @@ class InstallationSmokeTests(unittest.TestCase):
                 self.root, dict(os.environ), timeout=10,
             )
 
+    def test_environment_excludes_credentials_injection_and_real_user_paths(self) -> None:
+        inherited = {key: "inert" for key in (
+            "GITHUB_TOKEN", "GH_TOKEN", "OPENAI_API_KEY", "AWS_SECRET_ACCESS_KEY", "CUSTOM_SECRET",
+            "NODE_OPTIONS", "PYTHONPATH", "GIT_SSH_COMMAND", "HTTPS_PROXY", "NPM_CONFIG_USERCONFIG",
+        )}
+        inherited.update({"PATH": "fixture-path", "SYSTEMROOT": "fixture-system", "APPDATA": "real-home"})
+        with mock.patch.dict(os.environ, inherited, clear=True):
+            environment = smoke_install.isolated_environment(self.root)
+            self.assertEqual(dict(os.environ), inherited)
+        for key in inherited.keys() - {"PATH", "SYSTEMROOT", "APPDATA"}:
+            self.assertNotIn(key, environment)
+        self.assertEqual(environment["PATH"], "fixture-path")
+        self.assertEqual(environment["SYSTEMROOT"], "fixture-system")
+        self.assertEqual(environment["APPDATA"], str(self.root / "AppData" / "Roaming"))
+
     def test_command_output_is_utf8_and_arguments_are_not_shell_code(self) -> None:
         argument = "caf\u00e9;$()&literal"
         output = smoke_install.run(
@@ -91,6 +106,66 @@ class InstallationSmokeTests(unittest.TestCase):
             self.root, dict(os.environ), timeout=10,
         )
         self.assertEqual(output, argument)
+
+    def test_posix_cleanup_reaps_exited_leader_and_preserves_permission_failures(self) -> None:
+        for denied in (False, True):
+            with self.subTest(permission_denied=denied):
+                process = mock.Mock(pid=123)
+                process.poll.return_value = 0
+
+                def signal_group(pid: int, sig: int) -> None:
+                    if not process.poll.called or denied:
+                        raise PermissionError("unreaped leader or inaccessible descendants")
+
+                with mock.patch.object(process_tree, "os") as platform, mock.patch.object(process_tree, "signal") as signals:
+                    platform.name = "posix"
+                    platform.killpg.side_effect = signal_group
+                    if denied:
+                        with self.assertRaises(PermissionError):
+                            process_tree.stop_process_tree(process)
+                    else:
+                        process_tree.stop_process_tree(process)
+                    platform.killpg.assert_called_once_with(process.pid, signals.SIGKILL)
+                process.kill.assert_not_called()
+                process.wait.assert_called_once_with(timeout=5)
+
+    def test_short_lived_success_and_failure_cannot_return_oversized_output(self) -> None:
+        for stream in ("stdout", "stderr"):
+            for exit_code in (0, 9):
+                command = [sys.executable, "-B", "-c",
+                           f"import sys; sys.{stream}.write('x' * (3 * 1024 * 1024)); sys.exit({exit_code})"]
+                with self.subTest(stream=stream, exit=exit_code):
+                    with self.assertRaisesRegex(smoke_install.SmokeError, "output exceeded its size limit"):
+                        smoke_install.run(command, self.root, smoke_install.isolated_environment(self.root), timeout=10)
+
+    def test_continuous_output_stops_the_owned_tree_before_the_time_limit(self) -> None:
+        parent_marker, child_marker = self.root / "parent.pid", self.root / "child.pid"
+        child = "import sys,time\nwhile True:\n sys.stdout.buffer.write(b'x' * 65536); sys.stdout.flush(); time.sleep(0.001)\n"
+        parent = (
+            "import os,subprocess,sys,time; from pathlib import Path; "
+            f"Path({str(parent_marker)!r}).write_text(str(os.getpid())); "
+            f"child = subprocess.Popen([sys.executable, '-B', '-c', {child!r}]); "
+            f"Path({str(child_marker)!r}).write_text(str(child.pid)); time.sleep(30)"
+        )
+        started = time.monotonic()
+        with self.assertRaisesRegex(smoke_install.SmokeError, "output exceeded its size limit"):
+            smoke_install.run([sys.executable, "-B", "-c", parent], self.root,
+                              smoke_install.isolated_environment(self.root), timeout=20)
+        self.assertLess(time.monotonic() - started, 12)
+        for marker in (parent_marker, child_marker):
+            self.assertTrue(marker.is_file(), "owned fixture process did not start")
+            self.assert_process_stopped(int(marker.read_text()))
+
+    def test_successful_parent_exit_also_stops_its_descendants(self) -> None:
+        child_marker = self.root / "child.pid"
+        parent = (
+            "import subprocess,sys,time; from pathlib import Path; "
+            "child = subprocess.Popen([sys.executable, '-B', '-c', 'import time; time.sleep(30)']); "
+            f"Path({str(child_marker)!r}).write_text(str(child.pid)); time.sleep(0.2)"
+        )
+        smoke_install.run([sys.executable, "-B", "-c", parent], self.root,
+                          smoke_install.isolated_environment(self.root), timeout=10)
+        self.assert_process_stopped(int(child_marker.read_text()))
 
     def assert_process_stopped(self, pid: int) -> None:
         if os.name == "nt":

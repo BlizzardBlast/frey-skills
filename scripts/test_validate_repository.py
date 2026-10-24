@@ -107,12 +107,27 @@ class RepositoryValidatorTests(unittest.TestCase):
         return combined
 
     def test_valid_repository_passes(self) -> None:
-        self.write("README.md", "# Valid Repository\n")
+        self.write("README.md", "# Valid Repository\n\n## Choose a skill\n\n[Sample](sample-skill/SKILL.md)\n\n## Available Skills\n\n### sample-skill\n\n## Skill Structure\n\n```text\nsample-skill/\n```\n")
         self.write_valid_skill()
 
         result = run_validator(self.repo)
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_broken_root_document_links_and_missing_catalog_entries_fail(self) -> None:
+        self.write_valid_skill()
+        self.write("README.md", "# Missing catalog\n\n[Broken](missing.md#missing)\n")
+        output = self.assert_validation_fails_with("invalid local Markdown link")
+        self.assertIn("Choose a skill inventory", output)
+        self.assertIn("Available Skills inventory", output)
+        self.assertIn("Current layout inventory", output)
+
+    def test_visible_links_after_comments_in_literal_html_are_still_validated(self) -> None:
+        self.write_valid_skill()
+        self.write('sample-skill/references/example.md',
+                   'Example <code>\n\n<!-- first --> <!-- second\n\nHidden\n\n-->\n\n</code>\n\n'
+                   '[Missing](missing.md)\n')
+        self.assert_validation_fails_with('invalid local Markdown link')
 
     def test_current_repository_passes(self) -> None:
         result = run_validator(REPOSITORY_ROOT)
@@ -213,12 +228,12 @@ class RepositoryValidatorTests(unittest.TestCase):
 
     def test_crlf_endings_have_the_same_single_newline_rule(self) -> None:
         self.write_valid_skill()
-        path = self.repo / "README.md"
+        path = self.repo / "NOTES.md"
         path.write_bytes(b"# Valid CRLF\r\n")
         result = run_validator(self.repo)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         path.write_bytes(b"# Extra CRLF\r\n\r\n")
-        self.assert_validation_fails_with("README.md: must end with exactly one trailing newline")
+        self.assert_validation_fails_with("NOTES.md: must end with exactly one trailing newline")
 
     def test_skill_over_500_lines_fails(self) -> None:
         body = "\n".join(f"Line {index}" for index in range(497))
@@ -271,6 +286,19 @@ class RepositoryValidatorTests(unittest.TestCase):
         output = self.assert_validation_fails_with("bad-metadata/SKILL.md")
         self.assertIn("must be a scalar", output)
 
+    def test_non_string_frontmatter_keys_report_diagnostics_without_tracebacks(self) -> None:
+        self.write("later-skill/SKILL.md", "---\nname: later-skill\n---\n\n# Later\n")
+        for key in ("true", "42", "null", "2026-10-21"):
+            with self.subTest(key=key):
+                self.write(
+                    "bad-frontmatter/SKILL.md",
+                    "---\nname: bad-frontmatter\ndescription: Invalid key fixture.\n"
+                    f"{key}: value\nunknown-field: value\n---\n\n# Bad\n",
+                )
+                output = self.assert_validation_fails_with("bad-frontmatter/SKILL.md: frontmatter keys must be strings")
+                self.assertIn("later-skill/SKILL.md: frontmatter description", output)
+                self.assertNotIn("Traceback", output)
+
     def test_missing_local_reference_fails(self) -> None:
         self.write(
             "referencing-skill/SKILL.md",
@@ -302,6 +330,112 @@ class RepositoryValidatorTests(unittest.TestCase):
         self.assertIn("display_name", output)
         self.assertIn("allow_implicit_invocation", output)
 
+    def test_markdown_skill_links_accept_fragments_encoding_and_reference_syntax(self) -> None:
+        self.write_valid_skill()
+        self.write("sample-skill/references/guide.md", "# Guide\n\n## Details\n")
+        self.write("sample-skill/references/guide file.md", "# Guide\n")
+        skill = self.repo / "sample-skill/SKILL.md"
+        skill.write_text(
+            skill.read_text(encoding="utf-8") + "\n"
+            "[Details](references/guide.md#details)\n"
+            "[Encoded](references/%67uide.md#details)\n"
+            "[`references/guide.md#details`](references/guide.md#details)\n"
+            "[Reference][guide]\n\n[guide]: <references/guide file.md#guide>\n",
+            encoding="utf-8",
+        )
+        # A link inside a supporting document is relative to that document.
+        self.write("sample-skill/references/index.md", "[Nested](guide.md#details)\n")
+        result = run_validator(self.repo)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+        skill.write_text(
+            "---\nname: sample-skill\ndescription: Use when testing reference definitions.\n---\n\n"
+            "[guide]: references/%67uide.md#details\n\n[Guide][guide]\n", encoding="utf-8",
+        )
+        result = run_validator(self.repo)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_markdown_skill_links_retain_missing_anchor_and_traversal_guards(self) -> None:
+        self.write_valid_skill()
+        self.write("outside.md", "# Outside the packaged skill\n")
+        skill = self.repo / "sample-skill/SKILL.md"
+        original = skill.read_text(encoding="utf-8")
+        for link, expected in (
+            ("[Missing](references/guide.md#missing)", "heading anchor does not exist"),
+            ("[Missing](references/missing.md)", "target does not exist"),
+            ("[Escape](references/../../outside.md)", "must stay below the skill directory"),
+            ("[Escape](references/%2e%2e/%2e%2e/outside.md)", "must stay below the skill directory"),
+            ("[Escape](references/%2e%2e/%2e%2e/%2e%2e/outside.md)", "must stay below the repository"),
+        ):
+            with self.subTest(link=link):
+                skill.write_text(original + "\n" + link + "\n", encoding="utf-8")
+                self.assert_validation_fails_with(expected)
+
+    def test_bare_references_keep_literal_filename_and_metadata_guards(self) -> None:
+        self.write_valid_skill()
+        self.write("sample-skill/references/literal%67.md", "# Literal percent filename\n")
+        self.write("sample-skill/references/guide#part.md", "# Literal hash filename\n")
+        skill = self.repo / "sample-skill/SKILL.md"
+        original = skill.read_text(encoding="utf-8")
+        valid = original + "\nRead `references/literal%67.md` and `references/guide#part.md`.\n"
+        skill.write_text(valid, encoding="utf-8")
+        result = run_validator(self.repo)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for content, expected in (
+            (valid + "\nRead `references/missing.md`.\n", "references/missing.md"),
+            (original.replace("---\n\n#", "metadata:\n  guide: references/missing.md\n---\n\n#"), "references/missing.md"),
+        ):
+            with self.subTest(content=content):
+                skill.write_text(content, encoding="utf-8")
+                self.assert_validation_fails_with(expected)
+        skill.write_text(original, encoding="utf-8")
+        self.write("sample-skill/agents/openai.yaml", (self.repo / "sample-skill/agents/openai.yaml").read_text(encoding="utf-8") + "example: references/missing.md\n")
+        self.assert_validation_fails_with("references/missing.md")
+
+    def test_hidden_link_destinations_and_definitions_retain_literal_path_guards(self) -> None:
+        self.write_valid_skill()
+        self.write('outside.md', '# Outside the skill\n')
+        skill = self.repo / 'sample-skill/SKILL.md'
+        original = skill.read_text(encoding='utf-8')
+        for path in ('references/missing.md', 'references/../../outside.md'):
+            examples = []
+            for tag in ('code', 'pre', 'script', 'style', 'textarea', 'title'):
+                examples.extend((
+                    f'Example <{tag}>[Example]({path})</{tag}>',
+                    f'Example <{tag}>![Example]({path})</{tag}>',
+                    f'Example <{tag}>\n\n[guide]: {path}\n\n</{tag}>',
+                ))
+            examples.extend((
+                'Example <code>\n\n[image]: real.png\n\n</code>\n\n'
+                f'<!-- closed --> <!-- first\n\nHidden\n\n--> ![<!--][image]\n\n[Example]({path})\n\n-->\n',
+                f'<!-- closed --> <!--\n\n[guide]: {path}\n\n--> ',
+                f'> <!-- closed --> <!--\n>\n> [guide]: {path}',
+            ))
+            for example in examples:
+                with self.subTest(path=path, example=example):
+                    skill.write_text(original + '\n' + example + '\n', encoding='utf-8')
+                    output = self.assert_validation_fails_with(f"local reference '{path}'")
+                    self.assertIn('does not exist' if 'missing' in path else 'must stay below', output)
+
+    def test_hidden_literal_paths_and_visible_links_on_the_same_line_stay_distinct(self) -> None:
+        self.write_valid_skill()
+        self.write('sample-skill/references/literal%67#part.md', '# Literal filename\n')
+        skill = self.repo / 'sample-skill/SKILL.md'
+        original = skill.read_text(encoding='utf-8')
+        hidden = '[Example](references/literal%67#part.md)'
+        visible = '[Visible](references/%67uide.md#guide) [Ref][guide]'
+        for example in (f'Example <code>{hidden}</code> {visible}',
+                        'Example <code>\n\n[image]: real.png\n\n</code>\n\n'
+                        f'<!-- closed --> <!-- first\n\nHidden\n\n--> ![<!--][image]\n\n{hidden}\n\n-->\n\n{visible}',
+                        f'{visible} Example <code>{hidden}</code>',
+                        f'Example <title>\n\n{hidden}\n\n</title>\n\n{visible}',
+                        f'<!-- closed --> <!--\n\n{hidden}\n\n--> {visible}',
+                        f'<!-- closed --> <!--\n\n{hidden}\n\n--> {visible} <!-- again\n\n{hidden}\n\n-->'):
+            with self.subTest(example=example):
+                skill.write_text(original + '\n' + example + '\n\n[guide]: references/%67uide.md#guide\n', encoding='utf-8')
+                result = run_validator(self.repo)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_invalid_and_missing_eval_fixture_fails(self) -> None:
         self.write_valid_skill("eval-skill")
         self.write(
@@ -327,6 +461,55 @@ class RepositoryValidatorTests(unittest.TestCase):
         output = self.assert_validation_fails_with("evals/evals.json")
         self.assertIn("skill_name", output)
         self.assertIn("evals/fixtures/missing.md", output)
+
+    def test_eval_and_scorecard_files_require_json_objects(self) -> None:
+        self.write("later-skill/SKILL.md", "---\nname: later-skill\n---\n\n# Later\n")
+        for relative_path in ("evals/evals.json", "evals/scorecards/fixture.json"):
+            self.write_valid_skill("eval-skill")
+            path = f"eval-skill/{relative_path}"
+            for value in (None, [], False, 7, "invalid"):
+                with self.subTest(path=path, value=value):
+                    self.write(path, json.dumps(value) + "\n")
+                    output = self.assert_validation_fails_with(f"{path}: must parse to an object")
+                    self.assertIn("later-skill/SKILL.md: frontmatter description", output)
+                    self.assertNotIn("Traceback", output)
+
+    def test_null_eval_definition_cannot_hide_invalid_scorecards(self) -> None:
+        self.write_valid_skill("eval-skill")
+        evals_path = "eval-skill/evals/evals.json"
+        valid_evals = (self.repo / evals_path).read_text(encoding="utf-8")
+        scorecard_path = "eval-skill/evals/scorecards/fixture.json"
+        self.write(scorecard_path, "{}\n")
+        self.write(evals_path, "null\n")
+
+        self.assert_validation_fails_with(f"{evals_path}: must parse to an object")
+
+        self.write(evals_path, valid_evals)
+        self.assert_validation_fails_with(f"{scorecard_path}: results must be a non-empty list")
+
+    def test_json_scorecards_require_an_eval_definition(self) -> None:
+        self.write_valid_skill("eval-skill")
+        (self.repo / "eval-skill/evals/evals.json").unlink()
+        self.write("eval-skill/evals/scorecards/fixture.json", "{}\n")
+
+        self.assert_validation_fails_with(
+            "eval-skill/evals/scorecards: JSON scorecards require an evals/evals.json definition"
+        )
+
+        self.write("later-skill/SKILL.md", "---\nname: later-skill\n---\n\n# Later\n")
+        output = self.assert_validation_fails_with("JSON scorecards require an evals/evals.json definition")
+        self.assertIn("later-skill/SKILL.md: frontmatter description", output)
+
+    def test_missing_eval_definition_is_allowed_without_json_scorecards(self) -> None:
+        self.write_valid_skill("eval-skill")
+        (self.repo / "eval-skill/evals/evals.json").unlink()
+
+        for readme_only in (False, True):
+            with self.subTest(readme_only=readme_only):
+                if readme_only:
+                    self.write("eval-skill/evals/scorecards/README.md", "# Legacy scorecards\n")
+                result = run_validator(self.repo)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_eval_version_and_duplicate_ids_fail(self) -> None:
         self.write_valid_skill("eval-skill")
@@ -440,6 +623,41 @@ class RepositoryValidatorTests(unittest.TestCase):
         output = self.assert_validation_fails_with("trials must equal 10")
         self.assertIn("missing eval IDs", output)
         self.assertIn("unknown eval IDs", output)
+
+    def test_malformed_scorecard_enums_report_diagnostics_without_tracebacks(self) -> None:
+        self.write_valid_skill("scorecard-skill")
+        row = {
+            "eval_id": "valid-eval",
+            "case_type": "trigger",
+            "trials": 10,
+            "triggers": 10,
+            "accepted_activation": 10,
+            "assertion_passes": 10,
+            "assertion_denominator": 10,
+            "automatic_failures": 0,
+            "result": "pass",
+            "notes": 42,
+        }
+        scorecard = {
+            "version": 1,
+            "skill_name": "scorecard-skill",
+            "model": "inert-fixture",
+            "product_surface": "schema-test",
+            "run_date": "2026-10-21",
+            "skill_commit": "fixture",
+            "results": [row],
+        }
+        for field in ("case_type", "result"):
+            original = row[field]
+            for value in ([], {}, None, True, 7, "unknown"):
+                with self.subTest(field=field, value=value):
+                    row[field] = value
+                    self.write("scorecard-skill/evals/scorecards/fixture.json", json.dumps(scorecard) + "\n")
+                    output = self.assert_validation_fails_with(f"results[0].{field} must be")
+                    self.assertIn("scorecard-skill/evals/scorecards/fixture.json:", output)
+                    self.assertIn("results[0].notes must be a string", output)
+                    self.assertNotIn("Traceback", output)
+            row[field] = original
 
     def test_eval_scorecard_rejects_impossible_count_relationships(self) -> None:
         self.write_valid_skill("scorecard-skill")

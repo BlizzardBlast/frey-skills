@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import filecmp
 import json
 import re
 import sys
@@ -12,8 +11,10 @@ from pathlib import Path
 from typing import Any, Iterable, Optional
 
 try:
+    from scripts.build_plugin import BuildError, reject_symlinks, validate_output_path
     from scripts.repository_layout import SourcePathError, discover_skill_names, is_runtime_artifact, validate_source_path
 except ModuleNotFoundError:
+    from build_plugin import BuildError, reject_symlinks, validate_output_path
     from repository_layout import SourcePathError, discover_skill_names, is_runtime_artifact, validate_source_path
 
 
@@ -77,11 +78,11 @@ REQUIRED_KEYWORDS = {
     "writing",
 }
 SEMVER_PATTERN = re.compile(
-    r"^(0|[1-9]\d*)\."
-    r"(0|[1-9]\d*)\."
-    r"(0|[1-9]\d*)"
-    r"(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\."
-    r"(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?"
+    r"^(0|[1-9][0-9]*)\."
+    r"(0|[1-9][0-9]*)\."
+    r"(0|[1-9][0-9]*)"
+    r"(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\."
+    r"(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?"
     r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
 )
 
@@ -109,17 +110,19 @@ def main(argv: Optional[list[str]] = None) -> int:
 def validate_bundle(bundle: Path) -> list[str]:
     errors: list[str] = []
     try:
-        discover_skill_names(REPOSITORY_ROOT)
+        bundle = validate_output_path(bundle)
+        for name in discover_skill_names(REPOSITORY_ROOT):
+            reject_symlinks(REPOSITORY_ROOT / name)
         validate_source_path(PLUGIN_TEMPLATE / ".codex-plugin" / "plugin.json", REPOSITORY_ROOT)
-    except SourcePathError as exc:
+    except (SourcePathError, BuildError, OSError, RuntimeError) as exc:
         return [str(exc)]
-    if bundle.is_symlink():
-        return [f"bundle path must not be a symlink: {bundle}"]
+    validate_no_symlinks(bundle, errors)
+    if errors:
+        return errors
     if not bundle.is_dir():
         return [f"bundle path is not a directory: {bundle}"]
 
     validate_root_layout(bundle, errors)
-    validate_no_symlinks(bundle, errors)
     validate_manifest_parity(bundle, errors)
     manifest = load_manifest(bundle, errors)
     if manifest is not None:
@@ -158,7 +161,7 @@ def validate_manifest_parity(bundle: Path, errors: list[str]) -> None:
         return
     if not generated.is_file():
         return
-    if not filecmp.cmp(source, generated, shallow=False):
+    if source.read_bytes() != generated.read_bytes():
         errors.append(".codex-plugin/plugin.json differs from canonical template")
 
 
@@ -316,14 +319,15 @@ def compare_trees(source: Path, generated: Path, label: str, errors: list[str]) 
         return
 
     for relative_file in sorted(source_files):
-        if not filecmp.cmp(source / relative_file, generated / relative_file, shallow=False):
+        if (source / relative_file).read_bytes() != (generated / relative_file).read_bytes():
             errors.append(f"{label}/{relative_file.as_posix()} differs from canonical source")
 
 
 def validate_no_symlinks(bundle: Path, errors: list[str]) -> None:
-    for path in bundle.rglob("*"):
-        if path.is_symlink():
-            errors.append(f"symlinks are not allowed in plugin bundles: {path.relative_to(bundle).as_posix()}")
+    try:
+        reject_symlinks(bundle)
+    except (BuildError, OSError, RuntimeError) as exc:
+        errors.append(str(exc))
 
 
 def validate_no_todo_placeholders(value: Any, path: str, errors: list[str]) -> None:
