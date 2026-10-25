@@ -6,6 +6,9 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Record the delivery-handoff implementation plan: four anchored steps, eight
+  accepted criteria, fourteen planned decision cases, and deterministic
+  verification. Planning is complete; skill implementation has not started.
 - Reassess the twelve-skill roadmap against recent repository delivery work.
   Propose conditional PR delivery-handoff guidance in `implementation-plan`,
   with eight acceptance criteria and preserved authority boundaries; no skill

@@ -6,7 +6,7 @@ The published v1.12.0 portfolio contains twelve skills.
 
 Recommendation: extend `implementation-plan` with optional guidance for a
 user-requested PR delivery handoff, initially covering a single-PR squash merge.
-Status: **PROPOSED / NOT IMPLEMENTED**. This reassessment authorizes no skill
+Original disposition: **PROPOSED / NOT IMPLEMENTED**. This reassessment authorizes no skill
 change, merge capability, release, automation, or external write. The user
 requested a roadmap refresh and one evidence-backed improvement; the proposed
 behavior below remains subject to a separate development decision.
@@ -87,10 +87,12 @@ authority for every sensitive or external effect.
 
 ## Development and verification handoff
 
-The next development decision is whether to accept RM-AC01 through RM-AC08 for
-the conditional planning extension. If accepted, create a repository-grounded
-implementation plan using the existing planning entrypoint/checklist and native
-deterministic contract suite. This document is not `READY_TO_IMPLEMENT` input.
+The user subsequently requested the next step on 2026-10-25, accepting RM-AC01
+through RM-AC08 as the bounded planning input. The separate
+[implementation plan](delivery-handoff-implementation-plan.md) is
+**COMPLETE / READY_TO_IMPLEMENT**; implementation remains **NOT STARTED**.
+The reassessment itself is not an executable plan, and saving either document
+does not authorize execution or external effects.
 
 Future verification should cover the ordinary-plan exclusion, authorized
 squash-delivery handoff, missing ownership/authority, moved head/base, missing or
