@@ -42,7 +42,10 @@ for executed source-installation and metadata-only CLI results.
 
 The twelve-skill inventory is unchanged across that release pair; the migration
 references and updated skill metadata must still match the correct version's
-cache byte for byte. Desktop UI observations remain **NOT_TESTED** for v1.12.0.
+cache byte for byte. On 2026-10-25 the maintainer reported a successful v1.12.0
+desktop trial. The [bounded report](compatibility.md#maintainer-reported-v1120-desktop-trial)
+records this separately from automated verification; individual desktop checklist
+outcomes remain **NOT_TESTED**.
 Behavioral model evals were not run and no model-behavior certification is claimed.
 
 ## Historical local preparation (2026-10-24)

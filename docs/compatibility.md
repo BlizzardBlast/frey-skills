@@ -288,14 +288,14 @@ Node.js 24.22.0, Skills CLI 1.7.2, and Codex CLI 0.150.1.
 | Skills CLI installations | PASS | `scripts/smoke_install.py --cli dist/smoke-tools/node_modules/skills/bin/cli.mjs` verified checkout and pinned v1.12.0 source installations: selected/complete skill sets, default/copy modes, exact listings, all 131 skill-resource files, byte parity, and user-file preservation. |
 | Codex CLI published transition | PASS | `scripts/smoke_codex.py --cli dist/codex-smoke-cli/node_modules/@openai/codex/bin/codex.js` verified v1.11.0 install, v1.12.0 upgrade, and v1.11.0 rollback; every phase discovered twelve enabled skills and passed version-specific cache and public-archive byte comparisons. |
 | Codex CLI checkout transition | PASS | The same command separately verified v1.11.0 install, checkout v1.12.0 upgrade, and v1.11.0 rollback in a different home/cache. Every phase passed exact names, ownership, starter prompts, installed bytes, and unrelated user-skill preservation. |
-| v1.12.0 desktop UI | NOT_TESTED | No matching desktop installation, selector, restart, upgrade, or rollback observation is claimed. |
+| v1.12.0 desktop UI | PARTIAL (maintainer-reported) | On 2026-10-25 the maintainer reported a successful desktop trial; see the bounded report below. Individual checklist results were not supplied. |
 
 Both published releases contain twelve skills. Version-specific cache paths and
 exact installed supporting-file bytes distinguish an upgrade and rollback even
 when the skill counts are equal. The v1.12.0 skill-resource set has 131 files;
 the v1.11.0 set has 124.
 
-Checks used disposable homes without inherited credentials or real Codex
+CLI checks used disposable homes without inherited credentials or real Codex
 configuration. Downloaded helpers were not executed. The app-server handled
 metadata requests only; no skill invocation or model turn was started.
 
@@ -304,3 +304,16 @@ Windows, Linux, and macOS. Inspect the exact pin-update commit's jobs for hosted
 evidence. Local archive and CLI results do not establish desktop acceptance,
 skill activation, or model behavior. Behavioral model evals were not run and no
 model-behavior certification is claimed.
+
+### Maintainer-reported v1.12.0 desktop trial
+
+On 2026-10-25, after the optional v1.12.0 desktop compatibility check was
+proposed, the maintainer reported: "It works. I have tried it." Record this as
+successful use reported by the maintainer, separate from automated verification.
+
+The report did not supply the app build, installed version or bytes, skill
+count, or individual checklist outcomes. Exact inventory and uniqueness in
+plugin settings and the composer selector, restart persistence, upgrade and
+rollback, starter-prompt display, and unrelated-installation preservation
+remain **NOT_TESTED** for v1.12.0 desktop UI. No additional desktop automation
+or behavioral model eval was run; this report does not certify model behavior.
