@@ -138,6 +138,44 @@ class InstallationSmokeTests(unittest.TestCase):
                     with self.assertRaisesRegex(smoke_install.SmokeError, "output exceeded its size limit"):
                         smoke_install.run(command, self.root, smoke_install.isolated_environment(self.root), timeout=10)
 
+    def test_posix_cleanup_reaps_a_leader_that_exits_during_group_signal(self) -> None:
+        for retry_result in (None, ProcessLookupError()):
+            with self.subTest(group_disappeared=isinstance(retry_result, ProcessLookupError)):
+                process = mock.Mock(pid=123)
+                process.poll.side_effect = [None, 0, 0]
+                with mock.patch.object(process_tree, "os") as platform, mock.patch.object(process_tree, "signal") as signals:
+                    platform.name = "posix"
+                    platform.killpg.side_effect = [PermissionError("leader exited during signal"), retry_result]
+                    process_tree.stop_process_tree(process)
+                    self.assertEqual(platform.killpg.call_count, 2)
+                    platform.killpg.assert_has_calls([mock.call(process.pid, signals.SIGKILL)] * 2)
+                process.kill.assert_not_called()
+                process.wait.assert_called_once_with(timeout=5)
+
+    def test_posix_cleanup_does_not_retry_permission_denial_for_a_running_leader(self) -> None:
+        process = mock.Mock(pid=123)
+        process.poll.return_value = None
+        with mock.patch.object(process_tree, "os") as platform, mock.patch.object(process_tree, "signal"):
+            platform.name = "posix"
+            platform.killpg.side_effect = PermissionError("inaccessible live group")
+            with self.assertRaises(PermissionError):
+                process_tree.stop_process_tree(process)
+            self.assertEqual(platform.killpg.call_count, 1)
+        process.kill.assert_called_once_with()
+        process.wait.assert_called_once_with(timeout=5)
+
+    def test_posix_cleanup_preserves_permission_denial_after_reaping_race(self) -> None:
+        process = mock.Mock(pid=123)
+        process.poll.side_effect = [None, 0, 0]
+        with mock.patch.object(process_tree, "os") as platform, mock.patch.object(process_tree, "signal"):
+            platform.name = "posix"
+            platform.killpg.side_effect = [PermissionError("leader exited during signal"), PermissionError("inaccessible descendants")]
+            with self.assertRaisesRegex(PermissionError, "inaccessible descendants"):
+                process_tree.stop_process_tree(process)
+            self.assertEqual(platform.killpg.call_count, 2)
+        process.kill.assert_not_called()
+        process.wait.assert_called_once_with(timeout=5)
+
     def test_continuous_output_stops_the_owned_tree_before_the_time_limit(self) -> None:
         parent_marker, child_marker = self.root / "parent.pid", self.root / "child.pid"
         child = "import sys,time\nwhile True:\n sys.stdout.buffer.write(b'x' * 65536); sys.stdout.flush(); time.sleep(0.001)\n"

@@ -2,7 +2,7 @@
 
 Preparation date: 2026-10-25 (Asia/Jakarta). Baseline: clean `main` at
 `54821a819d278833506da62cc1ff836ddb13ef80`. Branch:
-`codex/prepare-v1-13-0`. Status: **PREPARED LOCALLY / NOT PUBLISHED**.
+`codex/prepare-v1-13-0`. Status: **REFRESHING AFTER CI FAILURE / NOT PUBLISHED**.
 
 ## Scope and identity
 
@@ -66,7 +66,7 @@ Existing native helpers supplied all checks; no new release runner, dependency,
 credential flow, or workflow permission was introduced. Final record-only edits
 receive native repository/link, documentation, and whitespace validation.
 
-## Scoped review
+## Initial scoped review
 
 Scope: release-preparation diff against the baseline, including the four-file
 metadata/documentation delta and its artifact evidence. Review completeness:
@@ -79,6 +79,34 @@ metadata/documentation delta and its artifact evidence. Review completeness:
 | Authority, privacy, recovery | No new credentials, disposable client state, native publication/rollback safeguards retained, explicit later tag/publication approval | No live publication/recovery experiment |
 | Python/SOLID, dependencies, CI | No runtime Python, dependency, workflow, or architecture change; existing native helpers reused | Hosted results must match the final PR head |
 | Documentation and evidence | Published v1.12.0 pins retained; historical/local/public and CLI/desktop/model evidence kept separate | v1.13.0 desktop UI remains untested |
+
+## CI discovery and candidate refresh
+
+Initial PR CI run `40202001672` failed in macOS job `121194940912` while
+`test_short_lived_success_and_failure_cannot_return_oversized_output` unwound
+the expected output-limit error. `stop_process_tree` raised `PermissionError`
+from the group signal and masked the original failure. The helper reaped a
+leader already exited at its first poll, but did not handle an exit between
+that poll and the signal.
+
+Controlled regression cases reproduce that transition. The shared POSIX helper
+now retries the group signal once only when it first observed a running leader
+and a fresh poll after permission denial confirms exit. A disappeared group is
+accepted; a still-running leader or persistent permission denial still raises.
+Bounded waits and descendant cleanup remain intact. Windows ownership is unchanged.
+The initial regression run failed against the old helper; corrected portable
+fixtures and the narrow fix are verified before refreshing the candidate.
+
+The new tooling fix and release-note entry require fresh full-gate, immutable
+preparation, and exact-head CI evidence. The initial artifact/CLI observations
+above remain historical until that refresh completes. No workflow was rerun to
+conceal the failure, and no tag or publication action was attempted.
+
+The shared smoke suites passed all **45 focused tests** after the fix. A fresh
+full local gate then passed **468 tests run, 462 passed, six expected Windows
+skips**, all twelve specifications, generated source parity, and whitespace.
+Log: ignored `dist/v1.13.0-cleanup-fix-check.log`. Artifact/notes refresh and
+new-head hosted CI remain pending at this checkpoint.
 
 ## Publication and limits
 
