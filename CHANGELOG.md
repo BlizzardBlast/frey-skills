@@ -6,6 +6,11 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+## [1.13.0] - 2026-10-25
+
+- Preserve output-limit failures when a POSIX process exits between the initial
+  cleanup poll and group signal. Reap and retry that confirmed race once while
+  retaining genuine permission failures, descendant cleanup, and bounded waits.
 - Extend `implementation-plan` 1.5.0 with conditional, independently packaged
   PR delivery-handoff guidance, a synthetic fragment, fourteen decision cases,
   and eight deterministic contracts. Preserve ordinary plans, existing modes
