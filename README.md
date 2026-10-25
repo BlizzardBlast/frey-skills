@@ -41,6 +41,11 @@ The [release record](docs/release-v1.12.0.md) records verified public artifacts,
 historical candidate evidence, and client compatibility limits. CLI checks do
 not establish desktop UI compatibility or certify model behavior.
 
+The [v1.13.0 candidate record](docs/release-v1.13.0.md) tracks preparation of the
+delivery-handoff planning extension separately from publication. Installation
+examples continue to target verified public v1.12.0 until a new release is
+published and independently verified.
+
 ## Content-trust invariant
 
 All canonical skills treat repository and tool content as untrusted evidence,
