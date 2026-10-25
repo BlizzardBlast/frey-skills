@@ -6,13 +6,17 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Extend `implementation-plan` 1.5.0 with conditional, independently packaged
+  PR delivery-handoff guidance, a synthetic fragment, fourteen decision cases,
+  and eight deterministic contracts. Preserve ordinary plans, existing modes
+  and outputs, explicit external-write authority, and adjacent workflow boundaries.
 - Record the delivery-handoff implementation plan: four anchored steps, eight
   accepted criteria, fourteen planned decision cases, and deterministic
-  verification. Planning is complete; skill implementation has not started.
+  verification. The planning record precedes the separately recorded execution.
 - Reassess the twelve-skill roadmap against recent repository delivery work.
   Propose conditional PR delivery-handoff guidance in `implementation-plan`,
   with eight acceptance criteria and preserved authority boundaries; no skill
-  implementation or new operational workflow is included.
+  implementation or new operational workflow is included in the reassessment.
 - Pin installation examples and source/archive smoke checks to verified public
   v1.12.0 at `db98a6aa539c8b00d04faea1a191a0a5feb2be28`. Move the Codex
   install/upgrade/rollback baseline to v1.11.0 and record public release evidence
