@@ -48,10 +48,10 @@ gate passed
 parity passed, and scoped self-review found no remaining actionable findings.
 This addition does not authorize publication of a candidate.
 
-The [v1.11.0 release record](release-v1.11.0.md) tracks preparation separately
+The [v1.11.0 release record](release-v1.11.0.md) tracks its preparation separately
 from verified publication of the twelve-skill bundle. Current installation and
-smoke-check pins identify that verified public release; the Codex transition
-checks v1.10.0 installation, v1.11.0 upgrade, and v1.10.0 rollback.
+smoke-check pins use verified v1.12.0; the Codex transition checks v1.11.0
+installation, v1.12.0 upgrade, and v1.11.0 rollback.
 
 The remaining names and scopes are proposals. This document does not activate skills,
 approve their specifications, authorize implementation or commands, accept
@@ -63,12 +63,12 @@ On 2026-10-24, the user authorized a migration/dependency-upgrade extension to
 development sources add local role-specific references, compatibility and phase
 gates, recovery and continuation rules, twelve deterministic decision cases,
 and a [synthetic worked example](migration-upgrade-worked-example.md).
-Development status: **IMPLEMENTED**, unreleased. The extension adds no skill or
-runtime dependency. Existing
-activation, output statuses, and command authority remain unchanged; publication
-and installed-client evidence are separate. Demand remains unmeasured.
-The [v1.12.0 preparation record](release-v1.12.0.md) covers this extension and
-the accumulated validation, artifact-publication, smoke, and review improvements.
+Development status: **IMPLEMENTED**, published in v1.12.0 on 2026-10-25.
+The extension adds no skill or runtime dependency. Existing activation, output
+statuses, and command authority remain unchanged; publication and installed-client
+evidence are separate. Demand remains unmeasured. The
+[v1.12.0 release record](release-v1.12.0.md) covers this extension and the
+accumulated validation, artifact-publication, smoke, and review improvements.
 
 ## Research approach and limits
 
@@ -339,7 +339,7 @@ required workflow sequence for users of the skills.
 | Idea | Recommended disposition | Evidence that would justify revisiting |
 | --- | --- | --- |
 | `safe-refactor` | Extend refactor profiles in `implementation-plan`, test guidance in `test-strategy`, and execution invariants first. | Repeated tasks require a distinct behavior-preservation artifact that the current combination cannot represent clearly. |
-| `migration` / `dependency-upgrade` | Extended the existing planning, strategy, and execution skills on 2026-10-24; see the [worked example](migration-upgrade-worked-example.md). The extension is unreleased. | Consider a separate skill only if a distinct compatibility or upgrade decision workflow emerges beyond the existing migration plan/test strategy. |
+| `migration` / `dependency-upgrade` | Extended the existing planning, strategy, and execution skills on 2026-10-24 and published in v1.12.0; see the [worked example](migration-upgrade-worked-example.md). | Consider a separate skill only if a distinct compatibility or upgrade decision workflow emerges beyond the existing migration plan/test strategy. |
 | General test writer or TDD skill | Defer a separate skill; authorized test implementation already fits plan execution, while `test-strategy` chooses coverage. | A focused user workflow needs a distinct contract beyond choosing tests or executing a plan; no blanket test-first requirement is introduced. |
 | General verification or release checker | Extend current execution/review/readiness evidence rules. | A new candidate/target decision cannot be represented by existing outputs. |
 | Framework-specific frontend, mobile, document, or cloud packs | Keep outside the immediate core roadmap; link to suitable specialist resources when relevant. | Sustained demand and a maintainable domain owner justify a separately scoped pack. |

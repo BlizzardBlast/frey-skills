@@ -1,9 +1,9 @@
 # Recorded plugin compatibility
 
-The current published release is v1.11.0; see the separate
-[v1.11.0 verification](#v1110-verification) for its public archive, CLI checks,
+The current published release is v1.12.0; see the separate
+[v1.12.0 verification](#v1120-verification) for its public archive, CLI checks,
 and desktop coverage limits. Historical Windows desktop observations remain
-version-specific; bounded v1.11.0 maintainer reports are recorded in its own section.
+version-specific and do not establish v1.12.0 desktop acceptance.
 
 Historical v1.8.1/v1.8.2 checks were recorded on 2026-10-17 with Windows 11
 build 26300 and Codex CLI 0.150.1.
@@ -22,6 +22,7 @@ and restart persistence remain **NOT_TESTED**.
 | [v1.9.0](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.9.0) | `9944b36d4406bb89443c5fabdbb15d4d019478fe` | `9e2870289252c26ac96a9bc01303d4b36bd3f96423e311d708e2ade6a889bf65` |
 | [v1.10.0](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.10.0) | `97f755b41e388f31b7c63465743ac26aa111360c` | `616ee291a1bca1ec0719045adf191b9dd773e8c23bed2a73446a865a13687cfc` |
 | [v1.11.0](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.11.0) | `7e7a535ca9f19fc8514c368cb00d5c4e8288dfcf` | `8f6f1d36d213cd8c49094708a4af9e46551212e89135d8fc654e47c6781d8897` |
+| [v1.12.0](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.12.0) | `db98a6aa539c8b00d04faea1a191a0a5feb2be28` | `1563c76f516d558161d4b042ab0b602f3bd1104998f6f8497a20f78bf28d7394` |
 
 Each ZIP matches its published `SHA256SUMS` and the tagged manifest, license,
 skill set, and supporting-file bytes. The client checks use the downloaded
@@ -83,7 +84,7 @@ the client surface you use.
 ## Automated CLI compatibility
 
 The initial `scripts/smoke_codex.py` checks used the v1.8.1/v1.8.2 pair below
-and pinned Codex CLI 0.150.1. Current pins are recorded in the v1.11.0 section.
+and pinned Codex CLI 0.150.1. Current pins are recorded in the v1.12.0 section.
 Those checks verified each archive before installation and compared installed
 bytes, enabled skill ownership, unique names, versioned cache paths, and v1.8.2
 starter prompts. Every phase used a fresh metadata-only app-server in the same
@@ -235,11 +236,11 @@ credential-free child homes. Downloaded helpers were not executed. Metadata
 RPCs started no model turn or skill invocation; behavioral model evals were not
 run, and no model-behavior certification is claimed.
 
-These rows are local Windows observations. The existing installation/archive
-and Codex client CI matrices now target the verified v1.11.0 source/archive and
-the published v1.10.0/v1.11.0 transition on Windows, Linux, and macOS. Inspect
-the exact pin-update commit's jobs for hosted evidence rather than extending
-the local result to another platform. See the
+These rows are historical local Windows observations. At the v1.11.0 pin
+update, the installation/archive and Codex client CI matrices targeted that
+source/archive and the published v1.10.0/v1.11.0 transition on Windows, Linux,
+and macOS. Inspect that exact pin-update commit's jobs for hosted evidence
+rather than extending the local result to another platform. See the
 [release record](release-v1.11.0.md) for independent public and candidate ZIP
 identities. The [desktop checklist](installation.md#manual-plugin-compatibility-check)
 remains optional and separate.
@@ -269,3 +270,37 @@ those checks remain **NOT_TESTED**. Windows package metadata identified
 `OpenAI.Codex` version `26.1013.4894.0` on Windows build 26300; the app's displayed
 About version was not reported. macOS and Linux desktop UI remain **NOT_TESTED**.
 Behavioral model evals were not run, and no model-behavior certification is claimed.
+
+## v1.12.0 verification
+
+The [release workflow](https://github.com/BlizzardBlast/frey-skills/actions/runs/40150936254)
+passed its Windows validation and Linux validation/publication jobs on
+2026-10-25 for annotated tag `v1.12.0` at
+`db98a6aa539c8b00d04faea1a191a0a5feb2be28`. The public ZIP and release notes
+were independently compared with the exact tagged sources.
+
+The following local Windows checks ran on 2026-10-25 with Python 3.12.14,
+Node.js 24.22.0, Skills CLI 1.7.2, and Codex CLI 0.150.1.
+
+| Check | Result | Observed evidence |
+| --- | --- | --- |
+| Public v1.12.0 archive | PASS | The downloaded ZIP matches its public checksum, manifest, license, all twelve skills, and every byte in all 133 archived files against an LF tagged checkout. Its digest is recorded in the release table above. |
+| Skills CLI installations | PASS | `scripts/smoke_install.py --cli dist/smoke-tools/node_modules/skills/bin/cli.mjs` verified checkout and pinned v1.12.0 source installations: selected/complete skill sets, default/copy modes, exact listings, all 131 skill-resource files, byte parity, and user-file preservation. |
+| Codex CLI published transition | PASS | `scripts/smoke_codex.py --cli dist/codex-smoke-cli/node_modules/@openai/codex/bin/codex.js` verified v1.11.0 install, v1.12.0 upgrade, and v1.11.0 rollback; every phase discovered twelve enabled skills and passed version-specific cache and public-archive byte comparisons. |
+| Codex CLI checkout transition | PASS | The same command separately verified v1.11.0 install, checkout v1.12.0 upgrade, and v1.11.0 rollback in a different home/cache. Every phase passed exact names, ownership, starter prompts, installed bytes, and unrelated user-skill preservation. |
+| v1.12.0 desktop UI | NOT_TESTED | No matching desktop installation, selector, restart, upgrade, or rollback observation is claimed. |
+
+Both published releases contain twelve skills. Version-specific cache paths and
+exact installed supporting-file bytes distinguish an upgrade and rollback even
+when the skill counts are equal. The v1.12.0 skill-resource set has 131 files;
+the v1.11.0 set has 124.
+
+Checks used disposable homes without inherited credentials or real Codex
+configuration. Downloaded helpers were not executed. The app-server handled
+metadata requests only; no skill invocation or model turn was started.
+
+The existing CI matrices target these source/archive and transition pins on
+Windows, Linux, and macOS. Inspect the exact pin-update commit's jobs for hosted
+evidence. Local archive and CLI results do not establish desktop acceptance,
+skill activation, or model behavior. Behavioral model evals were not run and no
+model-behavior certification is claimed.
