@@ -9,7 +9,10 @@ at `09f37e06e85499fff445cf0e8d583bf1d53e92c6`, screens the twelve published
 v1.12.0 skills and recent real repository delivery work. It recommends one
 conditional extension to `implementation-plan`, with eight observable acceptance
 criteria and unchanged execution/review/release authority boundaries. The
-extension is **PROPOSED / NOT IMPLEMENTED**; other specialists remain deferred.
+extension is **PLANNED / NOT IMPLEMENTED**; its
+[implementation plan](delivery-handoff-implementation-plan.md) records
+`COMPLETE / READY_TO_IMPLEMENT` planning against the accepted eight criteria.
+Other specialists remain deferred.
 The research baseline and historical milestone records below retain their
 original observation dates and evidence limits.
 
@@ -387,3 +390,4 @@ they should constrain future implementation scope.
 | 2026-10-18 | M3 delivered; `IMPLEMENTED` | [Development record](threat-modeling-development.md) at baseline `d9d48b580f93f8421e237ec20522122a73e325d3`: 21 focused tests passed; full gate reported 256 tests, 255 passed and one expected Windows-only skip; all eleven skills validated and bundle parity passed. Scoped self-review found no actionable findings. The skill is unreleased; no model-behavior or security certification is claimed. | M4: reassess the proposed debug performance extension and retrospective demand; record build, extend, defer, or drop decisions against the extraction conditions. |
 | 2026-10-19 | M4 delivered; EXTEND / DEFER / DEFER | [Specialist reassessment](specialist-reassessment.md) at baseline `8554932221064dd82c99404c468b85a8e531f43a`: 32 focused tests passed; the full gate reported 284 tests, 278 passed and six expected platform skips; all eleven skills validated and bundle parity passed. No recurring task evidence meeting extraction conditions was found in the bounded sources. | Maintain the extension and revisit extraction only with qualifying sanitized task evidence and a separately scoped request. No further standalone specialist is queued. |
 | 2026-10-25 | Roadmap refresh complete; planning extension PROPOSED | [Delivery-handoff reassessment](roadmap-reassessment-2026-10-25.md) at `09f37e06e85499fff445cf0e8d583bf1d53e92c6`: twelve-skill boundary screen and recent merged delivery tasks support a conditional planning reference, with medium confidence and eight acceptance criteria. No implementation, measured savings, cross-project demand, or model behavior is established. | Accept the bounded behavioral proposal, then create its implementation plan. Do not expand execution/review/release authority or create a general operator automatically. |
+| 2026-10-25 | Delivery-handoff planning complete; READY_TO_IMPLEMENT | [Four-step implementation plan](delivery-handoff-implementation-plan.md) at `1955752d86c8c5de47256da2de370ba52e67aa70` traces RM-AC01 through RM-AC08 to canonical authoring, fourteen planned decision cases, native test registration, documentation, and verification. No skill implementation or future check result is claimed. | Execute the bounded plan when separately requested; preserve the planning-only guide and adjacent authority boundaries. |
