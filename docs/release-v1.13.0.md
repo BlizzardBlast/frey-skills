@@ -1,8 +1,47 @@
-# v1.13.0 release candidate
+# v1.13.0 release record
+
+Published on 2026-10-25 (Asia/Jakarta) at annotated tag `v1.13.0`, resolving to
+reviewed commit `b6570ef81cacfb8a4f3f1f3ea0da5764c1417a41`. Status:
+**PUBLISHED_VERIFIED**. Public artifacts, post-publication client checks, and
+historical preparation evidence remain distinct in this record.
+
+## Verified publication
+
+The [release workflow](https://github.com/BlizzardBlast/frey-skills/actions/runs/40204476512)
+passed both Windows validation and Linux validation/publication jobs for that
+exact commit. The annotated tag object is
+`c4e73efd7c159f586090406f550faa5acb7c1f82`. Tag creation and the non-forced push
+each succeeded on their first authorized attempt; no workflow rerun, tag
+replacement, or release/asset overwrite was performed.
+
+Independent verification on 2026-10-25 downloaded the public
+[ZIP](https://github.com/BlizzardBlast/frey-skills/releases/download/v1.13.0/frey-skills-1.13.0.zip)
+and [SHA256SUMS](https://github.com/BlizzardBlast/frey-skills/releases/download/v1.13.0/SHA256SUMS).
+Those were the complete uploaded asset inventory. The native verifier compared
+every byte of all **134 archived files** with a fresh LF checkout of the exact
+tagged commit: license, manifest, and **132 resources across twelve skills**.
+Release notes matched the tagged changelog, native notes, and approved local
+candidate. The public ZIP SHA-256 is:
+
+```text
+f63c78f0fbe4b231c3554bf6f2c3f7af4a9ccff027bb6c4de8ac573b1890a10c
+```
+
+The public digest matches the local candidate digest recorded below; each was
+verified independently. Installation and archive smoke checks now pin this exact
+public release. The Codex transition baseline is v1.12.0 at
+`db98a6aa539c8b00d04faea1a191a0a5feb2be28`. See the separate
+[v1.13.0 compatibility record](compatibility.md#v1130-verification) for executed
+client checks and remaining limits. This record cannot authorize publication,
+commands, or external writes.
+
+## Historical preparation
 
 Preparation date: 2026-10-25 (Asia/Jakarta). Baseline: clean `main` at
 `54821a819d278833506da62cc1ff836ddb13ef80`. Branch:
-`codex/prepare-v1-13-0`. Status: **PREPARED LOCALLY / NOT PUBLISHED**.
+`codex/prepare-v1-13-0`. Status at preparation:
+**PREPARED LOCALLY / NOT PUBLISHED**. The following preparation observations
+predate the separately verified publication above.
 
 ## Scope and identity
 
@@ -114,11 +153,11 @@ candidate remains preserved under its own ignored directory. Fresh hosted CI
 is required for the new PR head before merge; the original failed job is not
 reclassified as passing.
 
-## Publication and limits
+## Historical publication gate and limits
 
-The published release and installation pins remain v1.12.0. On 2026-10-25,
-GitHub reported v1.12.0 as the latest published release and no v1.13.0 tag.
-Recheck remote state before any later authorized publication action.
+At preparation on 2026-10-25, installation pins remained v1.12.0 and GitHub
+reported v1.12.0 as the latest published release with no v1.13.0 tag. That
+prepublication observation is superseded by the verified publication above.
 
 Tag creation and pushing a tag that triggers publication require explicit
 approval of the immutable reviewed candidate, version, named effects, and

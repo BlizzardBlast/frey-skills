@@ -6,6 +6,11 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Pin installation examples and source/archive smoke checks to verified public
+  v1.13.0 at `b6570ef81cacfb8a4f3f1f3ea0da5764c1417a41`. Move the Codex
+  install/upgrade/rollback baseline to v1.12.0 and record publication and
+  compatibility evidence separately from historical candidates and desktop UI.
+
 ## [1.13.0] - 2026-10-25
 
 - Preserve output-limit failures when a POSIX process exits between the initial
