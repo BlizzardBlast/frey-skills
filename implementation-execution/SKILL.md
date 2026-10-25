@@ -4,7 +4,7 @@ description: Use when the user asks to execute, continue, or resume an existing 
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: '1.3.1'
+  version: '1.4.0'
   allow_implicit_invocation: 'true'
 ---
 
@@ -55,6 +55,7 @@ Load only needed references:
 
 - `references/baseline-and-verification-rules.md`
 - `references/plan-conformance-and-deviation-rules.md`
+- `references/migration-and-upgrade-rules.md` for an approved schema, API, dependency, framework, or toolchain transition, including continuation, before its first affected step
 - `references/execution-quality-checklist.md` before finalizing
 - `references/evaluation-playbook.md` only when evaluating this skill
 

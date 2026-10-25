@@ -58,6 +58,18 @@ approve their specifications, authorize implementation or commands, accept
 risk, or authorize external writes. Future work still takes its scope and
 authority from the user's request and active instructions.
 
+On 2026-10-24, the user authorized a migration/dependency-upgrade extension to
+`implementation-plan`, `test-strategy`, and `implementation-execution`. The
+development sources add local role-specific references, compatibility and phase
+gates, recovery and continuation rules, twelve deterministic decision cases,
+and a [synthetic worked example](migration-upgrade-worked-example.md).
+Development status: **IMPLEMENTED**, unreleased. The extension adds no skill or
+runtime dependency. Existing
+activation, output statuses, and command authority remain unchanged; publication
+and installed-client evidence are separate. Demand remains unmeasured.
+The [v1.12.0 preparation record](release-v1.12.0.md) covers this extension and
+the accumulated validation, artifact-publication, smoke, and review improvements.
+
 ## Research approach and limits
 
 Compare the current skill boundaries with the Agent Skills specification,
@@ -327,7 +339,7 @@ required workflow sequence for users of the skills.
 | Idea | Recommended disposition | Evidence that would justify revisiting |
 | --- | --- | --- |
 | `safe-refactor` | Extend refactor profiles in `implementation-plan`, test guidance in `test-strategy`, and execution invariants first. | Repeated tasks require a distinct behavior-preservation artifact that the current combination cannot represent clearly. |
-| `migration` / `dependency-upgrade` | Extend migration and dependency references, covering consumer compatibility, provenance, transition phases, and recovery. | A distinct compatibility or upgrade decision workflow emerges beyond the existing migration plan/test strategy. |
+| `migration` / `dependency-upgrade` | Extended the existing planning, strategy, and execution skills on 2026-10-24; see the [worked example](migration-upgrade-worked-example.md). The extension is unreleased. | Consider a separate skill only if a distinct compatibility or upgrade decision workflow emerges beyond the existing migration plan/test strategy. |
 | General test writer or TDD skill | Defer a separate skill; authorized test implementation already fits plan execution, while `test-strategy` chooses coverage. | A focused user workflow needs a distinct contract beyond choosing tests or executing a plan; no blanket test-first requirement is introduced. |
 | General verification or release checker | Extend current execution/review/readiness evidence rules. | A new candidate/target decision cannot be represented by existing outputs. |
 | Framework-specific frontend, mobile, document, or cloud packs | Keep outside the immediate core roadmap; link to suitable specialist resources when relevant. | Sustained demand and a maintainable domain owner justify a separately scoped pack. |

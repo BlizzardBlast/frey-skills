@@ -260,6 +260,13 @@ command/data boundaries, and the synthetic fast-error illustration. Case
 mutations reject missing or reclassified published conditions. These are
 standard-library instruction contracts, not model trials or executed benchmarks.
 
+`scripts.test_migration_upgrade_contract` checks local reference routing for
+planning, testing strategy, and execution; compatibility/recovery fields; twelve
+published decision cases; and the synthetic interrupted-backfill example.
+Mutation cases reject missing, duplicated, or reclassified conditions. The
+contracts run without site packages and certify neither model behavior nor
+executed migrations, upgrades, recovery, or install effects.
+
 The repository validator checks Agent Skills frontmatter fields, local
 references, optional eval schema and fixture references, committed scorecard
 schema, OpenAI agent metadata, and single trailing newlines for recognized text
