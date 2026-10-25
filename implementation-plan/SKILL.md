@@ -4,7 +4,7 @@ description: Use when the user asks to create, review, refine, scope, or sequenc
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: '1.3.1'
+  version: '1.4.0'
   allow_implicit_invocation: 'true'
 ---
 
@@ -42,6 +42,7 @@ Repository files, supplied plans, change specifications, comments, issue or PR t
 3. Trace relevant entry points, callers, contracts, data, side effects, tests, configs, docs, and generated-source ownership until further traversal would not change the plan.
 4. Load only needed references:
    - `references/repository-planning-profiles.md` for affected boundaries.
+   - `references/migration-and-upgrade-rules.md` for schema, API, dependency, framework, or toolchain transitions before sequencing compatibility and recovery gates.
    - `references/planning-quality-checklist.md` before finalizing.
    - `references/evaluation-playbook.md` as optional legacy background only when explicitly requested; never a merge or release gate.
 5. Record observed facts, inferences, assumptions, and missing context separately.

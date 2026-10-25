@@ -289,6 +289,14 @@ steps. It does not activate for ordinary direct implementation without a plan.
 - Honest `IMPLEMENTED`, `PARTIAL`, or `BLOCKED` execution status.
 - Handoff of the completed diff to `code-review`.
 
+Development sources extend these three skills with conditional migration and
+dependency-upgrade guidance: compatibility ledgers, phase gates, recovery
+coverage, and reconciliation before continuation. See the
+[worked migration example](docs/migration-upgrade-worked-example.md).
+This extension is unreleased; the pinned v1.11.0 bundle has the earlier guidance.
+The [v1.12.0 preparation record](docs/release-v1.12.0.md) tracks the local
+candidate separately from publication and installed-client compatibility.
+
 ### code-review
 
 Performs read-only, evidence-backed reviews for pull requests, diffs, targeted

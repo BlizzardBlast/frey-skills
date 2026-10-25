@@ -6,6 +6,13 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+## [1.12.0] - 2026-10-24
+
+- Extend `implementation-plan`, `test-strategy`, and `implementation-execution`
+  with independently packaged migration/dependency-upgrade references,
+  compatibility and recovery gates, bounded continuation, a synthetic worked
+  example, and twelve deterministic decision cases. Existing activation,
+  output statuses, and command-authority boundaries remain unchanged.
 - Add optional, local paired review-efficiency measurement with privacy-limited numeric aggregates and explicit quality safeguards; document evidence-based finding-to-prevention decisions (no new required model evals).
 - Recognize CI-time, tool-call, and repeated-read savings in the comparator's summary; reject counters above the documented numeric limit with a controlled validation error.
 - Reject excessively nested aggregate JSON with a controlled validation error instead of a traceback.
