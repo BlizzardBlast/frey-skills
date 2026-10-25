@@ -6,6 +6,10 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Reassess the twelve-skill roadmap against recent repository delivery work.
+  Propose conditional PR delivery-handoff guidance in `implementation-plan`,
+  with eight acceptance criteria and preserved authority boundaries; no skill
+  implementation or new operational workflow is included.
 - Pin installation examples and source/archive smoke checks to verified public
   v1.12.0 at `db98a6aa539c8b00d04faea1a191a0a5feb2be28`. Move the Codex
   install/upgrade/rollback baseline to v1.11.0 and record public release evidence

@@ -4,6 +4,15 @@ Research date: 2026-10-18. Status: proposed direction, not a delivery commitment
 Repository baseline: `19f0bf09ff8a1f1224c45f865090e246f316dfd3` on `main`,
 with eight canonical skills and plugin manifest version `1.9.0`.
 
+Current reassessment: [2026-10-25 delivery-handoff planning](roadmap-reassessment-2026-10-25.md),
+at `09f37e06e85499fff445cf0e8d583bf1d53e92c6`, screens the twelve published
+v1.12.0 skills and recent real repository delivery work. It recommends one
+conditional extension to `implementation-plan`, with eight observable acceptance
+criteria and unchanged execution/review/release authority boundaries. The
+extension is **PROPOSED / NOT IMPLEMENTED**; other specialists remain deferred.
+The research baseline and historical milestone records below retain their
+original observation dates and evidence limits.
+
 M1 has added the [repository-orientation skill](../repository-orientation/SKILL.md).
 M2 has added the [architecture-decision skill](../architecture-decision/SKILL.md);
 see the [development record](architecture-decision-development.md).
@@ -79,9 +88,11 @@ Prioritize a distinct reusable output over a larger catalog.
 The current-state findings below come from inspected repository files. The
 candidate ranking is an inference from those findings and the linked sources;
 the sources do not establish demand for these particular frey-skills additions.
-No usage analytics, user interviews, or issue-demand analysis informed this
-ranking. An authenticated GitHub CLI issue query was unavailable. This is a
-focused landscape sample, not an exhaustive market survey or a comparative
+No usage analytics, user interviews, or issue-demand analysis informed the
+original ranking. An authenticated GitHub CLI issue query was unavailable then;
+the linked 2026-10-25 reassessment separately records its bounded GitHub sample.
+This original research is a focused landscape sample, not an exhaustive market
+survey or a comparative
 quality assessment of other skill collections.
 
 Sources were read on the research date. Their existence and documented design
@@ -342,8 +353,9 @@ required workflow sequence for users of the skills.
 | `migration` / `dependency-upgrade` | Extended the existing planning, strategy, and execution skills on 2026-10-24 and published in v1.12.0; see the [worked example](migration-upgrade-worked-example.md). | Consider a separate skill only if a distinct compatibility or upgrade decision workflow emerges beyond the existing migration plan/test strategy. |
 | General test writer or TDD skill | Defer a separate skill; authorized test implementation already fits plan execution, while `test-strategy` chooses coverage. | A focused user workflow needs a distinct contract beyond choosing tests or executing a plan; no blanket test-first requirement is introduced. |
 | General verification or release checker | Extend current execution/review/readiness evidence rules. | A new candidate/target decision cannot be represented by existing outputs. |
+| PR delivery handoff | The [2026-10-25 reassessment](roadmap-reassessment-2026-10-25.md) proposes optional guidance in `implementation-plan` for a requested single-PR squash-delivery sequence. Preserve execution's no-merge boundary and advisory review. | Accept its eight behavioral criteria and create an implementation plan; a broader mutating operator needs separate scope and authority. |
 | Framework-specific frontend, mobile, document, or cloud packs | Keep outside the immediate core roadmap; link to suitable specialist resources when relevant. | Sustained demand and a maintainable domain owner justify a separately scoped pack. |
-| Release executor, deployment operator, or incident mitigator | Defer; the current release skill intentionally provides an assessment. | A concrete target ecosystem, credential/approval model, recovery contract, and maintenance capacity support an explicitly authorized operational workflow. |
+| Release executor, deployment operator, or incident mitigator | Frey Skills GitHub publication is implemented in `release-execution` and published in v1.11.0. Defer general release operations, deployment, and incident mitigation; `release-readiness` remains read-only. | A concrete additional target ecosystem, credential/approval model, recovery contract, and maintenance capacity support a separately scoped operational workflow. |
 | Autonomous orchestration, automatic lesson promotion, or issue synchronization | Defer broad automation and external-write workflows. | A concrete repeated task establishes value and a clear consent, provenance, privacy, and recovery contract. |
 
 ## Maintaining this roadmap
@@ -374,3 +386,4 @@ they should constrain future implementation scope.
 | 2026-10-18 | M2 delivered; `IMPLEMENTED` | [Development record](architecture-decision-development.md) at baseline `51950489682fbe304ca818b17a7e911e2f4bd7f6`: 19 focused tests passed; full gate reported 247 tests, 246 passed and one expected Windows-only skip; all ten skills validated and bundle parity passed. Scoped self-review found no actionable findings. Skill remains unreleased; model behavior and recurring demand remain unmeasured. | M3: scope threat-modeling against review and test-strategy boundaries before authoring it. |
 | 2026-10-18 | M3 delivered; `IMPLEMENTED` | [Development record](threat-modeling-development.md) at baseline `d9d48b580f93f8421e237ec20522122a73e325d3`: 21 focused tests passed; full gate reported 256 tests, 255 passed and one expected Windows-only skip; all eleven skills validated and bundle parity passed. Scoped self-review found no actionable findings. The skill is unreleased; no model-behavior or security certification is claimed. | M4: reassess the proposed debug performance extension and retrospective demand; record build, extend, defer, or drop decisions against the extraction conditions. |
 | 2026-10-19 | M4 delivered; EXTEND / DEFER / DEFER | [Specialist reassessment](specialist-reassessment.md) at baseline `8554932221064dd82c99404c468b85a8e531f43a`: 32 focused tests passed; the full gate reported 284 tests, 278 passed and six expected platform skips; all eleven skills validated and bundle parity passed. No recurring task evidence meeting extraction conditions was found in the bounded sources. | Maintain the extension and revisit extraction only with qualifying sanitized task evidence and a separately scoped request. No further standalone specialist is queued. |
+| 2026-10-25 | Roadmap refresh complete; planning extension PROPOSED | [Delivery-handoff reassessment](roadmap-reassessment-2026-10-25.md) at `09f37e06e85499fff445cf0e8d583bf1d53e92c6`: twelve-skill boundary screen and recent merged delivery tasks support a conditional planning reference, with medium confidence and eight acceptance criteria. No implementation, measured savings, cross-project demand, or model behavior is established. | Accept the bounded behavioral proposal, then create its implementation plan. Do not expand execution/review/release authority or create a general operator automatically. |
