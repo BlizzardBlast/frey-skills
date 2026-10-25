@@ -34,17 +34,15 @@ handoff sequence, see the [worked example](docs/worked-example.md).
 For researched future skill priorities and delivery gates, see the
 [skill development roadmap](docs/roadmap.md).
 
-The versioned installation below pins the published twelve-skill v1.12.0
+The versioned installation below pins the published twelve-skill v1.13.0
 release, including `release-execution`, repository orientation, architecture
 decisions, threat modeling, and the performance-investigation guidance in `debug`.
-The [release record](docs/release-v1.12.0.md) records verified public artifacts,
+The [release record](docs/release-v1.13.0.md) records verified public artifacts,
 historical candidate evidence, and client compatibility limits. CLI checks do
 not establish desktop UI compatibility or certify model behavior.
 
-The [v1.13.0 candidate record](docs/release-v1.13.0.md) tracks preparation of the
-delivery-handoff planning extension separately from publication. Installation
-examples continue to target verified public v1.12.0 until a new release is
-published and independently verified.
+The release includes optional PR delivery-handoff planning guidance and preserves
+the existing skill inventory, activation rules, output contracts, and prompts.
 
 ## Content-trust invariant
 
@@ -117,7 +115,7 @@ system symptom.
   review, or remediation.
 
 The performance reference first shipped in v1.10.0 and is included in the pinned
-v1.12.0 release.
+v1.13.0 release.
 
 ### change-specification
 
@@ -226,11 +224,10 @@ sequence, or refine a concrete codebase change before editing.
 - Readiness semantics: `READY_TO_IMPLEMENT`, `READY_WITH_ASSUMPTIONS`, or
   `NOT_READY`.
 
-The development checkout adds optional [PR delivery-handoff guidance](implementation-plan/references/delivery-handoff-planning.md)
+The pinned v1.13.0 release includes optional [PR delivery-handoff guidance](implementation-plan/references/delivery-handoff-planning.md)
 for a requested single-PR squash plan: named owners, current candidate/policy
 checks, cleanup prerequisites, and separate post-merge verification. Ordinary
 plans gain no delivery obligations, and the guide grants no write authority.
-This extension is unreleased and is not included in the pinned v1.12.0 archive.
 
 ### test-strategy
 
@@ -300,7 +297,7 @@ steps. It does not activate for ordinary direct implementation without a plan.
 - Honest `IMPLEMENTED`, `PARTIAL`, or `BLOCKED` execution status.
 - Handoff of the completed diff to `code-review`.
 
-The pinned v1.12.0 release extends these three skills with conditional migration and
+Since v1.12.0, these three skills include conditional migration and
 dependency-upgrade guidance: compatibility ledgers, phase gates, recovery
 coverage, and reconciliation before continuation. See the
 [worked migration example](docs/migration-upgrade-worked-example.md).
@@ -425,7 +422,7 @@ remain separate.
 `threat-modeling` is optional when a scoped defensive model is the requested
 output, including after a trust-boundary change. It can inform specification,
 architecture, test strategy, and review without executing those workflows or
-certifying security. All three skills are included in pinned v1.12.0.
+certifying security. All three skills are included in pinned v1.13.0.
 
 ```text
 symptom or failing test
@@ -468,7 +465,7 @@ behavioral model eval evidence.
 Install the versioned skill sources with the Skills CLI:
 
 ```bash
-npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.12.0
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.13.0
 ```
 
 Choose the skills, agent, and project or user scope in the installer. To follow

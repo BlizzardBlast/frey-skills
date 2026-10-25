@@ -9,10 +9,12 @@ at `09f37e06e85499fff445cf0e8d583bf1d53e92c6`, screens the twelve published
 v1.12.0 skills and recent real repository delivery work. It recommends one
 conditional extension to `implementation-plan`, with eight observable acceptance
 criteria and unchanged execution/review/release authority boundaries. The
-extension is **IMPLEMENTED / UNRELEASED**; its
+extension is **IMPLEMENTED / PUBLISHED in v1.13.0**; its
 [execution record](delivery-handoff-implementation-plan.md#execution-record)
 traces the accepted eight criteria to fourteen published decision cases,
-passing deterministic checks, and scoped review. Public v1.12.0 is unchanged.
+passing deterministic checks, and scoped review. The
+[v1.13.0 release record](release-v1.13.0.md) records independently verified
+public artifacts and compatibility limits.
 Other specialists remain deferred.
 The research baseline and historical milestone records below retain their
 original observation dates and evidence limits.
@@ -63,8 +65,8 @@ This addition does not authorize publication of a candidate.
 
 The [v1.11.0 release record](release-v1.11.0.md) tracks its preparation separately
 from verified publication of the twelve-skill bundle. Current installation and
-smoke-check pins use verified v1.12.0; the Codex transition checks v1.11.0
-installation, v1.12.0 upgrade, and v1.11.0 rollback.
+smoke-check pins use verified v1.13.0; the Codex transition checks v1.12.0
+installation, v1.13.0 upgrade, and v1.12.0 rollback.
 
 The remaining names and scopes are proposals. This document does not activate skills,
 approve their specifications, authorize implementation or commands, accept
