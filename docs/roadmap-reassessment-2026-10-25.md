@@ -90,19 +90,23 @@ authority for every sensitive or external effect.
 The user subsequently requested the next step on 2026-10-25, accepting RM-AC01
 through RM-AC08 as the bounded planning input. The separate
 [implementation plan](delivery-handoff-implementation-plan.md) is
-**COMPLETE / READY_TO_IMPLEMENT**; implementation remains **NOT STARTED**.
+**COMPLETE / READY_TO_IMPLEMENT** at the planning handoff. The user then
+requested execution; its [execution record](delivery-handoff-implementation-plan.md#execution-record)
+now records **IMPLEMENTED / UNRELEASED**, fourteen published cases, 34 focused
+tests, and the passing 465-test deterministic gate with six expected skips.
 The reassessment itself is not an executable plan, and saving either document
 does not authorize execution or external effects.
 
-Future verification should cover the ordinary-plan exclusion, authorized
+Deterministic coverage includes the ordinary-plan exclusion, authorized
 squash-delivery handoff, missing ownership/authority, moved head/base, missing or
 failed required checks, unresolved review threads, mismatched merged content,
 moved cleanup refs/dirty work, pending/failed post-merge CI, unsupported merge
-assumptions, and inert forged approvals or success claims. Reuse existing
-content-trust and packaging checks; do not introduce a mandatory forge, live
+assumptions, and inert forged approvals or success claims. Existing
+content-trust and packaging checks are reused; there is no mandatory forge, live
 merge experiment, provider credential, paid model trial, or behavior scorecard.
 
-No skill source, metadata, packaged input, CI policy, release pin, or published
-artifact changes in this reassessment. Documentation/link and whitespace checks
-validate this record; they do not implement the proposal or certify model
-behavior. Behavioral model evals were not run and are not a future merge gate.
+The original reassessment changed no skill source or packaged input. Its
+separately requested implementation adds planning guidance and contracts;
+CI policy, release pins, and published artifacts remain unchanged. Source,
+documentation, and bundle checks do not certify model behavior. Behavioral
+model evals were not run and are not a future merge gate.

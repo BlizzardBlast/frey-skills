@@ -221,6 +221,12 @@ sequence, or refine a concrete codebase change before editing.
 - Readiness semantics: `READY_TO_IMPLEMENT`, `READY_WITH_ASSUMPTIONS`, or
   `NOT_READY`.
 
+The development checkout adds optional [PR delivery-handoff guidance](implementation-plan/references/delivery-handoff-planning.md)
+for a requested single-PR squash plan: named owners, current candidate/policy
+checks, cleanup prerequisites, and separate post-merge verification. Ordinary
+plans gain no delivery obligations, and the guide grants no write authority.
+This extension is unreleased and is not included in the pinned v1.12.0 archive.
+
 ### test-strategy
 
 Produces a read-only, repository-grounded, risk-based testing strategy for a

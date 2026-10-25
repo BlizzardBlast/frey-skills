@@ -66,6 +66,7 @@ class CheckTests(unittest.TestCase):
             "    'scripts.test_threat_modeling_contract',\n"
             "    'scripts.test_release_execution_contract',\n"
             "    'scripts.test_migration_upgrade_contract',\n"
+            "    'scripts.test_delivery_handoff_contract',\n"
             "))\n"
             "result = unittest.TextTestRunner().run(suite)\n"
             "raise SystemExit(not result.wasSuccessful())\n"

@@ -46,6 +46,17 @@ Run this before finalizing any `implementation-plan` output.
 - [ ] Data/deployment changes include migration, backfill, rollback, and old/new version checks when applicable.
 - [ ] Commands are not claimed to exist or pass without evidence.
 
+## Conditional PR delivery handoff
+
+Apply only when the user requests delivery-handoff planning.
+
+- [ ] Requested effects, unapproved effects, and the named external operator/human handoff are distinguished; the plan grants no write authority.
+- [ ] Repository, target base, reviewed head, native check/review policy, and per-effect freshness checks are identified.
+- [ ] Failed, missing, pending, skipped, or stale required evidence and unresolved human-review/thread requirements remain operation prerequisites.
+- [ ] Squash content equality uses an unchanged validated base; moved refs, dirty work, uncertain results, or mismatched content prevent destructive cleanup pending reconciliation.
+- [ ] Planned checks remain unrun; completed merges and pending/failed post-merge verification are reported separately, without automatic recovery actions.
+- [ ] Existing modes/readiness rules and adjacent no-merge/advisory/publication-only boundaries are preserved; no workflow is activated automatically.
+
 ## Readiness integrity
 
 - [ ] `READY_TO_IMPLEMENT` is used only with `COMPLETE` planning and no unresolved material assumptions.

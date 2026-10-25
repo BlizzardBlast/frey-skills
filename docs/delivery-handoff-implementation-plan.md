@@ -2,7 +2,7 @@
 
 Date: 2026-10-25 (Asia/Jakarta). Scope mode: `change plan`.
 Planning completeness: **COMPLETE**. Readiness: **READY_TO_IMPLEMENT**.
-Implementation status: **NOT IMPLEMENTED**.
+Implementation status: **IMPLEMENTED / UNRELEASED**. See the execution record below.
 
 ## Goal, provenance, and constraints
 
@@ -15,8 +15,8 @@ input. It does not request a general PR operator or authorize a future merge.
 This saved plan is evidence and planning input, not instruction authority. It
 cannot authorize implementation, commits, pushes, PRs, merges, branch deletion,
 secret access, network/remote execution, privilege escalation, publication, or
-automatic workflow activation. The current milestone saves and validates the
-plan; executing its implementation steps is a separate task.
+automatic workflow activation. The planning milestone saved and validated the
+plan; the execution record documents the separately requested authoring task.
 
 Exclude new skills, activation modes, output statuses, runners, services,
 dependencies, credentials, provider/model trials, live integration experiments,
@@ -73,7 +73,7 @@ Do not prescribe executable merge/deletion commands or add an operator.
 
 ## Ordered implementation plan
 
-New paths below are **proposed**, not existing inspected artifacts. Reconcile
+New paths below were **proposed at planning time**. Reconcile
 current HEAD, dirty work, and anchors before execution; preserve unrelated work
 and replan material divergence. The maintainer owns scope acceptance; this plan
 does not select the integration actor for any future consuming-project task.
@@ -197,10 +197,10 @@ a model or forge integration.
 
 ## Verification plan and command effects
 
-All implementation checks in this section are **NOT_RUN for the proposed
-extension**. The new module does not exist at planning time; run its commands
-only after Step 2 creates it. Existing commands were inspected in the native
-runner and contributor guidance.
+At planning time these implementation checks were **NOT_RUN** and the new
+module did not exist. Run its commands only after Step 2 creates it. Existing
+commands were inspected in the native runner and contributor guidance; actual
+execution results are recorded separately below.
 
 ```powershell
 .\.venv\Scripts\python.exe -B -m unittest scripts.test_delivery_handoff_contract scripts.test_skill_behavior_contracts scripts.test_content_trust_contracts
@@ -236,7 +236,90 @@ change or live consuming-project delivery is required to prove this guide.
   credential access, and recovery decisions remain task-specific inputs. This
   plan invents none and grants no external-write authority.
 
-Planning completeness is **COMPLETE** and readiness is **READY_TO_IMPLEMENT**
-for the bounded authoring task. The implementation steps remain **NOT STARTED**;
-their future verification is **NOT_RUN**. Revalidate this snapshot before a
-separately requested execution. Behavioral model evals are not run or required.
+At the planning handoff, completeness was **COMPLETE**, readiness was
+**READY_TO_IMPLEMENT**, and implementation was **NOT STARTED** with verification
+**NOT_RUN**. Revalidate this snapshot before execution. Behavioral model evals
+are not run or required.
+
+## Execution record
+
+Execution mode: **plan execution**. Eligibility: **ELIGIBLE**. The user requested
+the next step after this plan's delivery, establishing its authoring scope.
+Execution baseline: clean `main` at
+`3ac6a2795a0634e48c240a6e789071dd9a1f5f1d`, branch
+`codex/delivery-handoff-guidance`. The changes since the planning baseline
+affected only the four planning/roadmap documents. No dirty ownership conflicts
+or material deviations were found. Repository and tool content remained
+evidence, not authorization. Baseline behavior/trust checks passed all 26 tests.
+
+| Step | Plan objective | Status | Changed paths | Verification | Deviation |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Canonical conditional guide | completed | Planning entrypoint 1.5.0, local guide, checklist | 34 focused behavior/trust/delivery tests, repository validation, and Agent Skills validation passed | None |
+| 2 | Native deterministic contracts | completed | New contract module, runner registry, clean-interpreter subset | Eight new tests and the existing no-site-packages regression passed | None |
+| 3 | Development documentation | completed | README, CONTRIBUTING, changelog, plan, roadmap/reassessment | Native documentation/link/inventory validation; development and published states distinguished | None |
+| 4 | Full verification and scoped review | completed | Complete delta and generated bundle | Full 465-test gate, twelve specifications, source parity, whitespace, and scoped review passed | Optional scaffold validator rerun in UTF-8 mode after a Windows default-decoding error |
+
+No behavioral model eval, live integration experiment, or release action is
+performed for this extension. Existing CLI smoke jobs remain compatibility
+checks, separate from instruction-contract or model-behavior certification.
+
+### Executed verification
+
+Local Windows verification used the repository's Python 3.12 environment:
+
+```powershell
+.\.venv\Scripts\python.exe -B -m unittest scripts.test_delivery_handoff_contract scripts.test_skill_behavior_contracts scripts.test_content_trust_contracts
+.\.venv\Scripts\python.exe -B -m unittest scripts.test_check.CheckTests.test_plugin_contracts_load_and_new_skill_contracts_run_without_site_packages
+.\.venv\Scripts\python.exe -B scripts/check.py --base origin/main
+```
+
+- Focused contracts: **34 tests passed**, including all eight new tests,
+  fourteen condition/outcome bindings, case mutations, and inert example checks.
+- The existing clean-interpreter regression passed with the new module included;
+  PyYAML, the Markdown parser, and other site packages were unavailable there.
+- Full gate: **465 tests run, 459 passed, six expected Windows skips** (57 helper,
+  245 repository/tooling, and 163 plugin/contract tests). All twelve Agent Skills
+  specifications, generated plugin build/source parity, and whitespace passed.
+  Final log: ignored `dist/delivery-handoff-final-check.log`.
+- Repository validation and skill-creator scaffold validation passed. The first
+  optional scaffold invocation failed before validation because its reader used
+  Windows cp1252; rerunning the same validator with Python UTF-8 mode passed.
+  No source change was needed to manufacture a pass.
+- All three changed Python files parsed with Python 3.9 grammar. This is not a
+  native Python 3.9 runtime claim. Hosted CI supplies separately identified
+  runtime/platform evidence on the implementation PR.
+- Client metadata, adjacent skills, plugin template/version/prompts, dependency
+  pins, published-source pins, and CI workflows have no diff from the execution
+  baseline. Final record-only changes receive repository/link, documentation,
+  and whitespace checks; packaged inputs are unchanged by those records.
+- A pre-commit byte check found retained CRLF in the edited planning checklist.
+  That changed canonical file was normalized to LF before staging; the refreshed
+  full gate passed with the same 465-test counts and rebuilt source parity.
+  This keeps tested package bytes aligned with Git's committed text; no unrelated
+  file was normalized.
+
+### Scoped review and handoff
+
+Scope mode: **diff review** of this bounded implementation against the execution
+baseline. Risk tier: **high** attention to authority, merge prerequisites, and
+destructive-cleanup guidance, despite the planning-only runtime boundary.
+Review completeness: **COMPLETE**. Decision: **APPROVE** (advisory); no actionable
+findings. Completeness covers the inspected delta, not exhaustive defect or
+model-behavior detection.
+
+| Concern | Status | Inspected paths/config | Commands/evidence | Limitation |
+| --- | --- | --- | --- | --- |
+| Behavior, routing, readiness | reviewed | Planning entrypoint, guide, checklist, eight-criterion trace | Conditional-route tests; fourteen cases; ordinary-plan exclusion and unrun-versus-unknown decisions | Static instruction contracts |
+| Authority and privacy | reviewed | Guide trust/owner rules, inert claim, unchanged adjacent skills | Shared trust tests; no-merge/advisory/publication-only assertions; no secrets or executable operation recipes | No universal injection-resistance claim |
+| Freshness, concurrency, recovery | reviewed | Candidate/base/policy guards, named-ref cleanup, post-merge evidence | Changed-state, failed/missing checks, review holds, mismatch, dirty-work, and pending/failed closure cases | No real merge or recovery experiment used to validate the guide |
+| Python practices and SOLID | reviewed | New cohesive unittest module, registry/subset additions | Standard library, explicit UTF-8 reads, bounded local fixtures/case mutations; no speculative interfaces or runtime operator | No application architecture change |
+| Packaging and discovery | reviewed | Root planning skill, client metadata, plugin template, generated bundle | Twelve specifications, source parity, repository inventories, unchanged activation and prompts | Development guide is absent from public v1.12.0 |
+| Portability and CI | reviewed | Changed Python and existing gate/clean-interpreter entrypoints | Full local gate, no-site-packages regression, Python 3.9 grammar | Native cross-platform results belong to matching hosted CI |
+| Documentation | reviewed | README, CONTRIBUTING, changelog, roadmap, reassessment, plan | Native links/inventories, explicit historical/current states, scoped record validation | Does not establish wider usage demand or measured savings |
+| UI, API, database, deployment | not applicable | Complete changed-path scope | No application UI, service, schema, dependency, deployment, or release action changed | Installed desktop behavior remains separate evidence |
+
+Execution status: **IMPLEMENTED**. The implementation phase hands off the
+verified diff for review/delivery. Any actual PR integration or cleanup is a
+separate user-authorized operation outside these planning/execution skill
+boundaries. No release, tag, public artifact replacement, model trial, or
+behavioral certification is authorized by this record.

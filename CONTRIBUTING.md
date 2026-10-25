@@ -267,6 +267,12 @@ Mutation cases reject missing, duplicated, or reclassified conditions. The
 contracts run without site packages and certify neither model behavior nor
 executed migrations, upgrades, recovery, or install effects.
 
+`scripts.test_delivery_handoff_contract` checks conditional planning-reference
+routing, authority/evidence fields, fourteen condition/outcome bindings, case
+mutations, cleanup/freshness holds, and an inert synthetic handoff fragment.
+It runs in the standard-library plugin gate and clean-interpreter subset;
+these source contracts certify neither model behavior nor real PR delivery.
+
 The repository validator checks Agent Skills frontmatter fields, local
 references, optional eval schema and fixture references, committed scorecard
 schema, OpenAI agent metadata, and single trailing newlines for recognized text
