@@ -6,6 +6,11 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Pin installation examples and source/archive smoke checks to verified public
+  v1.12.0 at `db98a6aa539c8b00d04faea1a191a0a5feb2be28`. Move the Codex
+  install/upgrade/rollback baseline to v1.11.0 and record public release evidence
+  separately from historical local candidates and desktop acceptance.
+
 ## [1.12.0] - 2026-10-24
 
 - Extend `implementation-plan`, `test-strategy`, and `implementation-execution`

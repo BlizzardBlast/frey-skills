@@ -291,7 +291,7 @@ python scripts/smoke_install.py --cli dist/smoke-tools/node_modules/skills/bin/c
 
 Use Node.js 24 and Python 3.11+ for this command. The runner verifies the CLI
 version, stages the checkout's canonical skills without local runtime caches,
-and separately installs the documented `v1.11.0` GitHub source pin. That tag must
+and separately installs the documented `v1.12.0` GitHub source pin. That tag must
 still resolve to its recorded commit. Each source is checked with default and
 explicit `--copy` installation, selecting only `code-review` and all skills in
 separate empty projects. `--list` must report exactly the expected skill names
@@ -371,17 +371,17 @@ python scripts/smoke_codex.py --cli ./dist/codex-smoke-cli/node_modules/@openai/
 ```
 
 The checker verifies the npm package and native executable version, then directly
-supervises that executable. It downloads v1.10.0 and v1.11.0, checks each tag/commit,
+supervises that executable. It downloads v1.11.0 and v1.12.0, checks each tag/commit,
 checksum, and canonical archive bytes through the release checker, and installs
 those verified plugins into a disposable marketplace. It checks initial
 installation, upgrade, and rollback with a fresh app-server for each phase.
 Plugin ownership, enabled state, exact unique skill names, version-specific
 cache paths, and all installed bytes must match. The current release must retain
 its three starter prompts, and the previous release's prompts must also survive
-installation and rollback. Upgrade adds `release-execution`, increasing the
-skill count from eleven to twelve; rollback must restore exactly the previous
-eleven. Update both release pins and the compatibility record when intentionally
-changing the tested release pair.
+installation and rollback. Both releases contain twelve skills, so the checker
+uses version-specific cache paths and exact supporting-file bytes to distinguish
+the upgrade and rollback. Update both release pins and the compatibility record
+when intentionally changing the tested release pair.
 
 The default also builds and validates the current checkout bundle, then runs the
 same install/upgrade/rollback assertions against the pinned previous baseline.
