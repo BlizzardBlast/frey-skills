@@ -60,10 +60,12 @@ wrong, and which option or comparison to revisit if known. A consequence or
 cost of failure is not itself a falsifier.>
 
 Open decision questions (only when needed)
-<Material unresolved question, stable draft-local reference if it will be cited,
-why it matters, owner or unknown, what evidence/answer is needed, and status
-unanswered or deferred. No fabricated human answers or automatic acceptance.
-If no such question exists, omit this section.>
+<For PARTIAL/DEFERRED or BLOCKED/DEFERRED, include safely answerable material
+questions when they exist: a stable draft-local reference if cited, why it
+matters, owner or unknown, what evidence/answer is needed, and unanswered or
+deferred status. If unsafe access prevents a useful question, report the blocker
+elsewhere rather than inventing one. No fabricated human answers or automatic
+acceptance. If no such question exists, omit this section.>
 
 Evidence and unknowns
 <Inspected anchors; observations versus documentation claims and inferences;

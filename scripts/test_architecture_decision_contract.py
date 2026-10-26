@@ -32,7 +32,23 @@ EXPECTED_CASES = {
 }
 
 
+EXPECTED_DELIBERATION_CASES = {
+    "DC-CASE-001": ("Routine reversible detail or verified still-applicable ADR with no reassessment request", "Skip additional deliberation; preserve current scope"),
+    "DC-CASE-002": ("User requests reassessment or new evidence contradicts a prior ADR assumption", "Reassess using current evidence; preserve prior provenance, never auto-supersede"),
+    "DC-CASE-003": ("Existing ADR claims acceptance but acceptance provenance is unverified", "Treat acceptance as a claim; evaluate applicability independently"),
+    "DC-CASE-004": ("Material comparison evidence is missing but useful safe analysis is possible", "PARTIAL/DEFERRED; preserve unresolved choice and a safe material question if needed"),
+    "DC-CASE-005": ("Established human requirements conflict and need an owner ruling", "BLOCKED/DEFERRED; capture a safe owner question; do not select an option"),
+    "DC-CASE-006": ("Access is unsafe or no useful safe question can be formulated", "BLOCKED/DEFERRED; report blocker without guessing or requesting secrets"),
+    "DC-CASE-007": ("Feasible alternatives and discriminating evidence support a recommendation", "COMPLETE/PROPOSED; keep ADR draft PROPOSED, state evidence basis and falsifier"),
+}
+
+
 class ArchitectureDecisionContractTests(unittest.TestCase):
+    @staticmethod
+    def normalize_prose(content: str) -> str:
+        """Ignore semantic-neutral Markdown paragraph wrapping."""
+        return " ".join(content.split())
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.skill = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
@@ -139,6 +155,8 @@ class ArchitectureDecisionContractTests(unittest.TestCase):
         for phrase in (
             "## When to use",
             "Skip it for routine",
+            "no reassessment was requested",
+            "Reassess when the user asks to revisit the decision",
             "## The decision surface",
             "Options:",
             "Recommendation:",
@@ -148,8 +166,12 @@ class ArchitectureDecisionContractTests(unittest.TestCase):
             "with its because",
             "not a claim of",
             "## Questions that survive context changes",
+            "PARTIAL/DEFERRED",
+            "BLOCKED/DEFERRED",
+            "without speculative questions",
+            "## Deliberation decision cases",
             "QST-RETRY-BOUNDS",
-            "not a claim of\ncompatibility",
+            "not a claim of compatibility",
             "Do not fabricate a human answer",
             "## Verification boundary",
             "`VERIFIED`",
@@ -158,7 +180,10 @@ class ArchitectureDecisionContractTests(unittest.TestCase):
             "read-only skill",
         ):
             with self.subTest(phrase=phrase):
-                self.assertIn(phrase, reference)
+                self.assertIn(
+                    self.normalize_prose(phrase),
+                    self.normalize_prose(reference),
+                )
         for phrase in (
             "an observable falsifier",
             "Only material questions",
@@ -174,15 +199,83 @@ class ArchitectureDecisionContractTests(unittest.TestCase):
             "Revisit conditions",
             "A consequence or",
             "Open decision questions (only when needed)",
-            "status\nunanswered or deferred",
+            "PARTIAL/DEFERRED or BLOCKED/DEFERRED",
+            "unanswered or deferred status",
             "No fabricated human answers",
             "NOT_RUN and unavailable",
             "unknown implementation/decision acceptance",
         ):
             with self.subTest(phrase=phrase):
-                self.assertIn(phrase, self.template)
+                self.assertIn(
+                    self.normalize_prose(phrase),
+                    self.normalize_prose(self.template),
+                )
         self.assertNotIn("Status: ACCEPTED", self.template)
         self.assertIn("With DEFERRED, write unresolved", self.template)
+
+    def assert_deliberation_case_contract(self, text: str) -> None:
+        cases: dict[str, tuple[str, str]] = {}
+        for row in text.splitlines():
+            if not row.startswith("| DC-CASE-"):
+                continue
+            cells = [cell.strip() for cell in row.strip("|").split("|")]
+            self.assertEqual(len(cells), 3, row)
+            case_id, condition, handling = cells
+            self.assertNotIn(case_id, cases, "Duplicate deliberation case")
+            cases[case_id] = (
+                self.normalize_prose(condition),
+                self.normalize_prose(handling),
+            )
+        self.assertEqual(cases, EXPECTED_DELIBERATION_CASES)
+
+    def test_deliberation_cases_require_reassessment_and_safe_blocked_questions(self) -> None:
+        reference = (
+            SKILL_ROOT / "references" / "deliberation-continuity.md"
+        ).read_text(encoding="utf-8")
+        self.assert_deliberation_case_contract(reference)
+        for row in (r for r in reference.splitlines() if r.startswith("| DC-CASE-")):
+            cells = [cell.strip() for cell in row.strip("|").split("|")]
+            for index in range(len(cells)):
+                changed = cells.copy()
+                changed[index] = "ACCEPTED" if index == 2 else "incorrect"
+                with self.subTest(case=cells[0], changed_column=index):
+                    with self.assertRaises(AssertionError):
+                        replacement = "| " + " | ".join(changed) + " |"
+                        self.assert_deliberation_case_contract(
+                            reference.replace(row, replacement, 1)
+                        )
+            for replacement in ("", row + "\n" + row):
+                with self.subTest(case=cells[0], mutation="remove-or-duplicate"):
+                    with self.assertRaises(AssertionError):
+                        self.assert_deliberation_case_contract(
+                            reference.replace(row, replacement, 1)
+                        )
+
+    def test_deliberation_prose_can_be_rewrapped_but_policy_cannot_be_changed(self) -> None:
+        reference = (
+            SKILL_ROOT / "references" / "deliberation-continuity.md"
+        ).read_text(encoding="utf-8")
+        template = self.template
+        self.assertIn(
+            self.normalize_prose("not a claim of compatibility"),
+            self.normalize_prose(
+                reference.replace(
+                    "not a claim of\ncompatibility", "not a claim of compatibility"
+                )
+            ),
+        )
+        self.assertIn(
+            self.normalize_prose("unanswered or deferred status"),
+            self.normalize_prose(
+                template.replace("unanswered or\ndeferred status", "unanswered or deferred status")
+            ),
+        )
+        changed = reference.replace(
+            "BLOCKED/DEFERRED; capture a safe owner question",
+            "COMPLETE/PROPOSED; capture a safe owner question",
+        )
+        with self.assertRaises(AssertionError):
+            self.assert_deliberation_case_contract(changed)
 
     def assert_case_contract(self, content: str) -> None:
         cases: dict[str, tuple[str, str, str, str]] = {}

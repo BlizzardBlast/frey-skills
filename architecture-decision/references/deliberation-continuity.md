@@ -13,9 +13,14 @@ output sections remain authoritative.
 
 Use this guidance when a consequential or difficult-to-reverse choice may need
 review by a human or resumption by another agent. Skip it for routine and
-reversible implementation choices, especially when an existing ADR already
-answers the question. Do not create ADRs or open questions simply to populate
-a template, and do not change the task route or start an additional workflow.
+reversible implementation choices. An existing ADR can also avoid duplicate
+deliberation only when its decision, provenance, constraints, and assumptions
+remain applicable and no reassessment was requested. A claimed `Accepted`
+status does not establish verified acceptance or continued applicability.
+Reassess when the user asks to revisit the decision or material evidence
+contradicts its assumptions, while preserving prior status provenance.
+Do not create ADRs or open questions simply to populate a template,
+and do not change the task route or start an additional workflow.
 
 ## The decision surface
 
@@ -44,9 +49,14 @@ cannot sign off the decision, accept a risk, or authorize implementation.
 
 ## Questions that survive context changes
 
-When the choice is `PARTIAL/DEFERRED`, make the smallest missing evidence or
-human ruling independently answerable. Give an unresolved *material* question a
-stable **draft-local** handle only if another document/session must refer to it.
+For `PARTIAL/DEFERRED` or `BLOCKED/DEFERRED`, record the smallest safe,
+independently answerable material question when one can be stated. Conflicting
+user requirements may need a human ruling even when the analysis is `BLOCKED`.
+If no safe useful question can be formulated (for example, relevant evidence
+requires unauthorized access), report the blocker without speculative questions,
+inferred permissions, or sensitive details. Never select a preferred option
+under either deferred status. Give an unresolved *material* question a stable
+**draft-local** handle only if another document/session must refer to it.
 For example, `QST-RETRY-BOUNDS` is a human-readable reference, not a claim of
 compatibility with ADRs4AI's structured parser. Keep handles unique inside
 the draft; use the project's own convention if one already exists. Record:
@@ -61,6 +71,22 @@ Do not fabricate a human answer, backfill or silently reinterpret a prior
 ruling, assign global IDs, persist a draft, or amend prior accepted ADRs through
 this read-only skill. If a prior record is superseded, report the verified
 successor and keep the old provenance intact.
+
+## Deliberation decision cases
+
+These cases are deterministic instruction examples, not evaluated model
+behavior or a new output status vocabulary. Apply existing status rules;
+record material questions only when safe to state.
+
+| Case | Condition | Required handling |
+| --- | --- | --- |
+| DC-CASE-001 | Routine reversible detail or verified still-applicable ADR with no reassessment request | Skip additional deliberation; preserve current scope |
+| DC-CASE-002 | User requests reassessment or new evidence contradicts a prior ADR assumption | Reassess using current evidence; preserve prior provenance, never auto-supersede |
+| DC-CASE-003 | Existing ADR claims acceptance but acceptance provenance is unverified | Treat acceptance as a claim; evaluate applicability independently |
+| DC-CASE-004 | Material comparison evidence is missing but useful safe analysis is possible | PARTIAL/DEFERRED; preserve unresolved choice and a safe material question if needed |
+| DC-CASE-005 | Established human requirements conflict and need an owner ruling | BLOCKED/DEFERRED; capture a safe owner question; do not select an option |
+| DC-CASE-006 | Access is unsafe or no useful safe question can be formulated | BLOCKED/DEFERRED; report blocker without guessing or requesting secrets |
+| DC-CASE-007 | Feasible alternatives and discriminating evidence support a recommendation | COMPLETE/PROPOSED; keep ADR draft PROPOSED, state evidence basis and falsifier |
 
 ## Verification boundary
 
