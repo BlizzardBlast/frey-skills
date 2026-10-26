@@ -251,31 +251,31 @@ class ArchitectureDecisionContractTests(unittest.TestCase):
                             reference.replace(row, replacement, 1)
                         )
 
-    def test_deliberation_prose_can_be_rewrapped_but_policy_cannot_be_changed(self) -> None:
+    def test_deliberation_case_spacing_is_tolerated_but_policy_cannot_be_changed(self) -> None:
         reference = (
             SKILL_ROOT / "references" / "deliberation-continuity.md"
         ).read_text(encoding="utf-8")
-        template = self.template
-        self.assertIn(
-            self.normalize_prose("not a claim of compatibility"),
-            self.normalize_prose(
-                reference.replace(
-                    "not a claim of\ncompatibility", "not a claim of compatibility"
-                )
-            ),
+        case_row = next(
+            row for row in reference.splitlines() if row.startswith("| DC-CASE-005 |")
         )
-        self.assertIn(
-            self.normalize_prose("unanswered or deferred status"),
-            self.normalize_prose(
-                template.replace("unanswered or\ndeferred status", "unanswered or deferred status")
-            ),
+        rewrapped_row = case_row.replace(
+            "Established human requirements conflict",
+            "Established  human  requirements  conflict",
+        ).replace(
+            "BLOCKED/DEFERRED; capture", "BLOCKED/DEFERRED;  capture"
         )
-        changed = reference.replace(
-            "BLOCKED/DEFERRED; capture a safe owner question",
-            "COMPLETE/PROPOSED; capture a safe owner question",
+        self.assertNotEqual(case_row, rewrapped_row)
+        rewrapped_reference = reference.replace(case_row, rewrapped_row, 1)
+        self.assert_deliberation_case_contract(rewrapped_reference)
+
+        reclassified = rewrapped_row.replace(
+            "BLOCKED/DEFERRED;  capture", "COMPLETE/PROPOSED;  capture"
         )
+        self.assertNotEqual(rewrapped_row, reclassified)
         with self.assertRaises(AssertionError):
-            self.assert_deliberation_case_contract(changed)
+            self.assert_deliberation_case_contract(
+                reference.replace(case_row, reclassified, 1)
+            )
 
     def assert_case_contract(self, content: str) -> None:
         cases: dict[str, tuple[str, str, str, str]] = {}

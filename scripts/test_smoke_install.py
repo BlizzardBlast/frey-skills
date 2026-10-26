@@ -262,6 +262,47 @@ class InstallationSmokeTests(unittest.TestCase):
             leader.wait(timeout=5)
 
     @unittest.skipUnless(sys.platform == "darwin", "macOS real process-group check")
+    def test_macos_exited_leader_with_live_descendant_preserves_signal_denial(self) -> None:
+        marker = self.root / "orphaned-child.pid"
+        parent_code = (
+            "import subprocess,sys; from pathlib import Path; "
+            "child = subprocess.Popen([sys.executable, '-B', '-c', 'import time; time.sleep(30)'], "
+            "stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); "
+            f"Path({str(marker)!r}).write_text(str(child.pid))"
+        )
+        leader = subprocess.Popen(
+            [sys.executable, "-B", "-c", parent_code],
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        real_killpg = os.killpg
+        try:
+            self.assertEqual(leader.wait(timeout=5), 0)
+            self.assertTrue(marker.is_file(), "leader exited before recording descendant")
+            child_pid = int(marker.read_text(encoding="utf-8"))
+            self.assertEqual(os.getpgid(child_pid), leader.pid)
+            with mock.patch.object(
+                process_tree, "_macos_group_has_running_members",
+                wraps=process_tree._macos_group_has_running_members,
+            ) as group_probe:
+                with mock.patch.object(
+                    process_tree.os, "killpg", side_effect=PermissionError("simulated EPERM")
+                ) as denied:
+                    with self.assertRaisesRegex(PermissionError, "simulated EPERM"):
+                        process_tree.stop_process_tree(leader)
+                    denied.assert_called_once_with(leader.pid, signal.SIGKILL)
+                group_probe.assert_called_once_with(leader.pid)
+            self.assertTrue(process_tree._macos_group_has_running_members(leader.pid))
+        finally:
+            try:
+                real_killpg(leader.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            if leader.poll() is None:
+                leader.kill()
+            leader.wait(timeout=5)
+
+    @unittest.skipUnless(sys.platform == "darwin", "macOS real process-group check")
     def test_macos_exited_group_may_ignore_simulated_signal_denial(self) -> None:
         leader = subprocess.Popen(
             [sys.executable, "-c", "pass"], start_new_session=True,

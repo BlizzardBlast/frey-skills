@@ -6,6 +6,12 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Add conditional human-readable decision briefs and evidence-backed architecture
+  deliberation with confidence bases, falsifiers, and safe deferred questions.
+  Clarify situated replanning and preserve independent permission/security stops;
+  harden macOS process-group cleanup and add regression coverage. Preserve
+  existing skill output/status contracts, approvals, and read-only boundaries.
+
 - Document conditional storage/workload reliability planning inspired by OpenAI Habitat engineering Parts I and II: bounded operations, isolation/backpressure, cache consistency, replay safety, measured tradeoffs, and explicit no-premature-infrastructure cases. Add seven static decision cases and regression tests, and keep architecture-decision independently usable. Preserve skill activation, output, trust, and execution-authority boundaries; add no dependencies or automation.
 
 - Close the v1.13.0 roadmap delivery cycle, correct the shipped delivery-handoff
