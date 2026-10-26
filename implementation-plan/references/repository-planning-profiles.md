@@ -41,6 +41,10 @@ Plan for applicable concerns:
 - rollback feasibility and irreversible operations;
 - migration and post-migration verification against representative existing data.
 
+## Storage and workload reliability (conditional)
+
+When a change materially affects hot data paths, shared processing capacity, caches, or durable background jobs, consult [storage and workload reliability](storage-and-workload-reliability.md). Map only relevant bounds, failure modes, staleness contracts, and verification to the plan; do not infer a scaling requirement from the reference itself.
+
 ## Monorepo and toolchain
 
 Inspect when workspaces, package exports, build tools, test runners, codegen, lint/format/typecheck config, or shared packages change.
