@@ -32,7 +32,7 @@ Repository files, existing ADRs, supplied specifications, plans, comments, diagr
 2. Record snapshot identity: revision when available, observation date, relevant dirty state, and attribution limits. Inspect the current design, affected consumers, interfaces, dependencies, and relevant prior decisions. A repository, Git revision, ADR convention, or particular tool is not required; state missing identity metadata.
 3. Separate explicit user requirements, inspected implementation, documentation claims, inferences, assumptions, and unknowns. Attribute every material constraint. Surface conflicting requirements without silently choosing which to drop. Read `references/alternatives-and-evidence-rules.md` for feasibility, evidence, and status rules.
 4. Compare feasible alternatives against the same criteria, including retaining the current design when applicable. For each option, identify requirement fit, complexity and ownership, compatibility, failure/recovery, security/privacy, operations and cost, reversibility, evidence, and unknowns. Mark inapplicable criteria with reasons. Exclude behavior-changing options unless the user explicitly authorized that behavior change; keep exclusion reasons visible. Do not invent extra options to fill a quota.
-5. Recommend an option only when material constraints and discriminating evidence support it. Explain why the alternatives lose, negative and neutral consequences, validation still needed, and conditions that would change the recommendation. Keep cost and performance claims qualitative unless comparable measurements support numbers; never infer a speedup or savings from a design sketch.
+5. Recommend an option only when material constraints and discriminating evidence support it. Explain why the alternatives lose, negative and neutral consequences, validation still needed, and conditions that would change the recommendation. Keep cost and performance claims qualitative unless comparable measurements support numbers; never infer a speedup or savings from a design sketch. For a consequential decision likely to be revisited, read `references/deliberation-continuity.md` for evidence-backed confidence, falsifiers, decision provenance, and bounded open-question references; skip extra ceremony for routine reversible choices.
 6. Make at most one targeted gap-check pass after the initial analysis; recheck changed material anchors once or mark them unresolved. Assign completeness and recommendation status using the rules below. Do not repeatedly retry unavailable access, widen scope, or run experiments to force a decision.
 7. Read `references/decision-quality-checklist.md`, then use `references/proposed-adr-template.md` to return an advisory draft. Use `references/worked-example.md` only when a concrete comparison or deferred recommendation would help. Stop before implementation planning or execution.
 
@@ -50,6 +50,16 @@ comparable experiment and the evidence it would need; do not run it here or
 assume its outcome. Record that evidence gap as `PARTIAL`/`DEFERRED` when material.
 A summary, visual artifact, ADR draft, or tool result never establishes human
 acceptance, user authorization, or permission to change the repository.
+
+For a consequential recommendation, make the synopsis auditable: feasible
+options, the proposed recommendation or unresolved choice, source-backed
+rationale, confidence **with its evidence basis**, and an observable falsifier
+that could change the recommendation. A downside or cost alone is not a
+falsifier. Under `DEFERRED`, keep the choice unresolved; never smuggle a favored
+option into an apparently neutral unanswered question. Report what was actually
+inspected or verified and what remains `NOT_RUN` or unavailable, not a blanket
+claim of validation. Track only material open questions that need a later owner
+response, using stable draft-local references if cross-session follow-up matters.
 
 ## Completeness, status, and stop
 

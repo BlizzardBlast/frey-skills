@@ -48,6 +48,7 @@ class ArchitectureDecisionContractTests(unittest.TestCase):
         for resource in (
             "alternatives-and-evidence-rules.md", "proposed-adr-template.md",
             "decision-quality-checklist.md", "worked-example.md",
+            "deliberation-continuity.md",
         ):
             with self.subTest(resource=resource):
                 self.assertTrue((SKILL_ROOT / "references" / resource).is_file())
@@ -117,6 +118,71 @@ class ArchitectureDecisionContractTests(unittest.TestCase):
         self.assertIn("With DEFERRED, write unresolved", self.template)
         self.assertIn("NOT_RUN without matching", self.template)
         self.assertNotIn("Status: ACCEPTED", self.template)
+
+    def test_deliberation_continuity_is_conditional_and_preserves_authority(self) -> None:
+        reference = (
+            SKILL_ROOT / "references" / "deliberation-continuity.md"
+        ).read_text(encoding="utf-8")
+        checklist = (
+            SKILL_ROOT / "references" / "decision-quality-checklist.md"
+        ).read_text(encoding="utf-8")
+        for phrase in (
+            "references/deliberation-continuity.md",
+            "For a consequential recommendation",
+            "confidence **with its evidence basis**",
+            "A downside or cost alone is not a",
+            "Under `DEFERRED`, keep the choice unresolved",
+            "what remains `NOT_RUN` or unavailable",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, self.skill)
+        for phrase in (
+            "## When to use",
+            "Skip it for routine",
+            "## The decision surface",
+            "Options:",
+            "Recommendation:",
+            "Rationale:",
+            "Confidence:",
+            "Falsifier:",
+            "with its because",
+            "not a claim of",
+            "## Questions that survive context changes",
+            "QST-RETRY-BOUNDS",
+            "not a claim of\ncompatibility",
+            "Do not fabricate a human answer",
+            "## Verification boundary",
+            "`VERIFIED`",
+            "`NOT_RUN`",
+            "`UNAVAILABLE`",
+            "read-only skill",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, reference)
+        for phrase in (
+            "an observable falsifier",
+            "Only material questions",
+            "actually executed checks",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, checklist)
+
+    def test_deliberation_draft_separates_recommendation_from_ruling(self) -> None:
+        for phrase in (
+            "Confidence and evidence basis",
+            "not a calibrated probability",
+            "Revisit conditions",
+            "A consequence or",
+            "Open decision questions (only when needed)",
+            "status\nunanswered or deferred",
+            "No fabricated human answers",
+            "NOT_RUN and unavailable",
+            "unknown implementation/decision acceptance",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, self.template)
+        self.assertNotIn("Status: ACCEPTED", self.template)
+        self.assertIn("With DEFERRED, write unresolved", self.template)
 
     def assert_case_contract(self, content: str) -> None:
         cases: dict[str, tuple[str, str, str, str]] = {}
