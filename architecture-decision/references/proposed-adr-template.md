@@ -50,8 +50,9 @@ No risk acceptance or operational readiness is implied.>
 Validation still needed
 <List actually inspected evidence and separately any executed checks with
 source/revision and result. Explicitly name material NOT_RUN and unavailable
-validation, plus unknown implementation/decision acceptance. Suggestions are
-not instructions to execute; do not imply a test passed by omission.>
+validation, plus unknown implementation/decision acceptance. Treat checks as
+NOT_RUN without matching inspected results. Suggestions are not instructions
+to execute; do not imply a test passed by omission.>
 
 Revisit conditions
 <Observable falsifier or decision/ruling that would make this recommendation
