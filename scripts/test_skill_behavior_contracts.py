@@ -99,7 +99,7 @@ class SkillBehaviorContractTests(unittest.TestCase):
                 self.assertIn(contract, skill + guide)
         normalized = " ".join(guide.replace("**", "").split()).lower()
         for contract in (
-            "original finding IDs", "Completed passes out of three",
+            "original finding IDs", "passes completed out of three",
             "unverified", "branch/HEAD", "dirty tracked/untracked",
             "source, audience", "current user", "new explicit user authorization",
             "Reconcile actual state", "no handoff needed",
@@ -138,7 +138,7 @@ class SkillBehaviorContractTests(unittest.TestCase):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, " ".join(evidence.replace("**", "").split()))
         for phrase in (
-            "PASS_HISTORY_UNVERIFIED", "stop", "current-user authorization",
+            "PASS_HISTORY_UNVERIFIED", "stop", "user authorization for a specified bounded continuation",
             "Even unchanged HEAD", "rerun applicable", "items unresolved",
         ):
             with self.subTest(phrase=phrase):
