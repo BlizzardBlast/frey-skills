@@ -83,6 +83,7 @@ class SkillBehaviorContractTests(unittest.TestCase):
         ):
             with self.subTest(contract=contract):
                 self.assertIn(contract, skill + guide)
+        normalized = " ".join(guide.replace("**", "").split()).lower()
         for contract in (
             "original finding IDs", "Completed passes out of three",
             "unverified", "branch/HEAD", "dirty tracked/untracked",
@@ -90,12 +91,12 @@ class SkillBehaviorContractTests(unittest.TestCase):
             "Reconcile actual state", "no handoff needed",
         ):
             with self.subTest(contract=contract):
-                self.assertIn(contract.lower(), guide.lower())
+                self.assertIn(contract.lower(), normalized)
         cases = [line.split("|")[1].strip() for line in guide.splitlines() if line.startswith("| HND-")]
         self.assertEqual(cases, [f"HND-{i:03d}" for i in range(1, 8)])
-        self.assertIn("not a mandatory threshold", guide)
-        self.assertIn("does not restart the three-pass budget", guide)
-        self.assertIn("no automatic memory capture", guide)
+        self.assertIn("not a mandatory threshold", normalized)
+        self.assertIn("does not restart the three-pass budget", normalized)
+        self.assertIn("no automatic memory capture", normalized)
 
     def test_remediation_rechecks_invariants_before_resolving_items(self) -> None:
         skill = (REPOSITORY_ROOT / "iterative-self-review" / "SKILL.md").read_text(encoding="utf-8")
