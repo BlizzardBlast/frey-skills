@@ -22,9 +22,10 @@ evidence that any particular prompt improves coding-agent correctness.
 
 - Keep the established separation between read-only specification, architecture,
   planning, and separately authorized implementation/execution.
-- Material changes discovered in execution stop before out-of-plan actions,
+- Material conflicts discovered in execution stop before out-of-plan actions,
   identify the contradicted assumption and affected steps, and require an
-  eligible revised plan with user authorization to resume.
+  eligible revised plan with user authorization to resume. Merely finding a
+  feasible alternative does not invalidate an approved, still-safe plan.
 - Make the concise brief conditional on a meaningful human decision. Do not add
   approval prompts for every mechanical edit.
 - Use tables or text diagrams only when they clarify relationships, label

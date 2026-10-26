@@ -117,7 +117,9 @@ class InstallationSmokeTests(unittest.TestCase):
                     if not process.poll.called or denied:
                         raise PermissionError("unreaped leader or inaccessible descendants")
 
-                with mock.patch.object(process_tree, "os") as platform, mock.patch.object(process_tree, "signal") as signals:
+                with mock.patch.object(process_tree, "os") as platform, \
+                     mock.patch.object(process_tree, "signal") as signals, \
+                     mock.patch.object(process_tree, "_macos_group_has_running_members", return_value=True):
                     platform.name = "posix"
                     platform.killpg.side_effect = signal_group
                     if denied:
@@ -128,6 +130,59 @@ class InstallationSmokeTests(unittest.TestCase):
                     platform.killpg.assert_called_once_with(process.pid, signals.SIGKILL)
                 process.kill.assert_not_called()
                 process.wait.assert_called_once_with(timeout=5)
+
+    def test_macos_snapshot_distinguishes_zombies_from_live_descendants(self) -> None:
+        for output, expected in (
+            ("", False),
+            ("123 Z\n", False),
+            ("123 Z\n123 R+\n", True),
+            ("123 S\n", True),
+            ("124 S\n", False),
+        ):
+            with self.subTest(output=output):
+                completed = subprocess.CompletedProcess(args=["ps"], returncode=0, stdout=output, stderr="")
+                with mock.patch.object(process_tree.subprocess, "run", return_value=completed) as run:
+                    self.assertEqual(process_tree._macos_group_has_running_members(123), expected)
+                    self.assertEqual(run.call_args.args[0], ["ps", "-A", "-o", "pgid=", "-o", "stat="])
+
+        for failure in (
+            subprocess.CompletedProcess(args=["ps"], returncode=1, stdout="", stderr="denied"),
+            subprocess.CompletedProcess(args=["ps"], returncode=0, stdout="bad row\n", stderr=""),
+        ):
+            with self.subTest(failure=failure), mock.patch.object(
+                process_tree.subprocess, "run", return_value=failure
+            ), self.assertRaises(process_tree.ProcessCleanupError):
+                process_tree._macos_group_has_running_members(123)
+
+        with mock.patch.object(
+            process_tree.subprocess, "run", side_effect=subprocess.TimeoutExpired(["ps"], 5)
+        ), self.assertRaises(process_tree.ProcessCleanupError):
+            process_tree._macos_group_has_running_members(123)
+
+    def test_macos_exited_group_permission_denial_only_ignored_when_empty(self) -> None:
+        for exited_during_signal in (False, True):
+            for group_live in (False, True):
+                with self.subTest(raced=exited_during_signal, live=group_live):
+                    process = mock.Mock(pid=123)
+                    process.poll.side_effect = [None, 0, 0] if exited_during_signal else [0, 0, 0]
+                    with mock.patch.object(process_tree, "os") as platform, \
+                         mock.patch.object(process_tree, "sys") as system, \
+                         mock.patch.object(process_tree, "signal") as signals, \
+                         mock.patch.object(
+                             process_tree, "_macos_group_has_running_members", return_value=group_live
+                         ) as group_probe:
+                        platform.name = "posix"
+                        system.platform = "darwin"
+                        platform.killpg.side_effect = PermissionError("already exited")
+                        if group_live:
+                            with self.assertRaises(PermissionError):
+                                process_tree.stop_process_tree(process)
+                        else:
+                            process_tree.stop_process_tree(process)
+                        self.assertEqual(platform.killpg.call_count, 2 if exited_during_signal else 1)
+                        group_probe.assert_called_once_with(123)
+                    process.wait.assert_called_once_with(timeout=5)
+                    process.kill.assert_not_called()
 
     def test_short_lived_success_and_failure_cannot_return_oversized_output(self) -> None:
         for stream in ("stdout", "stderr"):
