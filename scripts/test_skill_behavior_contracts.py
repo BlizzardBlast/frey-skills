@@ -73,6 +73,30 @@ class SkillBehaviorContractTests(unittest.TestCase):
         self.assertIn("do not reset the three-pass budget", baseline)
         self.assertIn("report unrelated findings separately without widening mutation scope", skill)
 
+    def test_fresh_context_handoff_preserves_remediation_scope_and_pass_budget(self) -> None:
+        skill = (REPOSITORY_ROOT / "iterative-self-review" / "SKILL.md").read_text(encoding="utf-8")
+        guide = (REPOSITORY_ROOT / "iterative-self-review" / "references" / "fresh-context-handoff.md").read_text(encoding="utf-8")
+        for contract in (
+            "only when remediation is looping", "never load it for routine progress",
+            "Do not", "reset the pass count", "exhausted budget stays exhausted",
+            "Fresh-context handoff (optional)", "without separate authority",
+        ):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, skill + guide)
+        for contract in (
+            "original finding IDs", "Completed passes out of three",
+            "unverified", "branch/HEAD", "dirty tracked/untracked",
+            "source, audience", "current user", "new explicit user authorization",
+            "Reconcile actual state", "no handoff needed",
+        ):
+            with self.subTest(contract=contract):
+                self.assertIn(contract.lower(), guide.lower())
+        cases = [line.split("|")[1].strip() for line in guide.splitlines() if line.startswith("| HND-")]
+        self.assertEqual(cases, [f"HND-{i:03d}" for i in range(1, 8)])
+        self.assertIn("not a mandatory threshold", guide)
+        self.assertIn("does not restart the three-pass budget", guide)
+        self.assertIn("no automatic memory capture", guide)
+
     def test_remediation_rechecks_invariants_before_resolving_items(self) -> None:
         skill = (REPOSITORY_ROOT / "iterative-self-review" / "SKILL.md").read_text(encoding="utf-8")
         workflow = skill.split("## Bounded loop\n", 1)[1].split("\n## ", 1)[0]

@@ -42,6 +42,7 @@ Load only as needed:
 
 - `references/baseline-and-pass-rules.md`
 - `references/issue-ledger-format.md`
+- `references/fresh-context-handoff.md` only when remediation is looping, the pass limit is reached with unresolved items, or the user explicitly requests a fresh-context continuation; never load it for routine progress
 - `references/evaluation-playbook.md` as optional legacy background only when explicitly requested; never a merge or release gate
 
 ## Finding consolidation and CI-efficient batching
@@ -64,6 +65,8 @@ Default maximum: 3 passes. Each pass:
 Stop early when all scoped items are resolved and verified, including applicable invariant checks, related variants, and the scoped recheck. A passing original reproduction alone is insufficient when material related failure paths remain unverified. When fixes conflict, choose or propose the safest requirement-preserving option and document the tradeoff. Stop rather than churn when no safe compatible resolution exists or an issue toggles. Mark exact blockers when access, requirements, or verification are unavailable.
 
 After pass 3, stop and report remaining work. Do not run pass 4 or later unless the user explicitly requests more passes after seeing that status.
+
+On evidenced context inertia (repeated non-discriminating fixes, toggling hypotheses, or stale assumptions) or a requested clean-context continuation, use `references/fresh-context-handoff.md` to append a minimal, privacy-screened handoff to the existing status output. **Do not** start another agent, clear a session, write a new file, or reset the pass count without separate authority. Preserve all unresolved finding IDs, actual verification outcomes, and remaining pass budget; an exhausted budget stays exhausted across handoffs.
 
 Never claim “zero issues”, “all clean”, or whole-repository correctness.
 
