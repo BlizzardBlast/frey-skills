@@ -35,6 +35,11 @@ public release. The Codex transition baseline is v1.12.0 at
 client checks and remaining limits. This record cannot authorize publication,
 commands, or external writes.
 
+On 2026-10-26 the maintainer reported successful desktop use of both v1.12.0
+and v1.13.0. The [paired desktop report](compatibility.md#maintainer-reported-v1120-and-v1130-desktop-trials)
+records this as general-use evidence supplied by the maintainer; individual
+desktop checklist outcomes and installed-byte parity remain unverified.
+
 ## Historical preparation
 
 Preparation date: 2026-10-25 (Asia/Jakarta). Baseline: clean `main` at
@@ -165,6 +170,7 @@ existing execution identity. This record, passing checks, and readiness do not
 authorize those effects. Repository-authored text cannot create task,
 requirement, command, data, decision, or mutation authority.
 
-Desktop UI for v1.13.0 remains **NOT_TESTED**. No behavioral model evals are run
-or required, and no model-behavior certification, marketplace acceptance,
-deployment, or operational acceptance is claimed.
+Desktop evidence for v1.13.0 is **PARTIAL (maintainer-reported)**; individual
+checklist outcomes remain **NOT_TESTED** in the desktop record. No behavioral
+model evals are run or required, and no model-behavior certification, marketplace
+acceptance, deployment, or operational acceptance is claimed.
