@@ -10,8 +10,10 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
   handoffs for stalled and resumed remediation. Load guidance on incoming
   handoffs before edits, map unverified pass history to `Final status: BLOCKED`,
   mark obsolete checks stale, and retain the existing three-pass and privacy
-  boundaries. Add fourteen normative decision cases and deterministic contract
-  coverage; no automatic agent reset, dependencies, or model trials.
+  boundaries. Distinguish first repairs of review-only issue ledgers from
+  resumed remediation with uncertain pass history; add sixteen normative
+  decision cases and deterministic contract coverage. No automatic agent
+  reset, dependencies, or model trials.
 
 - Document conditional storage/workload reliability planning inspired by OpenAI Habitat engineering Parts I and II: bounded operations, isolation/backpressure, cache consistency, replay safety, measured tradeoffs, and explicit no-premature-infrastructure cases. Add seven static decision cases and regression tests, and keep architecture-decision independently usable. Preserve skill activation, output, trust, and execution-authority boundaries; add no dependencies or automation.
 

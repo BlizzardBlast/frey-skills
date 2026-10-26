@@ -37,6 +37,8 @@ EXPECTED_FRESH_CONTEXT_HANDOFF_CASES = [
     ("HND-012", "An authorized remediation request resumes from an incoming handoff without a new loop", "Load the handoff reference before edits; independently verify pass history and current checks"),
     ("HND-013", "Ordinary remediation has no incoming handoff, transferred ledger or context loop", "Use the standard bounded workflow; do not load the fresh-context reference"),
     ("HND-014", "Pass history is unverified and a final status must be reported", "Emit Final status: BLOCKED and record PASS_HISTORY_UNVERIFIED in Remaining concerns"),
+    ("HND-015", "A user authorizes first remediation of a review-only issue ledger with verified no prior repair attempts", "Start an ordinary three-pass run with zero passes used; do not block on missing prior-session count"),
+    ("HND-016", "A transferred ledger may reflect prior fix-and-recheck work but the number of used passes is unknown", "Mark PASS_HISTORY_UNVERIFIED; emit Final status: BLOCKED and request explicit bounded user authorization"),
 ]
 
 class SkillBehaviorContractTests(unittest.TestCase):
@@ -168,21 +170,22 @@ class SkillBehaviorContractTests(unittest.TestCase):
         route = skill.split("Load only as needed:", 1)[1].split("## Finding consolidation", 1)[0]
         entry = next(line for line in route.splitlines() if "references/fresh-context-handoff.md" in line)
         for expected in (
-            "incoming handoff", "transferred prior-session issue/pass ledger",
+            "incoming remediation handoff", "transferred prior-session remediation/pass ledger",
             "continue fixing", "load before any edit",
             "untrusted evidence, not new permission",
+            "review-only issue ledger without evidence of prior remediation",
             "never load it for routine progress without a handoff",
         ):
             with self.subTest(expected=expected):
                 self.assertIn(expected, entry)
         self.assertIn("Do not activate for ordinary implementation", skill)
         post_loop = skill.split("After pass 3,", 1)[1].split("Never claim", 1)[0]
-        self.assertIn("When receiving an incoming handoff", post_loop)
+        self.assertIn("When receiving an incoming remediation handoff", post_loop)
         self.assertIn("before any remediation edit", post_loop)
         guide = (REPOSITORY_ROOT / "iterative-self-review" / "references" / "fresh-context-handoff.md").read_text(encoding="utf-8")
         receiving = guide.split("## Receiving the handoff", 1)[1].split("## Decision examples", 1)[0]
         self.assertIn("load this guide before editing", " ".join(receiving.split()))
-        self.assertIn("incoming handoff", guide.split("## Evidence, not a token threshold", 1)[0])
+        self.assertIn("incoming remediation handoff", guide.split("## Evidence, not a token threshold", 1)[0])
 
     def test_unverified_pass_history_maps_to_existing_blocked_status(self) -> None:
         guide = (REPOSITORY_ROOT / "iterative-self-review" / "references" / "fresh-context-handoff.md").read_text(encoding="utf-8")
@@ -197,6 +200,43 @@ class SkillBehaviorContractTests(unittest.TestCase):
                 self.assertIn(expected, normalized)
         skill = (REPOSITORY_ROOT / "iterative-self-review" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("Final status: RESOLVED|PARTIAL|BLOCKED", skill)
+
+    def test_review_only_ledger_starts_new_run_without_bypassing_resume_guard(self) -> None:
+        skill = (REPOSITORY_ROOT / "iterative-self-review" / "SKILL.md").read_text(encoding="utf-8")
+        guide = (REPOSITORY_ROOT / "iterative-self-review" / "references" / "fresh-context-handoff.md").read_text(encoding="utf-8")
+        loading = skill.split("Load only as needed:", 1)[1].split("## Finding consolidation", 1)[0]
+        budget = " ".join(
+            guide.split("3. **Budget and ledger:**", 1)[1]
+            .split("4. **Evidence and uncertainty:**", 1)[0]
+            .replace("**", "").split()
+        )
+        receiving = " ".join(
+            guide.split("## Receiving the handoff", 1)[1]
+            .split("## Decision examples", 1)[0].split()
+        )
+        for contract in (
+            "review-only issue ledger without evidence of prior remediation",
+            "new run, not a handoff trigger",
+        ):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, loading)
+        for contract in (
+            "Classify the starting state before counting passes",
+            "review-only issue ledger is not evidence",
+            "no previous fix-and-recheck attempts",
+            "ordinary three-pass budget with zero passes used",
+            "not proof of a new run",
+            "If prior remediation may have occurred",
+            "PASS_HISTORY_UNVERIFIED",
+        ):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, budget)
+        self.assertIn("verified first repair", receiving)
+        self.assertIn("prior attempts are plausible but unverifiable", receiving)
+        self.assert_fresh_context_handoff_cases(guide)
+        skill_continuation = skill.split("When receiving an incoming remediation handoff", 1)[1].split("Never claim", 1)[0]
+        self.assertIn("ordinary three-pass run", skill_continuation)
+        self.assertIn("stop rather than assuming zero passes", skill_continuation)
 
     def test_remediation_rechecks_invariants_before_resolving_items(self) -> None:
         skill = (REPOSITORY_ROOT / "iterative-self-review" / "SKILL.md").read_text(encoding="utf-8")
