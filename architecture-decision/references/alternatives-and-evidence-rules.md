@@ -46,6 +46,7 @@ repository needs the same design. Defer infrastructure additions when local
 workload measurements, consistency requirements, or an operational owner are
 decisive and missing. This comparison is self-contained: do not require another
 skill's reference or activate a planning workflow to complete this decision.
+
 ## Evidence sufficiency
 
 An implementation sketch is not a measurement. Do not fabricate latency,
