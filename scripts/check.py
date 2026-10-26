@@ -34,6 +34,7 @@ CONTRACT_TESTS = (
     "scripts.test_debug_performance_contract",
     "scripts.test_migration_upgrade_contract",
     "scripts.test_delivery_handoff_contract",
+    "scripts.test_storage_workload_contract",
     "scripts.test_content_trust_contracts",
 )
 
