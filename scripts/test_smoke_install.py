@@ -143,7 +143,12 @@ class InstallationSmokeTests(unittest.TestCase):
                 completed = subprocess.CompletedProcess(args=["ps"], returncode=0, stdout=output, stderr="")
                 with mock.patch.object(process_tree.subprocess, "run", return_value=completed) as run:
                     self.assertEqual(process_tree._macos_group_has_running_members(123), expected)
-                    self.assertEqual(run.call_args.args[0], ["ps", "-A", "-o", "pgid=", "-o", "stat="])
+                    self.assertEqual(
+                        run.call_args.args[0], ["/bin/ps", "-A", "-o", "pgid=", "-o", "stat="]
+                    )
+                    self.assertEqual(
+                        run.call_args.kwargs["env"], {"PATH": "/usr/bin:/bin", "LC_ALL": "C"}
+                    )
 
         for failure in (
             subprocess.CompletedProcess(args=["ps"], returncode=1, stdout="", stderr="denied"),
@@ -158,6 +163,39 @@ class InstallationSmokeTests(unittest.TestCase):
             process_tree.subprocess, "run", side_effect=subprocess.TimeoutExpired(["ps"], 5)
         ), self.assertRaises(process_tree.ProcessCleanupError):
             process_tree._macos_group_has_running_members(123)
+
+    def test_macos_process_inspection_ignores_inherited_path_and_credentials(self) -> None:
+        completed = subprocess.CompletedProcess(args=["/bin/ps"], returncode=0, stdout="", stderr="")
+        with mock.patch.dict(
+            os.environ, {"PATH": "/untrusted/shadow", "GITHUB_TOKEN": "synthetic-credential"},
+            clear=True,
+        ):
+            with mock.patch.object(
+                process_tree.subprocess, "run", return_value=completed
+            ) as run:
+                self.assertFalse(process_tree._macos_group_has_running_members(123))
+        run.assert_called_once()
+        self.assertEqual(run.call_args.args[0][0], "/bin/ps")
+        self.assertEqual(
+            run.call_args.kwargs["env"], {"PATH": "/usr/bin:/bin", "LC_ALL": "C"}
+        )
+        self.assertNotIn("GITHUB_TOKEN", run.call_args.kwargs["env"])
+
+    @unittest.skipUnless(sys.platform == "darwin", "macOS executable shadowing test")
+    def test_macos_process_inspection_does_not_execute_shadow_ps(self) -> None:
+        shadow = self.root / "ps"
+        shadow.write_text(
+            '#!/bin/sh\nprintf hijacked > "$0.marker"\n',
+            encoding="utf-8",
+        )
+        shadow.chmod(0o755)
+        marker = self.root / "ps.marker"
+        with mock.patch.dict(
+            os.environ, {"PATH": str(self.root), "GITHUB_TOKEN": "synthetic-credential"}
+        ):
+            # An impossible group ID avoids dependence on live processes.
+            self.assertFalse(process_tree._macos_group_has_running_members(2147483647))
+        self.assertFalse(marker.exists(), "shadow executable ran during cleanup")
 
     def test_macos_exited_group_permission_denial_only_ignored_when_empty(self) -> None:
         for exited_during_signal in (False, True):

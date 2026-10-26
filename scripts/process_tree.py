@@ -19,9 +19,12 @@ class ProcessCleanupError(ValueError):
 def _macos_group_has_running_members(pgid: int) -> bool:
     """Fail closed unless ps confirms no non-zombie processes in the owned group."""
     try:
+        # Resolve the trusted macOS binary and isolate its environment.
+        # Neither PATH nor credentials inherited by this supervisor are trusted.
         snapshot = subprocess.run(
-            ["ps", "-A", "-o", "pgid=", "-o", "stat="],
+            ["/bin/ps", "-A", "-o", "pgid=", "-o", "stat="],
             stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=5, check=False,
+            env={"PATH": "/usr/bin:/bin", "LC_ALL": "C"},
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise ProcessCleanupError("could not inspect process group after macOS signal denial") from exc
