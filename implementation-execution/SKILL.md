@@ -108,12 +108,17 @@ and verification evidence. The plan is an orientation, not permission to improvi
 a different architecture or contract. Discovering another feasible option does
 not invalidate an approved, still-safe plan: continue without adding a human
 checkpoint or implementing that alternative. A supported, invariant-preserving
-minor deviation may proceed with a ledger explanation. Stop **before** out-of-plan
-edits or commands only when evidence invalidates a material plan assumption,
-contradicts a required invariant, or makes a material change necessary to finish
-the approved objective. State the original assumption and its evidence, the
-new contradictory observation, affected steps/invariants, attempted verification
-and its result, and the smallest decision or plan refinement required.
+minor deviation may proceed with a ledger explanation. For **material
+replanning**, stop before out-of-plan edits or commands when evidence invalidates
+a material plan assumption, contradicts a required invariant, or makes a material
+change necessary to finish the approved objective. State the original assumption
+and its evidence, the new contradictory observation, affected steps/invariants,
+attempted verification and its result, and the smallest decision or plan
+refinement required. These replanning conditions never supersede independent
+mandatory stop rules: missing plan approval or provenance, unsafe command
+authority, untrusted instruction dependencies, ambiguous work ownership,
+unauthorized external effects, and invalidating required verification failures
+still require `Execution status: BLOCKED` even if the original plan remains viable.
 
 Report `Execution status: BLOCKED` and recommend `implementation-plan`
 (referring to `architecture-decision` or `change-specification` only when their
