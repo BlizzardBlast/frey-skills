@@ -92,8 +92,11 @@ through RM-AC08 as the bounded planning input. The separate
 [implementation plan](delivery-handoff-implementation-plan.md) is
 **COMPLETE / READY_TO_IMPLEMENT** at the planning handoff. The user then
 requested execution; its [execution record](delivery-handoff-implementation-plan.md#execution-record)
-now records **IMPLEMENTED / UNRELEASED**, fourteen published cases, 34 focused
-tests, and the passing 465-test deterministic gate with six expected skips.
+recorded **IMPLEMENTED / UNRELEASED** at execution handoff, fourteen published
+cases, 34 focused tests, and the passing 465-test deterministic gate with six
+expected skips. The extension subsequently shipped in
+[v1.13.0](release-v1.13.0.md); the [roadmap](roadmap.md) records the post-release
+disposition separately from this original proposal and execution evidence.
 The reassessment itself is not an executable plan, and saving either document
 does not authorize execution or external effects.
 

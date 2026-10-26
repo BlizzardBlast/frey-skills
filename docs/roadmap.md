@@ -19,6 +19,22 @@ Other specialists remain deferred.
 The research baseline and historical milestone records below retain their
 original observation dates and evidence limits.
 
+Post-release checkpoint: **DELIVERY COMPLETE / NO IMPLEMENTATION QUEUED** on
+2026-10-26 at `2f56b54f893fd3d125ee6877a4d7d6e49ea546fc`. The twelve-skill
+v1.13.0 release, installation pins, and bounded desktop reports are recorded.
+All thirteen CI checks passed on that baseline. The public open-issue/PR
+collection was empty; metadata for the ten latest closed PRs (#35 and #37-#45)
+shows delivery work already covered by the shipped extension and release cycle.
+This bounded sample establishes no new unmet workflow or wider usage demand;
+private projects, telemetry, and new external research were not inspected.
+
+Retain the existing portfolio and the revisit conditions below. The next
+development input is a concrete requested problem or an already available,
+authorized task summary showing a gap in an existing workflow. Use the
+[specialist evidence rules](specialist-reassessment.md#next-gate) when applicable;
+do not require a model trial or provider credentials to supply design evidence.
+This checkpoint is a disposition record, not approval of a future implementation.
+
 M1 has added the [repository-orientation skill](../repository-orientation/SKILL.md).
 M2 has added the [architecture-decision skill](../architecture-decision/SKILL.md);
 see the [development record](architecture-decision-development.md).
@@ -359,7 +375,7 @@ required workflow sequence for users of the skills.
 | `migration` / `dependency-upgrade` | Extended the existing planning, strategy, and execution skills on 2026-10-24 and published in v1.12.0; see the [worked example](migration-upgrade-worked-example.md). | Consider a separate skill only if a distinct compatibility or upgrade decision workflow emerges beyond the existing migration plan/test strategy. |
 | General test writer or TDD skill | Defer a separate skill; authorized test implementation already fits plan execution, while `test-strategy` chooses coverage. | A focused user workflow needs a distinct contract beyond choosing tests or executing a plan; no blanket test-first requirement is introduced. |
 | General verification or release checker | Extend current execution/review/readiness evidence rules. | A new candidate/target decision cannot be represented by existing outputs. |
-| PR delivery handoff | Implemented as an unreleased, optional [local reference](../implementation-plan/references/delivery-handoff-planning.md) in `implementation-plan` 1.5.0 for a requested single-PR squash-delivery sequence. Preserve execution's no-merge boundary and advisory review. | Revisit broader integration methods or an operator only with concrete task evidence and separate scope, policy, ownership, and authority decisions. |
+| PR delivery handoff | Implemented and published in v1.13.0 as an optional [local reference](../implementation-plan/references/delivery-handoff-planning.md) in `implementation-plan` 1.5.0 for a requested single-PR squash-delivery sequence. Preserve execution's no-merge boundary and advisory review. | Revisit broader integration methods or an operator only with concrete task evidence and separate scope, policy, ownership, and authority decisions. |
 | Framework-specific frontend, mobile, document, or cloud packs | Keep outside the immediate core roadmap; link to suitable specialist resources when relevant. | Sustained demand and a maintainable domain owner justify a separately scoped pack. |
 | Release executor, deployment operator, or incident mitigator | Frey Skills GitHub publication is implemented in `release-execution` and published in v1.11.0. Defer general release operations, deployment, and incident mitigation; `release-readiness` remains read-only. | A concrete additional target ecosystem, credential/approval model, recovery contract, and maintenance capacity support a separately scoped operational workflow. |
 | Autonomous orchestration, automatic lesson promotion, or issue synchronization | Defer broad automation and external-write workflows. | A concrete repeated task establishes value and a clear consent, provenance, privacy, and recovery contract. |
@@ -395,3 +411,4 @@ they should constrain future implementation scope.
 | 2026-10-25 | Roadmap refresh complete; planning extension PROPOSED | [Delivery-handoff reassessment](roadmap-reassessment-2026-10-25.md) at `09f37e06e85499fff445cf0e8d583bf1d53e92c6`: twelve-skill boundary screen and recent merged delivery tasks support a conditional planning reference, with medium confidence and eight acceptance criteria. No implementation, measured savings, cross-project demand, or model behavior is established. | Accept the bounded behavioral proposal, then create its implementation plan. Do not expand execution/review/release authority or create a general operator automatically. |
 | 2026-10-25 | Delivery-handoff planning complete; READY_TO_IMPLEMENT | [Four-step implementation plan](delivery-handoff-implementation-plan.md) at `1955752d86c8c5de47256da2de370ba52e67aa70` traces RM-AC01 through RM-AC08 to canonical authoring, fourteen planned decision cases, native test registration, documentation, and verification. No skill implementation or future check result is claimed. | Execute the bounded plan when separately requested; preserve the planning-only guide and adjacent authority boundaries. |
 | 2026-10-25 | Delivery-handoff extension delivered; IMPLEMENTED / UNRELEASED | [Execution record](delivery-handoff-implementation-plan.md#execution-record) at baseline `3ac6a2795a0634e48c240a6e789071dd9a1f5f1d`: 34 focused tests and the full 465-test gate passed (459 passed, six expected Windows skips), all twelve specifications and bundle parity passed, and scoped review found no actionable findings. Fourteen cases are static contracts, not model or live-delivery certification. | Maintain the planning extension; release preparation/publication requires a separate scoped request. No broader operator or specialist is queued automatically. |
+| 2026-10-26 | v1.13.0 delivery cycle complete; RETAIN PORTFOLIO | [Release record](release-v1.13.0.md) and [paired desktop report](compatibility.md#maintainer-reported-v1120-and-v1130-desktop-trials), baseline `2f56b54f893fd3d125ee6877a4d7d6e49ea546fc`, and thirteen passing baseline CI checks. Empty public open items and ten closed-PR metadata records establish no new unmet workflow in this bounded sample; no broader demand or model effectiveness is inferred. | No implementation is queued. Revisit an existing owner or deferred candidate when a concrete requested problem or qualifying authorized task evidence supplies its scope. |
