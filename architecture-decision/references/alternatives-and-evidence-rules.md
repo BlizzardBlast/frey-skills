@@ -32,6 +32,10 @@ verified acceptance. Inspect a claimed replacement when available; an older
 superseded record alone does not establish the current design. Preserve holds
 and historical evidence; a new recommendation cannot lift or supersede them.
 
+## Storage and workload scaling tradeoffs (conditional)
+
+When comparing database, tenancy, partitioning, cache, shared-worker, or processing topology changes, include **retaining the current design with smaller controls** if feasible. Compare predictable query/batch cost; hot-key and noisy-neighbor exposure; foreground versus background resource contention; consistency/freshness and cache-invalidation failure; retry/replay behavior; capacity ownership; failure isolation; and reversible migration. Mark an axis inapplicable rather than forcing every architecture to implement it. A cloud platform's scale or reported latency improvement is not evidence that this repository needs the same design. Defer infrastructure additions when local workload measurements, consistency requirements, or an operational owner are decisive and missing. For the storage-specific planning checklist, see the independently packaged `implementation-plan` reference rather than treating it as an implicit workflow activation.
+
 ## Evidence sufficiency
 
 An implementation sketch is not a measurement. Do not fabricate latency,

@@ -6,6 +6,8 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Document conditional storage/workload reliability planning inspired by OpenAI Habitat engineering Parts I and II: bounded operations, isolation/backpressure, cache consistency, replay safety, measured tradeoffs, and explicit no-premature-infrastructure cases. Preserve skill activation, output, trust, and execution-authority boundaries; add no dependencies or automation.
+
 - Close the v1.13.0 roadmap delivery cycle, correct the shipped delivery-handoff
   status, and retain the twelve-skill portfolio pending a concrete requested
   problem or qualifying task evidence. Preserve deferred specialist gates.
