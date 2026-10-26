@@ -337,7 +337,7 @@ existing native smoke runners and already installed pinned CLI packages.
 | Skills CLI installations | PASS | `scripts/smoke_install.py --cli dist/smoke-tools/node_modules/skills/bin/cli.mjs` checked checkout and pinned v1.13.0 source installations: selected/complete sets, default/copy modes, exact listings, all 132 skill-resource files, byte parity, and disposable user-file preservation. |
 | Codex CLI published transition | PASS | `scripts/smoke_codex.py --cli dist/codex-smoke-cli/node_modules/@openai/codex/bin/codex.js` verified v1.12.0 install, v1.13.0 upgrade, and v1.12.0 rollback, with twelve enabled skills in each phase and exact installed public-archive bytes. |
 | Codex CLI checkout transition | PASS | The same command separately verified v1.12.0 install, checkout v1.13.0 upgrade, and v1.12.0 rollback in another project/home/cache. All phases passed unique names, plugin ownership, version-specific cache paths, starter prompts, installed bytes, and unrelated user-skill preservation. |
-| v1.13.0 desktop UI | NOT_TESTED | No v1.13.0 desktop observations were supplied or automated. Earlier desktop reports do not establish this version's compatibility. |
+| v1.13.0 desktop UI | PARTIAL (maintainer-reported) | On 2026-10-26 the maintainer reported successful desktop use of both v1.12.0 and v1.13.0; see the bounded report below. Individual checklist outcomes were not supplied. |
 
 The shared source/archive pin is v1.13.0 at the exact commit above. The Codex
 baseline is v1.12.0 at `db98a6aa539c8b00d04faea1a191a0a5feb2be28`.
@@ -354,3 +354,26 @@ All CLI checks used disposable state without inherited credentials or real
 Codex configuration. Downloaded helpers were data only. No thread, model turn,
 skill invocation, or behavioral model eval was run. These results do not certify
 model behavior, desktop compatibility, or marketplace acceptance.
+
+### Maintainer-reported v1.12.0 and v1.13.0 desktop trials
+
+On 2026-10-26, after the optional desktop compatibility check was prepared, the
+maintainer reported: "I have tried this and it already works." Asked whether
+this referred to v1.13.0, the v1.12.0 baseline, or both, the maintainer answered:
+"Both versions." Record successful desktop use reported for both releases,
+separately from automated archive and isolated CLI verification.
+
+The report identifies both release versions without individual checklist
+outcomes or enabled skill counts. Windows package metadata
+`OpenAI.Codex 26.1021.3705.0` came from read-only inspection during preparation;
+the app's own About version was not captured. The prepared test catalog still
+selects v1.12.0; this source selection does not establish the installed version,
+the phase order, or where the maintainer performed the trials.
+
+Exact inventory and uniqueness in plugin settings and the composer selector,
+restart persistence, upgrade/rollback/final-restoration behavior, starter-prompt
+display, unrelated-installation preservation, and installed-byte parity remain
+**NOT_TESTED** in the desktop checklist. This denotes missing criterion-level
+evidence, not a claim that the maintainer did not perform those checks. No
+desktop automation or behavioral model eval was run in response to this report,
+and no model-behavior certification is claimed.

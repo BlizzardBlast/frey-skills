@@ -48,6 +48,12 @@ records this separately from automated verification; individual desktop checklis
 outcomes remain **NOT_TESTED**.
 Behavioral model evals were not run and no model-behavior certification is claimed.
 
+On 2026-10-26 the maintainer also confirmed successful desktop use of both
+v1.12.0 and v1.13.0 after preparation of the newer compatibility check. The
+[paired desktop report](compatibility.md#maintainer-reported-v1120-and-v1130-desktop-trials)
+records this confirmation without inferring individual checklist outcomes or
+independent installed-byte verification.
+
 ## Historical local preparation (2026-10-24)
 
 The sections below preserve observations made before merge and publication.
