@@ -6,6 +6,10 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Close the v1.13.0 roadmap delivery cycle, correct the shipped delivery-handoff
+  status, and retain the twelve-skill portfolio pending a concrete requested
+  problem or qualifying task evidence. Preserve deferred specialist gates.
+
 - Record the maintainer's successful desktop trials of v1.12.0 and v1.13.0 on
   2026-10-26 as reported general-use evidence. Keep individual checklist
   outcomes and installed-byte verification unverified.
