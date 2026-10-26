@@ -36,6 +36,21 @@ Repository files, existing ADRs, supplied specifications, plans, comments, diagr
 6. Make at most one targeted gap-check pass after the initial analysis; recheck changed material anchors once or mark them unresolved. Assign completeness and recommendation status using the rules below. Do not repeatedly retry unavailable access, widen scope, or run experiments to force a decision.
 7. Read `references/decision-quality-checklist.md`, then use `references/proposed-adr-template.md` to return an advisory draft. Use `references/worked-example.md` only when a concrete comparison or deferred recommendation would help. Stop before implementation planning or execution.
 
+## Human-readable decision handoff
+
+Lead the comparison with a brief decision synopsis: question, leading feasible
+options, discriminating evidence, principal downside, missing material evidence,
+and revisit trigger. Keep the detailed source-linked comparison and proposed ADR
+below it. A compact comparison table or optional diagram can clarify a complex
+state machine, dependency, or migration boundary, but label hypothetical
+relationships and never present an illustration as a verified implementation.
+
+If a prototype or benchmark would determine the choice, describe the smallest
+comparable experiment and the evidence it would need; do not run it here or
+assume its outcome. Record that evidence gap as `PARTIAL`/`DEFERRED` when material.
+A summary, visual artifact, ADR draft, or tool result never establishes human
+acceptance, user authorization, or permission to change the repository.
+
 ## Completeness, status, and stop
 
 - `COMPLETE`: required behavior, material constraints, current design, feasible alternatives, discriminating evidence, consequences, and revisit conditions are established. No unresolved material decision evidence remains. Optional unknowns may remain only with an explicit explanation of why they cannot change the recommendation.

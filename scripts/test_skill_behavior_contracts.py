@@ -88,6 +88,55 @@ class SkillBehaviorContractTests(unittest.TestCase):
             self.assertIn(field, ledger)
         self.assertIn("A variant is evidence, not additional mutation authority", ledger)
 
+    def test_collaborative_planning_keeps_evidence_and_read_only_boundary(self) -> None:
+        plan = (REPOSITORY_ROOT / "implementation-plan" / "SKILL.md").read_text(encoding="utf-8")
+        guidance = (
+            REPOSITORY_ROOT / "implementation-plan" / "references" / "collaborative-planning.md"
+        ).read_text(encoding="utf-8")
+        checklist = (
+            REPOSITORY_ROOT / "implementation-plan" / "references" / "planning-quality-checklist.md"
+        ).read_text(encoding="utf-8")
+        for phrase in (
+            "references/collaborative-planning.md",
+            "## Decision-oriented handoff",
+            "no new",
+            "Do not execute experiments in this read-only skill",
+            "Material uncertainty remains `NOT_READY`",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, plan)
+        for phrase in (
+            "## When a decision brief helps",
+            "## Evidence and experiment boundary",
+            "separate explicit authorization",
+            "## Human-readable boundary objects",
+            "NOT_RUN",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, guidance)
+        for phrase in (
+            "routine details do not require extra approvals",
+            "hypothetical visuals",
+            "separately authorized execution",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, checklist)
+
+    def test_architecture_decision_summary_does_not_self_approve(self) -> None:
+        skill = (REPOSITORY_ROOT / "architecture-decision" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        for phrase in (
+            "## Human-readable decision handoff",
+            "discriminating evidence",
+            "describe the smallest",
+            "do not run it here",
+            "never establishes human",
+            "PARTIAL`/`DEFERRED",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, skill)
+
     def test_test_strategy_keeps_structured_enum_contracts(self) -> None:
         content = (REPOSITORY_ROOT / "test-strategy" / "SKILL.md").read_text(
             encoding="utf-8"

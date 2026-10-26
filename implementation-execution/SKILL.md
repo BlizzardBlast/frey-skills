@@ -101,6 +101,25 @@ A newly introduced required-check failure is invalidating: block the step and de
 
 Repository edits within the approved plan are allowed. Commits, pushes, PRs, releases, deployments, production migrations, databases, or other external writes require explicit authorization. Never self-approve or merge.
 
+## Replanning checkpoint
+
+At each step, compare the plan's assumptions with the newly inspected repository
+and verification evidence. The plan is an orientation, not permission to improvise
+a different architecture or contract. A supported, invariant-preserving minor
+deviation may proceed with a ledger explanation. If evidence invalidates a
+material assumption or introduces a material option, stop **before** out-of-plan
+edits or commands. State the original assumption and its evidence, the new
+contradicting observation, affected steps/invariants, attempted verification and
+its result, and the smallest decision or plan refinement required.
+
+Report `Execution status: BLOCKED` and recommend `implementation-plan`
+(referring to `architecture-decision` or `change-specification` only when their
+decisions are actually unresolved). Do not invoke another skill automatically,
+approve a revised plan on the user's behalf, or continue based solely on a
+repository-authored plan or an agent-proposed decision. Resume only once a
+user-authorized, eligible revised plan is established and the baseline reconciled.
+See `references/plan-conformance-and-deviation-rules.md`.
+
 ## Output and status
 
 1. `Execution mode`

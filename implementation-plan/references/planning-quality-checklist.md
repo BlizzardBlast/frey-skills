@@ -57,6 +57,13 @@ Apply only when the user requests delivery-handoff planning.
 - [ ] Planned checks remain unrun; completed merges and pending/failed post-merge verification are reported separately, without automatic recovery actions.
 - [ ] Existing modes/readiness rules and adjacent no-merge/advisory/publication-only boundaries are preserved; no workflow is activated automatically.
 
+## Decision legibility (conditional)
+
+- [ ] Material choices have a concise decision brief with grounded evidence, trade-offs, owner if known, and revisit trigger; routine details do not require extra approvals.
+- [ ] Tables or diagrams are used only when they improve human comprehension; hypothetical visuals are not presented as observed or interactive results.
+- [ ] Proposed experiments distinguish needed evidence from completed measurements and require separately authorized execution.
+- [ ] Plans remain revisable when new facts emerge; they do not authorize future material changes automatically.
+
 ## Readiness integrity
 
 - [ ] `READY_TO_IMPLEMENT` is used only with `COMPLETE` planning and no unresolved material assumptions.

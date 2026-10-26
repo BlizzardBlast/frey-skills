@@ -127,6 +127,28 @@ class ImplementationExecutionContractTests(unittest.TestCase):
         self.assertIn("## Content trust boundary", checklist)
         self.assertIn("No downloaded content was piped into an interpreter or shell", checklist)
 
+    def test_situated_replanning_stops_on_material_drift(self) -> None:
+        skill = SKILL_PATH.read_text(encoding="utf-8")
+        rules = DEVIATION_RULES_PATH.read_text(encoding="utf-8")
+        for phrase in (
+            "## Replanning checkpoint",
+            "stop **before** out-of-plan",
+            "Execution status: BLOCKED",
+            "Do not invoke another skill automatically",
+            "Resume only once a",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, skill)
+        for phrase in (
+            "## Situated replanning scenarios",
+            "Proceed as minor deviation",
+            "Stop with `BLOCKED`",
+            "do not run unapproved experiments",
+            "An agent may recommend a refinement, not approve it",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, rules)
+
     def test_evaluation_playbook_is_legacy_dynamic_and_non_gating(self) -> None:
         playbook = EVALUATION_PLAYBOOK_PATH.read_text(encoding="utf-8")
 
