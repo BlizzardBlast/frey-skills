@@ -80,6 +80,14 @@ class SkillBehaviorContractTests(unittest.TestCase):
         self.assertIn("mandatory review and CI were not waived", checklist)
         self.assertIn("an exhaustive input cross-product is not required", guidance)
         self.assertIn("not presented as a guarantee that all defects were found", checklist)
+        experiment = (REPOSITORY_ROOT / "code-review" / "references" / "review-efficiency-experiment.md").read_text(encoding="utf-8")
+        for contract in (
+            "verifier-first only", "model-routing only", "independent acceptance oracles",
+            "read-only behavior", "held-out set", "wrong-route cases",
+            "**all** models", "vendor's reported percentage", "not an instruction to install a router",
+        ):
+            with self.subTest(experiment_contract=contract):
+                self.assertIn(contract, experiment)
 
     def test_remediation_batches_locally_without_rewriting_scope_or_skipping_ci(self) -> None:
         skill = (REPOSITORY_ROOT / "iterative-self-review" / "SKILL.md").read_text(encoding="utf-8")
