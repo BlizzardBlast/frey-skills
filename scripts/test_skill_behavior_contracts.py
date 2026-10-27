@@ -89,7 +89,7 @@ class SkillBehaviorContractTests(unittest.TestCase):
         checklist = (REPOSITORY_ROOT / "code-review" / "references" / "review-quality-checklist.md").read_text(encoding="utf-8")
         evals = json.loads((REPOSITORY_ROOT / "code-review" / "evals" / "evals.json").read_text(encoding="utf-8"))
         cases = [line.split("|")[1].strip() for line in guide.splitlines() if line.startswith("| RVR-")]
-        self.assertEqual(cases, [f"RVR-{i:03d}" for i in range(1, 11)])
+        self.assertEqual(cases, [f"RVR-{i:03d}" for i in range(1, 12)])
         for phrase in (
             "references/review-convergence.md",
             "Never re-post a verified resolved defect",
@@ -99,6 +99,7 @@ class SkillBehaviorContractTests(unittest.TestCase):
                 self.assertIn(phrase, skill)
         for phrase in (
             "PARTIAL/BLOCKED", "explicitly requests another thorough/full review",
+            "merge-base/ancestry", "as an incremental safety check",
             "untrusted evidence", "never replaces", "three remediation-pass",
             "no new actionable findings", "Do not", "required GitHub checks",
             "harmful", "source consent",
@@ -109,12 +110,18 @@ class SkillBehaviorContractTests(unittest.TestCase):
         names = {row["id"]: row for row in evals["evals"]}
         self.assertEqual(len(names), len(evals["evals"]))
         for case, filename in (
-            ("cr-repeat-review-new-regression", "rereview-new-regression.md"),
-            ("cr-repeat-review-unverified-baseline", "rereview-unverified-baseline.md"),
+            ("cr-repeat-review-new-regression", "rereview-login-control.md"),
+            ("cr-repeat-review-unverified-baseline", "rereview-release-workflow.md"),
+            ("cr-repeat-review-branch-update", "rereview-branch-update.md"),
         ):
             with self.subTest(case=case):
                 self.assertEqual(names[case]["files"], [f"evals/fixtures/{filename}"])
-                self.assertTrue((REPOSITORY_ROOT / "code-review" / "evals" / "fixtures" / filename).is_file())
+                fixture = (REPOSITORY_ROOT / "code-review" / "evals" / "fixtures" / filename).read_text(encoding="utf-8")
+                self.assertNotIn("Expected independent review:", fixture)
+                self.assertNotIn("decision is REQUEST_CHANGES", fixture)
+                self.assertNotIn("./scripts/from-pr.sh", fixture)
+        playbook = (REPOSITORY_ROOT / "code-review" / "references" / "evaluation-playbook.md").read_text(encoding="utf-8")
+        self.assertIn("grader-only oracles", playbook)
 
     def test_remediation_batches_locally_without_rewriting_scope_or_skipping_ci(self) -> None:
         skill = (REPOSITORY_ROOT / "iterative-self-review" / "SKILL.md").read_text(encoding="utf-8")
