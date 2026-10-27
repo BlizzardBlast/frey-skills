@@ -455,5 +455,25 @@ class SkillBehaviorContractTests(unittest.TestCase):
             self.assert_example_priority_contract(example.replace("| high", "| P1", 1))
 
 
+    def test_review_efficiency_routing_trial_requires_comparable_metrics_and_clear_sources(self) -> None:
+        document = (REPOSITORY_ROOT / "code-review" / "references" / "review-efficiency-experiment.md").read_text(encoding="utf-8")
+        heading = "## Optional verifier-first and model-routing trial\n"
+        self.assertEqual(document.count(heading), 1)
+        prior_guidance, trial = document.split(heading, 1)
+        self.assertIn("Source: [AI21 GitLab case study]", prior_guidance)
+        self.assertNotIn("Source: [AI21 GitLab case study]", trial)
+        self.assertIn("[Maestro announcement", trial)
+        normalized = " ".join(trial.replace("*", "").replace("`", "").split())
+        for contract in (
+            "verifier-first only", "model-routing only", "independent acceptance oracles",
+            "read-only behavior", "held-out set", "wrong-route cases", "all models",
+            "not an instruction to install a router", "different tokenizers",
+            "metering definitions", "promising_not_certified", "not evidence of savings",
+            "not a demonstrated saving", "independently measured end-to-end billed cost",
+        ):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, normalized)
+
+
 if __name__ == "__main__":
     unittest.main()
