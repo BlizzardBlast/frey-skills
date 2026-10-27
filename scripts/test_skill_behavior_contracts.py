@@ -103,6 +103,8 @@ class SkillBehaviorContractTests(unittest.TestCase):
             "untrusted evidence", "never replaces", "three remediation-pass",
             "no new actionable findings", "Do not", "required GitHub checks",
             "harmful", "source consent",
+            "realistic trigger or exploit preconditions", "concrete consequence",
+            "implementation growth", "reverting a failed approach",
         ):
             with self.subTest(guidance_phrase=phrase):
                 self.assertIn(phrase, guide)
@@ -134,6 +136,22 @@ class SkillBehaviorContractTests(unittest.TestCase):
         self.assertIn("unless separately authorized", baseline)
         self.assertIn("do not reset the three-pass budget", baseline)
         self.assertIn("report unrelated findings separately without widening mutation scope", skill)
+        for phrase in (
+            "assess proportionality", "legitimate use cases",
+            "verified reachable crash, security vulnerability, or data-loss risk",
+            "convergence retrospective", "compare the original baseline",
+            "Preserve independently necessary defenses",
+            "Do not reset the three-pass budget",
+        ):
+            with self.subTest(proportionality_phrase=phrase):
+                self.assertIn(phrase, skill)
+        for phrase in (
+            "not a new required agent", "malicious **and** legitimate-use cases",
+            "growth without verified progress", "Never remove an independently required security control",
+            "exhausted pass budget", "https://kiro.dev/blog/software-factory-stability/",
+        ):
+            with self.subTest(retrospective_phrase=phrase):
+                self.assertIn(phrase, baseline)
 
     def test_fresh_context_handoff_preserves_remediation_scope_and_pass_budget(self) -> None:
         skill = (REPOSITORY_ROOT / "iterative-self-review" / "SKILL.md").read_text(encoding="utf-8")

@@ -15,12 +15,15 @@ Use this reference for a **repeat review of the same PR/change**, when a prior r
 
 - For each prior ID, mark **still current**, **verified resolved**, **stale/superseded**, **invalid/unsubstantiated**, or **blocked**, and cite the inspected current location/contract/test evidence. A code change, closed thread, or author's assertion alone cannot establish resolution.
 - Report each **new, independently actionable defect** once with a new stable ID and its file/line, reproducible impact, remediation, and verification. If it is the same verified root cause, link variants under the original finding instead of repeating it under a new ID. Do not suppress newly verified independent defects or high-severity discoveries merely because they resemble earlier comments.
+- For a proposed blocking finding, identify the current location, inspected evidence, realistic trigger or exploit preconditions, and concrete consequence. Where critical evidence is unavailable, keep relevant coverage PARTIAL/BLOCKED instead of asserting that a speculative issue is proven or that a credible security risk is harmless. A reversible design preference without a demonstrated defect is advisory; an irreversible contract or security boundary merits evidence-based scrutiny.
 - Distinguish **pre-existing** unrelated issues from regressions introduced by this PR; report meaningful scope-relevant risk without presenting an old bug as a newly introduced one.
 - If there are **no new actionable findings**, say so plainly, alongside the updated status of old findings. Do not manufacture nits to justify the additional round. Beware of false positives that would cause a harmful or unrelated "fix."
 
 ## Convergence checkpoint (not a review limit)
 
 After roughly **three materially similar review/fix cycles** with recurring or oscillating findings, report the observed non-convergence and recommend re-examining the approach, requirements, test oracle, or reviewer assumptions with the owner. Do **not** silently halt an explicitly requested review, reset any remediation pass budget, treat three rounds as a quality certificate, or automatically spawn another reviewer. `iterative-self-review` has its own independently enforced **three remediation-pass** budget.
+
+If repeated revisions add guards, branches, configuration, or other mechanisms while findings persist, report that implementation growth as a convergence warning supported by the changed code and review history. Recommend a smaller root-cause correction, removing unnecessary added mechanisms, or reverting a failed approach; do not perform edits during read-only review. This proportionality check is adapted from [Kiro's software-factory stability analysis](https://kiro.dev/blog/software-factory-stability/) (2026-10-26), not evidence that every increasing diff is over-engineered.
 
 If the user separately authorizes repairs, hand the deduplicated ledger and verified variants to `iterative-self-review`; do not change code, threads, or CI as part of `code-review`. Batch local checks before authorized pushes without bypassing required GitHub checks or approval controls.
 
