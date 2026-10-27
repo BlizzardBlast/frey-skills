@@ -37,17 +37,35 @@ Proposed choice and rationale
 <Supported option and discriminating evidence only with COMPLETE/PROPOSED.
 With DEFERRED, write unresolved and list the missing evidence or decision.>
 
+Confidence and evidence basis
+<Qualitative confidence in the recommendation with explicit reasons and limits;
+not a calibrated probability or proof. With DEFERRED state why confidence is
+insufficient, not an unjustified preference. Do not invent an agent or reviewer.>
+
 Consequences and residual risk
 <Positive, negative, and neutral effects; compatibility, failure/recovery,
 security/privacy, operations/cost, ownership, reversibility, and limitations.
 No risk acceptance or operational readiness is implied.>
 
 Validation still needed
-<Questions or measurements and their purpose; NOT_RUN without matching
-inspected results. Suggested validation is not an instruction to execute it.>
+<List actually inspected evidence and separately any executed checks with
+source/revision and result. Explicitly name material NOT_RUN and unavailable
+validation, plus unknown implementation/decision acceptance. Treat checks as
+NOT_RUN without matching inspected results. Suggestions are not instructions
+to execute; do not imply a test passed by omission.>
 
 Revisit conditions
-<Observable changes that would invalidate the recommendation or assumptions.>
+<Observable falsifier or decision/ruling that would make this recommendation
+wrong, and which option or comparison to revisit if known. A consequence or
+cost of failure is not itself a falsifier.>
+
+Open decision questions (only when needed)
+<For PARTIAL/DEFERRED or BLOCKED/DEFERRED, include safely answerable material
+questions when they exist: a stable draft-local reference if cited, why it
+matters, owner or unknown, what evidence/answer is needed, and unanswered or
+deferred status. If unsafe access prevents a useful question, report the blocker
+elsewhere rather than inventing one. No fabricated human answers or automatic
+acceptance. If no such question exists, omit this section.>
 
 Evidence and unknowns
 <Inspected anchors; observations versus documentation claims and inferences;

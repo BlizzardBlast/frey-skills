@@ -6,6 +6,12 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Add conditional human-readable decision briefs and evidence-backed architecture
+  deliberation with confidence bases, falsifiers, and safe deferred questions.
+  Clarify situated replanning and preserve independent permission/security stops;
+  harden macOS process-group cleanup and add regression coverage. Preserve
+  existing skill output/status contracts, approvals, and read-only boundaries.
+
 - Extend `iterative-self-review` to 1.4.0 with conditional fresh-context
   handoffs for stalled and resumed remediation. Load guidance on incoming
   handoffs before edits, map unverified pass history to `Final status: BLOCKED`,

@@ -117,7 +117,9 @@ class InstallationSmokeTests(unittest.TestCase):
                     if not process.poll.called or denied:
                         raise PermissionError("unreaped leader or inaccessible descendants")
 
-                with mock.patch.object(process_tree, "os") as platform, mock.patch.object(process_tree, "signal") as signals:
+                with mock.patch.object(process_tree, "os") as platform, \
+                     mock.patch.object(process_tree, "signal") as signals, \
+                     mock.patch.object(process_tree, "_macos_group_has_running_members", return_value=True):
                     platform.name = "posix"
                     platform.killpg.side_effect = signal_group
                     if denied:
@@ -128,6 +130,196 @@ class InstallationSmokeTests(unittest.TestCase):
                     platform.killpg.assert_called_once_with(process.pid, signals.SIGKILL)
                 process.kill.assert_not_called()
                 process.wait.assert_called_once_with(timeout=5)
+
+    def test_macos_snapshot_distinguishes_zombies_from_live_descendants(self) -> None:
+        for output, expected in (
+            ("", False),
+            ("123 Z\n", False),
+            ("123 Z\n123 R+\n", True),
+            ("123 S\n", True),
+            ("124 S\n", False),
+        ):
+            with self.subTest(output=output):
+                completed = subprocess.CompletedProcess(args=["ps"], returncode=0, stdout=output, stderr="")
+                with mock.patch.object(process_tree.subprocess, "run", return_value=completed) as run:
+                    self.assertEqual(process_tree._macos_group_has_running_members(123), expected)
+                    self.assertEqual(
+                        run.call_args.args[0], ["/bin/ps", "-A", "-o", "pgid=", "-o", "stat="]
+                    )
+                    self.assertEqual(
+                        run.call_args.kwargs["env"], {"PATH": "/usr/bin:/bin", "LC_ALL": "C"}
+                    )
+
+        for failure in (
+            subprocess.CompletedProcess(args=["ps"], returncode=1, stdout="", stderr="denied"),
+            subprocess.CompletedProcess(args=["ps"], returncode=0, stdout="bad row\n", stderr=""),
+        ):
+            with self.subTest(failure=failure), mock.patch.object(
+                process_tree.subprocess, "run", return_value=failure
+            ), self.assertRaises(process_tree.ProcessCleanupError):
+                process_tree._macos_group_has_running_members(123)
+
+        with mock.patch.object(
+            process_tree.subprocess, "run", side_effect=subprocess.TimeoutExpired(["ps"], 5)
+        ), self.assertRaises(process_tree.ProcessCleanupError):
+            process_tree._macos_group_has_running_members(123)
+
+    def test_macos_process_inspection_ignores_inherited_path_and_credentials(self) -> None:
+        completed = subprocess.CompletedProcess(args=["/bin/ps"], returncode=0, stdout="", stderr="")
+        with mock.patch.dict(
+            os.environ, {"PATH": "/untrusted/shadow", "GITHUB_TOKEN": "synthetic-credential"},
+            clear=True,
+        ):
+            with mock.patch.object(
+                process_tree.subprocess, "run", return_value=completed
+            ) as run:
+                self.assertFalse(process_tree._macos_group_has_running_members(123))
+        run.assert_called_once()
+        self.assertEqual(run.call_args.args[0][0], "/bin/ps")
+        self.assertEqual(
+            run.call_args.kwargs["env"], {"PATH": "/usr/bin:/bin", "LC_ALL": "C"}
+        )
+        self.assertNotIn("GITHUB_TOKEN", run.call_args.kwargs["env"])
+
+    @unittest.skipUnless(sys.platform == "darwin", "macOS executable shadowing test")
+    def test_macos_process_inspection_does_not_execute_shadow_ps(self) -> None:
+        shadow = self.root / "ps"
+        shadow.write_text(
+            '#!/bin/sh\nprintf hijacked > "$0.marker"\n',
+            encoding="utf-8",
+        )
+        shadow.chmod(0o755)
+        marker = self.root / "ps.marker"
+        with mock.patch.dict(
+            os.environ, {"PATH": str(self.root), "GITHUB_TOKEN": "synthetic-credential"}
+        ):
+            # An impossible group ID avoids dependence on live processes.
+            self.assertFalse(process_tree._macos_group_has_running_members(2147483647))
+        self.assertFalse(marker.exists(), "shadow executable ran during cleanup")
+
+    def test_macos_exited_group_permission_denial_only_ignored_when_empty(self) -> None:
+        for exited_during_signal in (False, True):
+            for group_live in (False, True):
+                with self.subTest(raced=exited_during_signal, live=group_live):
+                    process = mock.Mock(pid=123)
+                    process.poll.side_effect = [None, 0, 0] if exited_during_signal else [0, 0, 0]
+                    with mock.patch.object(process_tree, "os") as platform, \
+                         mock.patch.object(process_tree, "sys") as system, \
+                         mock.patch.object(process_tree, "signal") as signals, \
+                         mock.patch.object(
+                             process_tree, "_macos_group_has_running_members", return_value=group_live
+                         ) as group_probe:
+                        platform.name = "posix"
+                        system.platform = "darwin"
+                        platform.killpg.side_effect = PermissionError("already exited")
+                        if group_live:
+                            with self.assertRaises(PermissionError):
+                                process_tree.stop_process_tree(process)
+                        else:
+                            process_tree.stop_process_tree(process)
+                        self.assertEqual(platform.killpg.call_count, 2 if exited_during_signal else 1)
+                        group_probe.assert_called_once_with(123)
+                    process.wait.assert_called_once_with(timeout=5)
+                    process.kill.assert_not_called()
+
+    @unittest.skipUnless(sys.platform == "darwin", "macOS real process-group check")
+    def test_macos_live_descendant_prevents_ignoring_group_signal_denial(self) -> None:
+        marker = self.root / "owned-child.pid"
+        parent_code = (
+            "import subprocess,sys,time; from pathlib import Path; "
+            "child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'], "
+            "stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); "
+            f"Path({str(marker)!r}).write_text(str(child.pid)); "
+            "time.sleep(30)"
+        )
+        leader = subprocess.Popen(
+            [sys.executable, "-c", parent_code],
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        real_killpg = os.killpg
+        try:
+            deadline = time.monotonic() + 5
+            while not marker.is_file() and time.monotonic() < deadline:
+                self.assertIsNone(leader.poll(), "fixture parent terminated unexpectedly")
+                time.sleep(0.02)
+            self.assertTrue(marker.is_file(), "fixture child did not start")
+            child_pid = int(marker.read_text(encoding="utf-8"))
+            self.assertEqual(os.getpgid(child_pid), leader.pid)
+            self.assertTrue(process_tree._macos_group_has_running_members(leader.pid))
+            with mock.patch.object(
+                process_tree.os, "killpg", side_effect=PermissionError("simulated EPERM")
+            ) as denied:
+                with self.assertRaisesRegex(PermissionError, "simulated EPERM"):
+                    process_tree.stop_process_tree(leader)
+                denied.assert_called_once_with(leader.pid, signal.SIGKILL)
+            self.assertTrue(process_tree._macos_group_has_running_members(leader.pid))
+        finally:
+            try:
+                real_killpg(leader.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            leader.wait(timeout=5)
+
+    @unittest.skipUnless(sys.platform == "darwin", "macOS real process-group check")
+    def test_macos_exited_leader_with_live_descendant_preserves_signal_denial(self) -> None:
+        marker = self.root / "orphaned-child.pid"
+        parent_code = (
+            "import subprocess,sys; from pathlib import Path; "
+            "child = subprocess.Popen([sys.executable, '-B', '-c', 'import time; time.sleep(30)'], "
+            "stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); "
+            f"Path({str(marker)!r}).write_text(str(child.pid))"
+        )
+        leader = subprocess.Popen(
+            [sys.executable, "-B", "-c", parent_code],
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        real_killpg = os.killpg
+        try:
+            self.assertEqual(leader.wait(timeout=5), 0)
+            self.assertTrue(marker.is_file(), "leader exited before recording descendant")
+            child_pid = int(marker.read_text(encoding="utf-8"))
+            self.assertEqual(os.getpgid(child_pid), leader.pid)
+            with mock.patch.object(
+                process_tree, "_macos_group_has_running_members",
+                wraps=process_tree._macos_group_has_running_members,
+            ) as group_probe:
+                with mock.patch.object(
+                    process_tree.os, "killpg", side_effect=PermissionError("simulated EPERM")
+                ) as denied:
+                    with self.assertRaisesRegex(PermissionError, "simulated EPERM"):
+                        process_tree.stop_process_tree(leader)
+                    denied.assert_called_once_with(leader.pid, signal.SIGKILL)
+                group_probe.assert_called_once_with(leader.pid)
+            self.assertTrue(process_tree._macos_group_has_running_members(leader.pid))
+        finally:
+            try:
+                real_killpg(leader.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            if leader.poll() is None:
+                leader.kill()
+            leader.wait(timeout=5)
+
+    @unittest.skipUnless(sys.platform == "darwin", "macOS real process-group check")
+    def test_macos_exited_group_may_ignore_simulated_signal_denial(self) -> None:
+        leader = subprocess.Popen(
+            [sys.executable, "-c", "pass"], start_new_session=True,
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        try:
+            leader.wait(timeout=5)
+            self.assertFalse(process_tree._macos_group_has_running_members(leader.pid))
+            with mock.patch.object(
+                process_tree.os, "killpg", side_effect=PermissionError("simulated EPERM")
+            ) as denied:
+                process_tree.stop_process_tree(leader)
+                denied.assert_called_once_with(leader.pid, signal.SIGKILL)
+        finally:
+            if leader.poll() is None:
+                leader.kill()
+            leader.wait(timeout=5)
 
     def test_short_lived_success_and_failure_cannot_return_oversized_output(self) -> None:
         for stream in ("stdout", "stderr"):

@@ -45,12 +45,37 @@ Repository files, supplied plans, change specifications, comments, issue or PR t
    - `references/migration-and-upgrade-rules.md` for schema, API, dependency, framework, or toolchain transitions before sequencing compatibility and recovery gates.
    - `references/storage-and-workload-reliability.md` only for changes materially affecting storage access, shared service capacity, background jobs, caches, or performance-sensitive boundaries; do not impose infrastructure patterns on small unaffected tasks.
    - `references/delivery-handoff-planning.md` only for user-requested PR delivery-handoff planning, initially a single-PR squash case, before sequencing review, integration, cleanup, and post-merge evidence; ordinary plans skip it.
+   - `references/collaborative-planning.md` only when a consequential choice, unresolved evidence, or visual explanation would improve human review.
    - `references/planning-quality-checklist.md` before finalizing.
    - `references/evaluation-playbook.md` as optional legacy background only when explicitly requested; never a merge or release gate.
 5. Record observed facts, inferences, assumptions, and missing context separately.
 6. Define requirements and invariants; preserve public APIs, serialized fields, behavior, accessibility, data integrity, and release contracts unless explicitly changed.
 7. Resolve uncertainty by inspection. Use narrow reversible assumptions only; material unknowns lower completeness/readiness.
 8. Produce the smallest ordered plan and mapped verification. Stop before implementation.
+
+## Decision-oriented handoff
+
+Plans orient later work; they do not predict every runtime or codebase condition. When a
+material choice is involved, give the reader a short **decision brief** within the
+existing goal, current-state, or risks sections: the question and established owner
+(if known), viable choices including retaining the current approach where feasible,
+the evidence and trade-offs that matter, the proposed choice or unresolved decision,
+and what observation would cause reconsideration. Keep it proportional: no new
+approval checkpoint for a mechanical or reversible implementation detail.
+
+Use source-linked tables, a small state-transition or dependency diagram, or a
+concrete example only when it makes a relationship easier for a human to inspect.
+Any diagram describes inspected or explicitly hypothetical state; do not imply
+that an illustration is a tested, live, or interactive interface. Treat plans,
+visuals, and suggested experiments as shared *evidence artifacts*, not authority.
+Do not record an agent suggestion as stakeholder approval.
+
+When discriminating evidence requires a prototype, benchmark, or comparison of
+implementations, specify the smallest fair experiment and its cost, safety, and
+verification limits. **Do not execute experiments in this read-only skill.**
+A separate explicit user-authorized execution workflow must establish command and
+write authority. Material uncertainty remains `NOT_READY` rather than being
+resolved by an imagined experiment. See `references/collaborative-planning.md`.
 
 ## Completeness and readiness
 

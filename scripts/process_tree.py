@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import signal
 import subprocess
+import sys
 import time
 from contextlib import contextmanager
 from pathlib import Path
@@ -13,6 +14,29 @@ from typing import BinaryIO, Iterator
 
 class ProcessCleanupError(ValueError):
     """Ownership or bounded cleanup of a child process tree could not be proven."""
+
+
+def _macos_group_has_running_members(pgid: int) -> bool:
+    """Fail closed unless ps confirms no non-zombie processes in the owned group."""
+    try:
+        # Resolve the trusted macOS binary and isolate its environment.
+        # Neither PATH nor credentials inherited by this supervisor are trusted.
+        snapshot = subprocess.run(
+            ["/bin/ps", "-A", "-o", "pgid=", "-o", "stat="],
+            stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=5, check=False,
+            env={"PATH": "/usr/bin:/bin", "LC_ALL": "C"},
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise ProcessCleanupError("could not inspect process group after macOS signal denial") from exc
+    if snapshot.returncode or snapshot.stderr.strip():
+        raise ProcessCleanupError("process-group inspection failed after macOS signal denial")
+    for row in snapshot.stdout.splitlines():
+        fields = row.split()
+        if len(fields) != 2 or not fields[0].isdigit():
+            raise ProcessCleanupError("unrecognized process-group snapshot")
+        if int(fields[0]) == pgid and not fields[1].startswith("Z"):
+            return True
+    return False
 
 
 def stop_process_tree(process: subprocess.Popen[bytes]) -> None:
@@ -28,18 +52,24 @@ def stop_process_tree(process: subprocess.Popen[bytes]) -> None:
             if result.returncode:
                 raise ProcessCleanupError(f"could not confirm process-tree cleanup for PID {process.pid}")
         else:
-            # macOS can reject signals to a group containing only an unreaped leader.
+            # macOS may deny signals to an already-exited group containing only zombies.
             leader_running = process.poll() is None
             try:
                 os.killpg(process.pid, signal.SIGKILL)
             except PermissionError:
-                if not leader_running or process.poll() is None:
+                if process.poll() is None:
+                    raise  # A still-running leader must not be silently ignored.
+                if leader_running:
+                    # The leader exited between poll and signal: retry once.
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    except PermissionError:
+                        if sys.platform != "darwin" or _macos_group_has_running_members(process.pid):
+                            raise
+                elif sys.platform != "darwin" or _macos_group_has_running_members(process.pid):
                     raise
-                # Reap an exit between poll and signal; retry only this race once.
-                try:
-                    os.killpg(process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
             except ProcessLookupError:
                 pass
     finally:
