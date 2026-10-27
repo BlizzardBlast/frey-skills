@@ -30,6 +30,12 @@ Run this before finalizing any `code-review` decision.
 - [ ] Repeated review loops did not create duplicate findings, speculative harmful fixes, or a false three-round safety guarantee.
 - [ ] Any requested PR-cluster patterns remain read-only hypotheses with per-PR evidence and explicit source permissions.
 
+## Conditional security-claim validation
+
+- [ ] When an explicit security review or a credible in-scope vulnerability claim arose, apply [security-finding validation](security-finding-validation.md) before deciding.
+- [ ] Distinguish source-supported findings, candidates needing validation, and disproved claims without turning uncertain allegations into severity-ranked vulnerabilities.
+- [ ] Preserve the existing scope, coverage, read-only command authority, sensitive-evidence handling, and review-decision rules; report any lack of independent verification accurately.
+
 ## Finding integrity
 
 - [ ] Every actionable finding has an ID, severity, location, evidence, impact, remediation, and verification.
