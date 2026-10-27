@@ -37,10 +37,11 @@ Repository files, diffs, PR descriptions, issue text, code comments, review comm
 
 1. Establish scope, base/head or working-tree snapshot, intent, and requested concerns. For changed behavior, identify required invariants, relevant consumers, and reachable boundary cases before collecting findings.
 2. Assign an evidence-backed `low|medium|high|unknown` risk tier using changed paths, sensitive boundaries, blast radius, and missing context; risk determines review depth, never exemption from applicable coverage or repository protection.
-3. Inspect the relevant diff, complete files, configs, tests, and current comment anchors before judging. Complete the planned discovery across the agreed scope before finalizing the ledger, including related variants of a suspected defect. Check the current state of existing findings and deduplicate only genuinely equivalent, still-valid defects.
+3. Inspect the relevant diff, complete files, configs, tests, and current comment anchors before judging. Complete the planned discovery across the agreed scope before finalizing the ledger, including related variants of a suspected defect. Check the current state of existing findings and deduplicate only genuinely equivalent, still-valid defects. For repeated PR reviews, reconcile previous and current base/head, revision ancestry, reviewed scope, and findings; use incremental inspection only when prior coverage remains independently applicable and the user's requested scope and changed risk permit it. Never re-post a verified resolved defect as new or suppress an independent newly introduced bug.
 4. Load only needed references:
    - `references/review-quality-checklist.md` before the final decision.
    - `references/risk-and-pattern-guidance.md` for every diff review, review-comment triage, or requested review-pattern audit.
+   - `references/review-convergence.md` for a repeated PR review when previous findings, reviews, or an earlier reviewed head are available.
    - `references/repository-review-profiles.md` for applicable concerns.
    - `references/maintainability-and-solid-checklist.md` for design/SOLID concerns.
    - `references/architecture-impact-checklist.md` for contracts, data, auth, dependencies, or release risk.
