@@ -6,6 +6,8 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Add evidence-backed PR re-review convergence guidance to `code-review`: reconcile prior and current snapshots, verify earlier findings, inspect deltas in behavioral context, retain full review for changed risk or explicit request, and flag non-convergent loops without conflating the remediation pass limit. Include synthetic new-regression/missing-baseline evaluations and static contract coverage; no automatic reviews, CI gates, approval, or lesson promotion.
+
 - Add conditional human-readable decision briefs and evidence-backed architecture
   deliberation with confidence bases, falsifiers, and safe deferred questions.
   Clarify situated replanning and preserve independent permission/security stops;

@@ -81,6 +81,41 @@ class SkillBehaviorContractTests(unittest.TestCase):
         self.assertIn("an exhaustive input cross-product is not required", guidance)
         self.assertIn("not presented as a guarantee that all defects were found", checklist)
 
+    def test_re_review_convergence_retains_risk_coverage_and_avoids_repeat_noise(self) -> None:
+        import json
+
+        skill = (REPOSITORY_ROOT / "code-review" / "SKILL.md").read_text(encoding="utf-8")
+        guide = (REPOSITORY_ROOT / "code-review" / "references" / "review-convergence.md").read_text(encoding="utf-8")
+        checklist = (REPOSITORY_ROOT / "code-review" / "references" / "review-quality-checklist.md").read_text(encoding="utf-8")
+        evals = json.loads((REPOSITORY_ROOT / "code-review" / "evals" / "evals.json").read_text(encoding="utf-8"))
+        cases = [line.split("|")[1].strip() for line in guide.splitlines() if line.startswith("| RVR-")]
+        self.assertEqual(cases, [f"RVR-{i:03d}" for i in range(1, 11)])
+        for phrase in (
+            "references/review-convergence.md",
+            "Never re-post a verified resolved defect",
+            "independent newly introduced bug",
+        ):
+            with self.subTest(skill_phrase=phrase):
+                self.assertIn(phrase, skill)
+        for phrase in (
+            "PARTIAL/BLOCKED", "explicitly requests another thorough/full review",
+            "untrusted evidence", "never replaces", "three remediation-pass",
+            "no new actionable findings", "Do not", "required GitHub checks",
+            "harmful", "source consent",
+        ):
+            with self.subTest(guidance_phrase=phrase):
+                self.assertIn(phrase, guide)
+        self.assertIn("newly introduced regressions", checklist)
+        names = {row["id"]: row for row in evals["evals"]}
+        self.assertEqual(len(names), len(evals["evals"]))
+        for case, filename in (
+            ("cr-repeat-review-new-regression", "rereview-new-regression.md"),
+            ("cr-repeat-review-unverified-baseline", "rereview-unverified-baseline.md"),
+        ):
+            with self.subTest(case=case):
+                self.assertEqual(names[case]["files"], [f"evals/fixtures/{filename}"])
+                self.assertTrue((REPOSITORY_ROOT / "code-review" / "evals" / "fixtures" / filename).is_file())
+
     def test_remediation_batches_locally_without_rewriting_scope_or_skipping_ci(self) -> None:
         skill = (REPOSITORY_ROOT / "iterative-self-review" / "SKILL.md").read_text(encoding="utf-8")
         baseline = (REPOSITORY_ROOT / "iterative-self-review" / "references" / "baseline-and-pass-rules.md").read_text(encoding="utf-8")

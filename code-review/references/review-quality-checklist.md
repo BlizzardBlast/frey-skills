@@ -26,6 +26,8 @@ Run this before finalizing any `code-review` decision.
 - [ ] Sensitive boundaries and unknown blast radius received sufficient inspection; mandatory review and CI were not waived.
 - [ ] Duplicate findings share a verified root cause/remediation; unrelated defects were not silently collapsed.
 - [ ] Repeated comments were tested against the current revision, with invalid or stale claims distinguished from valid ones.
+- [ ] On a PR re-review, a verifiable prior head and coverage were reconciled with the current base/head; new deltas, affected behavior and old finding states were checked without hiding newly introduced regressions.
+- [ ] Repeated review loops did not create duplicate findings, speculative harmful fixes, or a false three-round safety guarantee.
 - [ ] Any requested PR-cluster patterns remain read-only hypotheses with per-PR evidence and explicit source permissions.
 
 ## Finding integrity
