@@ -4,7 +4,7 @@ description: Use when the user asks to review code, a PR, diff, current changes,
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: '1.3.4'
+  version: '1.4.0'
   allow_implicit_invocation: 'true'
 ---
 

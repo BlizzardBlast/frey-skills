@@ -6,6 +6,15 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Extend `code-review` 1.4.0 with a conditional frontend interaction-performance
+  reference covering high-cardinality UI, accessibility, meaningful measurement,
+  and the distinction between main-thread timings and field INP. Only material
+  performance risks or claimed speedups require measurement evidence; normal
+  frontend reviews have no blanket benchmark gate. Add three documented
+  decisions and deterministic contract tests. Preserve read-only review
+  authority, severity rules, and optional model-evaluation boundaries. No new
+  CI workflow or dependency and no behavioral model trials.
+
 - Add conditional human-readable decision briefs and evidence-backed architecture
   deliberation with confidence bases, falsifiers, and safe deferred questions.
   Clarify situated replanning and preserve independent permission/security stops;
