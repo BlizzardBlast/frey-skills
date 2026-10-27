@@ -38,4 +38,7 @@ Use these profiles to decide which concerns are applicable. Include applicable c
 ## Docs and dead code
 
 - Public docs, changelogs, examples, comments, generated docs, stale flags, unused exports, and unreachable branches.
+- For material claims about implemented behavior, commands, compatibility or release status, check current code, configuration, tests and relevant execution/release evidence; an accepted ADR is not proof of implementation. For intended architecture or policy, verify decision acceptance independently and distinguish proposed guidance, accepted intent and implementation gaps. Mark unsupported claims; a passing Markdown/link check or AI-generated explanation is not factual verification.
+- Check that readers and agents can identify the authoritative version. Flag conflicting or stale copies of policies, instructions and architecture guidance; distinguish canonical sources from generated or exported artifacts rather than maintaining independent versions.
+- When discoverability is material, inspect semantic headings, actual lists/tables, specific section titles and usable references—not just appearance or syntactically valid links. Apply this only to relevant documents; do not demand a new format or impose cosmetic rewrites.
 - Treat docs/dead-code findings as actionable when they can mislead users, hide risk, or keep obsolete behavior alive.

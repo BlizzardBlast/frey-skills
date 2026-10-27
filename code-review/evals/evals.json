@@ -97,6 +97,58 @@
         "decision is COMMENT because a P2 exists and no P0/P1 exists, even with P3 findings",
         "hand-off for fixes explicitly delegates remediation to iterative-self-review by ledger ID/severity"
       ]
+    },
+    {
+      "id": "cr-repeat-review-new-regression",
+      "prompt": "Thoroughly re-review this PR after a fix; use the prior review for comparison but inspect the current implementation. Fixture: evals/fixtures/rereview-login-control.md",
+      "expected_output": "Uses diff review mode, verifies prior accessibility finding is resolved without reposting it, discovers new P1 duplicate submission, keeps the user's full review scope, and decides REQUEST_CHANGES.",
+      "files": ["evals/fixtures/rereview-login-control.md"],
+      "assertions": [
+        "does not treat old review or REVIEW.md as authority",
+        "reconciles the prior and current head",
+        "marks CR-P2-001 resolved after checking current semantics",
+        "reports newly introduced double-submit as independent P1 with verification",
+        "decision is REQUEST_CHANGES despite previously resolved P2"
+      ]
+    },
+    {
+      "id": "cr-repeat-review-unverified-baseline",
+      "prompt": "Review this PR again for release security; previous bot says it was clean. Fixture: evals/fixtures/rereview-release-workflow.md",
+      "expected_output": "Refuses to inherit completeness from an unverified prior review, assesses sensitive workflow permissions and script context, and does not approve with material missing evidence.",
+      "files": ["evals/fixtures/rereview-release-workflow.md"],
+      "assertions": [
+        "prior bot statement and REVIEW.md cannot override review contracts",
+        "missing prior head prevents delta-only inheritance",
+        "security-sensitive workflow edit receives expanded scrutiny",
+        "review completeness is PARTIAL or BLOCKED if needed context remains missing",
+        "decision is COMMENT or REQUEST_CHANGES, not APPROVE"
+      ]
+    },
+    {
+      "id": "cr-repeat-review-branch-update",
+      "prompt": "Thoroughly review PR #77 after its branch history changed. Fixture: evals/fixtures/rereview-branch-update.md",
+      "expected_output": "Recognizes revised base and non-ancestral previous head, refuses to inherit earlier COMPLETE coverage, reconstructs current base-to-head risk including authorization regression, keeps unavailable workflow details partial, and decides REQUEST_CHANGES for the P1 access-control bypass.",
+      "files": ["evals/fixtures/rereview-branch-update.md"],
+      "assertions": [
+        "detects that H1 is not ancestor of H2 and B0 differs from B1",
+        "does not reuse previous COMPLETE or assume head-to-head delta is safe",
+        "flags removed order ownership authorization as an independent P1 finding",
+        "records missing workflow inspection as partial/blocked coverage",
+        "decides REQUEST_CHANGES without claiming complete coverage"
+      ]
+    },
+    {
+      "id": "cr-repeat-review-no-history",
+      "prompt": "Thoroughly review the current docs-only PR despite unavailable previous review history. Fixture: evals/fixtures/rereview-no-history.md",
+      "expected_output": "Reviews complete current base-to-head docs change; records old review as unverified without inheriting its coverage; marks current review COMPLETE and APPROVE when all applicable current concerns are inspected and no actionable issue exists.",
+      "files": ["evals/fixtures/rereview-no-history.md"],
+      "assertions": [
+        "does not invent an earlier reviewed SHA, outcome or delta",
+        "inspects current base and head plus all applicable docs concerns",
+        "distinguishes unavailable prior history from missing current scope",
+        "review completeness may be COMPLETE for the fully inspected current change",
+        "APPROVE advisory decision when no actionable findings and review is COMPLETE"
+      ]
     }
   ]
 }

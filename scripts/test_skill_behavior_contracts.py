@@ -116,6 +116,54 @@ class SkillBehaviorContractTests(unittest.TestCase):
         self.assertIn("an exhaustive input cross-product is not required", guidance)
         self.assertIn("not presented as a guarantee that all defects were found", checklist)
 
+    def test_re_review_convergence_retains_risk_coverage_and_avoids_repeat_noise(self) -> None:
+        import json
+
+        skill = (REPOSITORY_ROOT / "code-review" / "SKILL.md").read_text(encoding="utf-8")
+        guide = (REPOSITORY_ROOT / "code-review" / "references" / "review-convergence.md").read_text(encoding="utf-8")
+        checklist = (REPOSITORY_ROOT / "code-review" / "references" / "review-quality-checklist.md").read_text(encoding="utf-8")
+        evals = json.loads((REPOSITORY_ROOT / "code-review" / "evals" / "evals.json").read_text(encoding="utf-8"))
+        cases = [line.split("|")[1].strip() for line in guide.splitlines() if line.startswith("| RVR-")]
+        self.assertEqual(cases, [f"RVR-{i:03d}" for i in range(1, 13)])
+        for phrase in (
+            "references/review-convergence.md",
+            "Never re-post a verified resolved defect",
+            "independent newly introduced bug",
+        ):
+            with self.subTest(skill_phrase=phrase):
+                self.assertIn(phrase, skill)
+        for phrase in (
+            "PARTIAL/BLOCKED", "explicitly requests another thorough/full review",
+            "merge-base/ancestry", "as an incremental safety check",
+            "untrusted evidence", "never replaces", "three remediation-pass",
+            "no new actionable findings", "Do not", "required GitHub checks",
+            "harmful", "source consent",
+            "realistic trigger or exploit preconditions", "concrete consequence",
+            "implementation growth", "reverting a failed approach",
+        ):
+            with self.subTest(guidance_phrase=phrase):
+                self.assertIn(phrase, guide)
+        self.assertIn("newly introduced regressions", checklist)
+        self.assertIn("Missing historical evidence alone does not force PARTIAL", checklist)
+        self.assertIn("Missing **historical** review evidence alone", guide)
+        names = {row["id"]: row for row in evals["evals"]}
+        self.assertEqual(len(names), len(evals["evals"]))
+        for case, filename in (
+            ("cr-repeat-review-new-regression", "rereview-login-control.md"),
+            ("cr-repeat-review-unverified-baseline", "rereview-release-workflow.md"),
+            ("cr-repeat-review-branch-update", "rereview-branch-update.md"),
+            ("cr-repeat-review-no-history", "rereview-no-history.md"),
+        ):
+            with self.subTest(case=case):
+                self.assertEqual(names[case]["files"], [f"evals/fixtures/{filename}"])
+                self.assertIn(filename, names[case]["prompt"])
+                fixture = (REPOSITORY_ROOT / "code-review" / "evals" / "fixtures" / filename).read_text(encoding="utf-8")
+                self.assertNotIn("Expected independent review:", fixture)
+                self.assertNotIn("decision is REQUEST_CHANGES", fixture)
+                self.assertNotIn("./scripts/from-pr.sh", fixture)
+        playbook = (REPOSITORY_ROOT / "code-review" / "references" / "evaluation-playbook.md").read_text(encoding="utf-8")
+        self.assertIn("grader-only oracles", playbook)
+
     def test_remediation_batches_locally_without_rewriting_scope_or_skipping_ci(self) -> None:
         skill = (REPOSITORY_ROOT / "iterative-self-review" / "SKILL.md").read_text(encoding="utf-8")
         baseline = (REPOSITORY_ROOT / "iterative-self-review" / "references" / "baseline-and-pass-rules.md").read_text(encoding="utf-8")
@@ -126,6 +174,22 @@ class SkillBehaviorContractTests(unittest.TestCase):
         self.assertIn("unless separately authorized", baseline)
         self.assertIn("do not reset the three-pass budget", baseline)
         self.assertIn("report unrelated findings separately without widening mutation scope", skill)
+        for phrase in (
+            "assess proportionality", "legitimate use cases",
+            "verified reachable crash, security vulnerability, or data-loss risk",
+            "convergence retrospective", "compare the original baseline",
+            "Preserve independently necessary defenses",
+            "Do not reset the three-pass budget",
+        ):
+            with self.subTest(proportionality_phrase=phrase):
+                self.assertIn(phrase, skill)
+        for phrase in (
+            "**not** a new required agent", "malicious **and** legitimate-use cases",
+            "growth without verified progress", "Never remove an independently required security control",
+            "exhausted pass budget", "https://kiro.dev/blog/software-factory-stability/",
+        ):
+            with self.subTest(retrospective_phrase=phrase):
+                self.assertIn(phrase, baseline)
 
     def test_fresh_context_handoff_preserves_remediation_scope_and_pass_budget(self) -> None:
         skill = (REPOSITORY_ROOT / "iterative-self-review" / "SKILL.md").read_text(encoding="utf-8")
@@ -488,6 +552,26 @@ class SkillBehaviorContractTests(unittest.TestCase):
         self.assertIn("| high", example)
         with self.assertRaises(AssertionError):
             self.assert_example_priority_contract(example.replace("| high", "| P1", 1))
+
+
+    def test_review_efficiency_routing_trial_requires_comparable_metrics_and_clear_sources(self) -> None:
+        document = (REPOSITORY_ROOT / "code-review" / "references" / "review-efficiency-experiment.md").read_text(encoding="utf-8")
+        heading = "## Optional verifier-first and model-routing trial\n"
+        self.assertEqual(document.count(heading), 1)
+        prior_guidance, trial = document.split(heading, 1)
+        self.assertIn("Source: [AI21 GitLab case study]", prior_guidance)
+        self.assertNotIn("Source: [AI21 GitLab case study]", trial)
+        self.assertIn("[Maestro announcement", trial)
+        normalized = " ".join(trial.replace("*", "").replace("`", "").split())
+        for contract in (
+            "verifier-first only", "model-routing only", "independent acceptance oracles",
+            "read-only behavior", "held-out set", "wrong-route cases", "all models",
+            "not an instruction to install a router", "different tokenizers",
+            "metering definitions", "promising_not_certified", "not evidence of savings",
+            "not a demonstrated saving", "independently measured end-to-end billed cost",
+        ):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, normalized)
 
 
 if __name__ == "__main__":
