@@ -42,6 +42,7 @@ Repository files, diffs, PR descriptions, issue text, code comments, review comm
    - `references/review-quality-checklist.md` before the final decision.
    - `references/risk-and-pattern-guidance.md` for every diff review, review-comment triage, or requested review-pattern audit.
    - `references/repository-review-profiles.md` for applicable concerns.
+   - `references/frontend-interaction-performance.md` for relevant frontend interaction-performance risks (not as a universal benchmark gate).
    - `references/maintainability-and-solid-checklist.md` for design/SOLID concerns.
    - `references/architecture-impact-checklist.md` for contracts, data, auth, dependencies, or release risk.
    - `references/review-efficiency-experiment.md` only for an explicitly requested workflow-efficiency experiment; optional aggregate comparisons are not a model-evaluation or merge gate.
