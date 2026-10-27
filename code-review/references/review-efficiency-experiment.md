@@ -77,4 +77,3 @@ Use this extension only for a separately authorized workflow-efficiency experime
 5. **Keep or reject based on independent quality.** Compare verified correctness, important missed defects, false positives, applicability and negative cases before efficiency. Revert a proposed routing/tool-use policy if it degrades critical coverage or correctness; mark insufficient samples and uncertain or unverified oracles as inconclusive. Do not use the vendor's reported percentage as an acceptance threshold or auto-promote a policy from synthetic fixtures.
 
 No new dependencies, background agent, automated model router, agent-facing tool permissions, behavioral model runs, GitHub approvals, or CI gates follow from this reference.
-
