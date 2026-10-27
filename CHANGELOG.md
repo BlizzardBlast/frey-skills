@@ -6,6 +6,8 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Add conditional, source-first security-vulnerability triage to `code-review`: trace real trust-boundary outcomes, actively challenge suspected findings, separate supported claims from unverified and rejected candidates, and state independent-verification limits. Reuse existing coverage and review decisions; no new skill, dependency, execution authority, CI gate, or multi-agent requirement.
+
 - Extend `code-review` 1.4.0 with a conditional frontend interaction-performance
   reference covering high-cardinality UI, accessibility, meaningful measurement,
   and the distinction between main-thread timings and field INP. Only material

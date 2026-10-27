@@ -116,6 +116,52 @@ class SkillBehaviorContractTests(unittest.TestCase):
         self.assertIn("an exhaustive input cross-product is not required", guidance)
         self.assertIn("not presented as a guarantee that all defects were found", checklist)
 
+    def test_security_validation_routes_before_source_review(self) -> None:
+        skill = (REPOSITORY_ROOT / "code-review" / "SKILL.md").read_text(encoding="utf-8")
+        checklist = (REPOSITORY_ROOT / "code-review" / "references" / "review-quality-checklist.md").read_text(encoding="utf-8")
+        workflow = skill.split("## Workflow\n", 1)[1].split("\n## ", 1)[0]
+        route = next(
+            (step for step in re.split(r"(?m)^(?=\d+\. )", workflow)
+             if "`references/security-finding-validation.md`" in step),
+            None,
+        )
+        self.assertIsNotNone(route, "Security validation requires an explicit skill route")
+        self.assertTrue(route.startswith("3. Load only needed references"), route)
+        self.assertIn("a security-focused review explicitly requested by the user", route)
+        self.assertIn("a credible in-scope vulnerability candidate", route)
+        self.assertIn("before validating security candidates", route)
+        self.assertIn("4. Inspect the relevant diff", workflow)
+        self.assertLess(workflow.index("3. Load only needed references"), workflow.index("4. Inspect the relevant diff"))
+        self.assertIn("[security-finding validation](security-finding-validation.md)", checklist)
+
+    def test_security_validation_candidates_and_authority_remain_bounded(self) -> None:
+        guide = (REPOSITORY_ROOT / "code-review" / "references" / "security-finding-validation.md").read_text(encoding="utf-8")
+        expected = (
+            ("A browser hides an admin action, but the server enforces", "`rejected`"),
+            ("A browser hides an admin action and the server authorization path is inaccessible", "`needs-validation`"),
+            ("An untrusted agent lesson is parsed as data", "`source-supported`"),
+        )
+        rows = [
+            tuple(cell.strip() for cell in row.strip("|").split("|"))
+            for row in guide.splitlines()
+            if row.startswith("| A browser ") or row.startswith("| An untrusted agent ")
+        ]
+        self.assertEqual(len(rows), len(expected))
+        for row in rows:
+            self.assertEqual(len(row), 3, row)
+        for (scenario, disposition), row in zip(expected, rows):
+            self.assertIn(scenario, row[0])
+            self.assertIn(disposition, row[2])
+        for contract in (
+            "before reporting it", "existing P0–P3 ledger",
+            "**do not** assign a vulnerability severity", "not independent verification",
+            "read-only source review", "without an appropriately isolated",
+            "APPROVE/COMMENT/REQUEST_CHANGES", "No new release gate",
+            "sensitive proof-of-concept", "does not create a new mode",
+        ):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, guide)
+
     def test_re_review_convergence_retains_risk_coverage_and_avoids_repeat_noise(self) -> None:
         import json
 
