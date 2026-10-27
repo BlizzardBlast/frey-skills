@@ -89,7 +89,7 @@ class SkillBehaviorContractTests(unittest.TestCase):
         checklist = (REPOSITORY_ROOT / "code-review" / "references" / "review-quality-checklist.md").read_text(encoding="utf-8")
         evals = json.loads((REPOSITORY_ROOT / "code-review" / "evals" / "evals.json").read_text(encoding="utf-8"))
         cases = [line.split("|")[1].strip() for line in guide.splitlines() if line.startswith("| RVR-")]
-        self.assertEqual(cases, [f"RVR-{i:03d}" for i in range(1, 12)])
+        self.assertEqual(cases, [f"RVR-{i:03d}" for i in range(1, 13)])
         for phrase in (
             "references/review-convergence.md",
             "Never re-post a verified resolved defect",
@@ -109,12 +109,15 @@ class SkillBehaviorContractTests(unittest.TestCase):
             with self.subTest(guidance_phrase=phrase):
                 self.assertIn(phrase, guide)
         self.assertIn("newly introduced regressions", checklist)
+        self.assertIn("Missing historical evidence alone does not force PARTIAL", checklist)
+        self.assertIn("Missing **historical** review evidence alone", guide)
         names = {row["id"]: row for row in evals["evals"]}
         self.assertEqual(len(names), len(evals["evals"]))
         for case, filename in (
             ("cr-repeat-review-new-regression", "rereview-login-control.md"),
             ("cr-repeat-review-unverified-baseline", "rereview-release-workflow.md"),
             ("cr-repeat-review-branch-update", "rereview-branch-update.md"),
+            ("cr-repeat-review-no-history", "rereview-no-history.md"),
         ):
             with self.subTest(case=case):
                 self.assertEqual(names[case]["files"], [f"evals/fixtures/{filename}"])

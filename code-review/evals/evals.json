@@ -136,6 +136,19 @@
         "records missing workflow inspection as partial/blocked coverage",
         "decides REQUEST_CHANGES without claiming complete coverage"
       ]
+    },
+    {
+      "id": "cr-repeat-review-no-history",
+      "prompt": "Thoroughly review the current docs-only PR despite unavailable previous review history. Fixture: evals/fixtures/rereview-no-history.md",
+      "expected_output": "Reviews complete current base-to-head docs change; records old review as unverified without inheriting its coverage; marks current review COMPLETE and APPROVE when all applicable current concerns are inspected and no actionable issue exists.",
+      "files": ["evals/fixtures/rereview-no-history.md"],
+      "assertions": [
+        "does not invent an earlier reviewed SHA, outcome or delta",
+        "inspects current base and head plus all applicable docs concerns",
+        "distinguishes unavailable prior history from missing current scope",
+        "review completeness may be COMPLETE for the fully inspected current change",
+        "APPROVE advisory decision when no actionable findings and review is COMPLETE"
+      ]
     }
   ]
 }
