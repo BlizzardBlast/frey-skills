@@ -116,6 +116,7 @@ class SkillBehaviorContractTests(unittest.TestCase):
         ):
             with self.subTest(case=case):
                 self.assertEqual(names[case]["files"], [f"evals/fixtures/{filename}"])
+                self.assertIn(filename, names[case]["prompt"])
                 fixture = (REPOSITORY_ROOT / "code-review" / "evals" / "fixtures" / filename).read_text(encoding="utf-8")
                 self.assertNotIn("Expected independent review:", fixture)
                 self.assertNotIn("decision is REQUEST_CHANGES", fixture)

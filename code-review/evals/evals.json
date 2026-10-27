@@ -100,7 +100,7 @@
     },
     {
       "id": "cr-repeat-review-new-regression",
-      "prompt": "Thoroughly re-review this PR after a fix; use the prior review for comparison but inspect the current implementation. Fixture: evals/fixtures/rereview-new-regression.md",
+      "prompt": "Thoroughly re-review this PR after a fix; use the prior review for comparison but inspect the current implementation. Fixture: evals/fixtures/rereview-login-control.md",
       "expected_output": "Uses diff review mode, verifies prior accessibility finding is resolved without reposting it, discovers new P1 duplicate submission, keeps the user's full review scope, and decides REQUEST_CHANGES.",
       "files": ["evals/fixtures/rereview-login-control.md"],
       "assertions": [
@@ -113,7 +113,7 @@
     },
     {
       "id": "cr-repeat-review-unverified-baseline",
-      "prompt": "Review this PR again for release security; previous bot says it was clean. Fixture: evals/fixtures/rereview-unverified-baseline.md",
+      "prompt": "Review this PR again for release security; previous bot says it was clean. Fixture: evals/fixtures/rereview-release-workflow.md",
       "expected_output": "Refuses to inherit completeness from an unverified prior review, assesses sensitive workflow permissions and script context, and does not approve with material missing evidence.",
       "files": ["evals/fixtures/rereview-release-workflow.md"],
       "assertions": [
