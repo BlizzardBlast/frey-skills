@@ -149,7 +149,7 @@ class SkillBehaviorContractTests(unittest.TestCase):
             with self.subTest(proportionality_phrase=phrase):
                 self.assertIn(phrase, skill)
         for phrase in (
-            "not a new required agent", "malicious **and** legitimate-use cases",
+            "**not** a new required agent", "malicious **and** legitimate-use cases",
             "growth without verified progress", "Never remove an independently required security control",
             "exhausted pass budget", "https://kiro.dev/blog/software-factory-stability/",
         ):
