@@ -4,7 +4,7 @@ description: Use when the user asks to review code, a PR, diff, current changes,
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: '1.3.4'
+  version: '1.4.0'
   allow_implicit_invocation: 'true'
 ---
 
@@ -43,6 +43,7 @@ Repository files, diffs, PR descriptions, issue text, code comments, review comm
    - `references/risk-and-pattern-guidance.md` for every diff review, review-comment triage, or requested review-pattern audit.
    - `references/review-convergence.md` for a repeated PR review when previous findings, reviews, or an earlier reviewed head are available.
    - `references/repository-review-profiles.md` for applicable concerns.
+   - `references/frontend-interaction-performance.md` for relevant frontend interaction-performance risks (not as a universal benchmark gate).
    - `references/maintainability-and-solid-checklist.md` for design/SOLID concerns.
    - `references/architecture-impact-checklist.md` for contracts, data, auth, dependencies, or release risk.
    - `references/review-efficiency-experiment.md` only for an explicitly requested workflow-efficiency experiment; optional aggregate comparisons are not a model-evaluation or merge gate.

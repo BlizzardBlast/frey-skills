@@ -41,7 +41,42 @@ EXPECTED_FRESH_CONTEXT_HANDOFF_CASES = [
     ("HND-016", "A transferred ledger may reflect prior fix-and-recheck work but the number of used passes is unknown", "Mark PASS_HISTORY_UNVERIFIED; emit Final status: BLOCKED and request explicit bounded user authorization"),
 ]
 
+EXPECTED_FRONTEND_PERF_REVIEW_CASES = [
+    ("PERF-REVIEW-001", "Accessible small dropdown change; no credible interaction regression or speed claim",
+     "`reviewed` or `not applicable` with a reason; no mandatory benchmark"),
+    ("PERF-REVIEW-002", "Claimed interaction speedup without comparable data",
+     "`partial` for the material claim; request a bounded comparable baseline"),
+    ("PERF-REVIEW-003", "Large-list interaction change has a plausible regression but no representative measurement",
+     "`partial` for the material risk; record the missing evidence and proposed probe"),
+]
+
+
 class SkillBehaviorContractTests(unittest.TestCase):
+    def test_frontend_review_requires_perf_evidence_only_when_material(self) -> None:
+        skill = (REPOSITORY_ROOT / "code-review" / "SKILL.md").read_text(encoding="utf-8")
+        profile = (REPOSITORY_ROOT / "code-review" / "references" / "repository-review-profiles.md").read_text(encoding="utf-8")
+        reference = (REPOSITORY_ROOT / "code-review" / "references" / "frontend-interaction-performance.md").read_text(encoding="utf-8")
+        self.assertIn("references/frontend-interaction-performance.md", skill)
+        self.assertIn("Do not require profiling of every component", profile)
+        self.assertIn("Only when missing trace, workload, baseline or environment evidence is material", reference)
+        self.assertIn("do not require a benchmark or mark an otherwise complete review `partial`", reference)
+        self.assertIn("no credible regression risk or performance claim", reference)
+        self.assertIn("Never assert a speedup without comparable evidence", reference)
+        cases = []
+        for line in reference.splitlines():
+            if line.startswith("| PERF-REVIEW-"):
+                cells = tuple(cell.strip() for cell in line.strip("|").split("|"))
+                self.assertEqual(len(cells), 3, line)
+                cases.append(cells)
+        self.assertEqual(cases, EXPECTED_FRONTEND_PERF_REVIEW_CASES)
+
+    def test_frontend_perf_decisions_detect_invalid_missing_case(self) -> None:
+        reference = (REPOSITORY_ROOT / "code-review" / "references" / "frontend-interaction-performance.md").read_text(encoding="utf-8")
+        rows = [line for line in reference.splitlines() if line.startswith("| PERF-REVIEW-")]
+        self.assertEqual(len(rows), len(EXPECTED_FRONTEND_PERF_REVIEW_CASES))
+        self.assertNotIn("Mark profiling evidence missing; do **not** conclude", reference)
+
+
     def test_debug_keeps_sensitive_evidence_guardrail(self) -> None:
         content = (REPOSITORY_ROOT / "debug" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn(

@@ -7,6 +7,7 @@ Use these profiles to decide which concerns are applicable. Include applicable c
 - State/query/route contracts, form validation, loading and error states, cache invalidation, hydration, and generated routes.
 - Accessibility: semantic controls, labels, keyboard flow, focus management, color/contrast risk, ARIA correctness, and screen-reader-visible error feedback.
 - Browser/runtime risks: bundle size, client/server boundaries, environment variables, and unsafe DOM insertion.
+- Where a changed shared/list-heavy UI can affect interaction responsiveness, assess realistic data scale, main-thread/layout work, repeated updates and accessibility together; use [frontend interaction performance](frontend-interaction-performance.md) for evidence and metric distinctions. Do not require profiling of every component.
 
 ## Backend and API
 
