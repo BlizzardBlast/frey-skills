@@ -6,6 +6,8 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+## [1.14.0] - 2026-10-28
+
 - Add conditional, source-first security-vulnerability triage to `code-review`: trace real trust-boundary outcomes, actively challenge suspected findings, separate supported claims from unverified and rejected candidates, and state independent-verification limits. Reuse existing coverage and review decisions; no new skill, dependency, execution authority, CI gate, or multi-agent requirement.
 
 - Extend `code-review` 1.4.0 with a conditional frontend interaction-performance
@@ -19,9 +21,11 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 - Add evidence-backed PR re-review convergence guidance to `code-review`: reconcile prior and current snapshots, verify earlier findings, inspect deltas in behavioral context, retain full review for changed risk or explicit request, and flag non-convergent loops without conflating the remediation pass limit. Include synthetic new-regression/missing-baseline evaluations and static contract coverage; no automatic reviews, CI gates, approval, or lesson promotion.
 
-- Add conditional human-readable decision briefs and evidence-backed architecture
+- Extend `architecture-decision` to 1.1.0 and `implementation-plan` to 1.6.0
+  with conditional human-readable decision briefs and evidence-backed architecture
   deliberation with confidence bases, falsifiers, and safe deferred questions.
-  Clarify situated replanning and preserve independent permission/security stops;
+  Extend `implementation-execution` to 1.5.0 with situated replanning while
+  preserving independent permission/security stops;
   harden macOS process-group cleanup and add regression coverage. Preserve
   existing skill output/status contracts, approvals, and read-only boundaries.
 
