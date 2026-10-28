@@ -6,6 +6,10 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Pin installation and archive smoke checks to verified v1.14.0 and move the
+  Codex upgrade/rollback baseline to v1.13.0. Record public artifact and local
+  CLI evidence separately from untested v1.14.0 desktop compatibility.
+
 ## [1.14.0] - 2026-10-28
 
 - Add conditional, source-first security-vulnerability triage to `code-review`: trace real trust-boundary outcomes, actively challenge suspected findings, separate supported claims from unverified and rejected candidates, and state independent-verification limits. Reuse existing coverage and review decisions; no new skill, dependency, execution authority, CI gate, or multi-agent requirement.

@@ -297,7 +297,7 @@ python scripts/smoke_install.py --cli dist/smoke-tools/node_modules/skills/bin/c
 
 Use Node.js 24 and Python 3.11+ for this command. The runner verifies the CLI
 version, stages the checkout's canonical skills without local runtime caches,
-and separately installs the documented `v1.13.0` GitHub source pin. That tag must
+and separately installs the documented `v1.14.0` GitHub source pin. That tag must
 still resolve to its recorded commit. Each source is checked with default and
 explicit `--copy` installation, selecting only `code-review` and all skills in
 separate empty projects. `--list` must report exactly the expected skill names
@@ -377,7 +377,7 @@ python scripts/smoke_codex.py --cli ./dist/codex-smoke-cli/node_modules/@openai/
 ```
 
 The checker verifies the npm package and native executable version, then directly
-supervises that executable. It downloads v1.12.0 and v1.13.0, checks each tag/commit,
+supervises that executable. It downloads v1.13.0 and v1.14.0, checks each tag/commit,
 checksum, and canonical archive bytes through the release checker, and installs
 those verified plugins into a disposable marketplace. It checks initial
 installation, upgrade, and rollback with a fresh app-server for each phase.
