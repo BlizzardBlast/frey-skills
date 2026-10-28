@@ -392,6 +392,24 @@ uncertainty, and next gate. A deferred candidate may be dropped. Success means a
 clearer useful workflow with maintained boundaries, passing deterministic
 checks, and honest evidence, rather than reaching a target skill count.
 
+When an owner requests a portfolio reassessment or material overlap is found,
+also inspect **existing** skills, not just proposed additions. For each skill
+in scope, compare its distinct trigger and output, demonstrated use (if
+available), overlap with other skills, upkeep, and published compatibility
+obligations. Record a reasoned **retain, simplify, consolidate, or propose
+retirement** disposition with evidence, uncertainty, and a revisit condition.
+Unknown usage is not proof of disuse; do not invent adoption metrics or prune
+solely to reduce the skill count. An experiment can remain a documented idea
+without becoming a shipped skill.
+
+Retirement is a separate owner-approved change, not an automatic outcome of
+reassessment. Before removing or combining a published skill, review consumer
+compatibility, discovery and installation paths, references, bundled outputs,
+migration/rollback needs, and the existing trust and validation contracts.
+Do not create a scheduled review job or add a new process to ordinary tasks.
+This is a practical application of [Design as a garden](https://justinjay.wang/design-as-a-garden/),
+not a claim that the essay specifies engineering or compatibility policy.
+
 Open questions are demand and capacity: whether a standalone orientation
 artifact is useful often enough, which architecture decisions recur, whether
 security-domain maintenance is available, and whether performance or incident
