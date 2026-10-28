@@ -28,8 +28,8 @@ f63c78f0fbe4b231c3554bf6f2c3f7af4a9ccff027bb6c4de8ac573b1890a10c
 ```
 
 The public digest matches the local candidate digest recorded below; each was
-verified independently. Installation and archive smoke checks now pin this exact
-public release. The Codex transition baseline is v1.12.0 at
+verified independently. At the time, installation and archive smoke checks pinned
+this exact public release. The Codex transition baseline was v1.12.0 at
 `db98a6aa539c8b00d04faea1a191a0a5feb2be28`. See the separate
 [v1.13.0 compatibility record](compatibility.md#v1130-verification) for executed
 client checks and remaining limits. This record cannot authorize publication,

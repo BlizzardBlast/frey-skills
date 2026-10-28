@@ -81,8 +81,8 @@ This addition does not authorize publication of a candidate.
 
 The [v1.11.0 release record](release-v1.11.0.md) tracks its preparation separately
 from verified publication of the twelve-skill bundle. Current installation and
-smoke-check pins use verified v1.13.0; the Codex transition checks v1.12.0
-installation, v1.13.0 upgrade, and v1.12.0 rollback.
+smoke-check pins use verified v1.14.0; the Codex transition checks v1.13.0
+installation, v1.14.0 upgrade, and v1.13.0 rollback.
 
 The remaining names and scopes are proposals. This document does not activate skills,
 approve their specifications, authorize implementation or commands, accept

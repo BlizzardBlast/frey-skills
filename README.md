@@ -34,10 +34,10 @@ handoff sequence, see the [worked example](docs/worked-example.md).
 For researched future skill priorities and delivery gates, see the
 [skill development roadmap](docs/roadmap.md).
 
-The versioned installation below pins the published twelve-skill v1.13.0
+The versioned installation below pins the published twelve-skill v1.14.0
 release, including `release-execution`, repository orientation, architecture
 decisions, threat modeling, and the performance-investigation guidance in `debug`.
-The [release record](docs/release-v1.13.0.md) records verified public artifacts,
+The [release record](docs/release-v1.14.0.md) records verified public artifacts,
 historical candidate evidence, and client compatibility limits. CLI checks do
 not establish desktop UI compatibility or certify model behavior.
 
@@ -115,7 +115,7 @@ system symptom.
   review, or remediation.
 
 The performance reference first shipped in v1.10.0 and is included in the pinned
-v1.13.0 release.
+v1.14.0 release.
 
 ### change-specification
 
@@ -224,7 +224,7 @@ sequence, or refine a concrete codebase change before editing.
 - Readiness semantics: `READY_TO_IMPLEMENT`, `READY_WITH_ASSUMPTIONS`, or
   `NOT_READY`.
 
-The pinned v1.13.0 release includes optional [PR delivery-handoff guidance](implementation-plan/references/delivery-handoff-planning.md)
+The pinned v1.14.0 release includes optional [PR delivery-handoff guidance](implementation-plan/references/delivery-handoff-planning.md)
 for a requested single-PR squash plan: named owners, current candidate/policy
 checks, cleanup prerequisites, and separate post-merge verification. Ordinary
 plans gain no delivery obligations, and the guide grants no write authority.
@@ -422,7 +422,7 @@ remain separate.
 `threat-modeling` is optional when a scoped defensive model is the requested
 output, including after a trust-boundary change. It can inform specification,
 architecture, test strategy, and review without executing those workflows or
-certifying security. All three skills are included in pinned v1.13.0.
+certifying security. All three skills are included in pinned v1.14.0.
 
 ```text
 symptom or failing test
@@ -465,7 +465,7 @@ behavioral model eval evidence.
 Install the versioned skill sources with the Skills CLI:
 
 ```bash
-npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.13.0
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.14.0
 ```
 
 Choose the skills, agent, and project or user scope in the installer. To follow
