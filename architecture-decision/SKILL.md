@@ -4,7 +4,7 @@ description: Use when the user asks to compare concrete architecture or dependen
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: '1.0.0'
+  version: '1.1.0'
   allow_implicit_invocation: 'true'
 ---
 
