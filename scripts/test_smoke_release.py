@@ -58,9 +58,16 @@ def _slow_body_worker(marker: str, destination: Path, limit: int, result: Connec
     response = http.client.HTTPResponse(client)
     response.begin()
     response.url = "https://example.invalid/asset"
-    Path(marker).write_text(str(os.getpid()), encoding="utf-8")
+    original_read = response.read
+
+    def read(*args: object, **kwargs: object) -> bytes:
+        Path(marker).write_text(str(os.getpid()), encoding="utf-8")
+        return original_read(*args, **kwargs)
+
     try:
-        with mock.patch.object(urllib.request.OpenerDirector, "open", return_value=response):
+        with mock.patch.object(urllib.request.OpenerDirector, "open", return_value=response), mock.patch.object(
+            response, "read", side_effect=read
+        ):
             smoke_release._download_worker(response.url, destination, limit, result)
     finally:
         client.close()
@@ -424,15 +431,85 @@ class DownloadAndRunnerTests(unittest.TestCase):
                 root = Path(temporary).resolve()
                 marker, destination = root / "started.pid", root / "asset"
                 started = time.monotonic()
-                with mock.patch.object(smoke_release, "_download_worker", worker):
+                clock_start = None
+                startup_offset = None
+                ready_at = None
+                join_returned_at = None
+
+                # Exclude fixture startup from this blocked-operation clock only.
+                def fixture_clock() -> float:
+                    nonlocal clock_start, startup_offset, ready_at
+                    if clock_start is None:
+                        clock_start = time.monotonic()
+                        return clock_start
+                    if startup_offset is None:
+                        startup_deadline = time.monotonic() + 15
+                        while not marker.is_file():
+                            if time.monotonic() >= startup_deadline:
+                                raise AssertionError("worker did not reach the blocking operation")
+                            time.sleep(0.01)
+                        ready_at = time.monotonic()
+                        startup_offset = ready_at - clock_start
+                    return time.monotonic() - startup_offset
+
+                clock = mock.Mock(monotonic=fixture_clock)
+                process_type = multiprocessing.get_context("spawn").Process
+                original_start = process_type.start
+                original_join = process_type.join
+
+                def start_with_delay(process: multiprocessing.Process) -> None:
+                    if worker is _blocked_connect_worker:
+                        time.sleep(3.2)
+                    original_start(process)
+
+                def timed_join(process: multiprocessing.Process, timeout: float | None = None) -> None:
+                    nonlocal join_returned_at
+                    original_join(process, timeout)
+                    if join_returned_at is None:
+                        join_returned_at = time.monotonic()
+
+                with mock.patch.object(smoke_release, "_download_worker", worker), mock.patch.object(
+                    smoke_release, "time", clock
+                ), mock.patch.object(process_type, "start", start_with_delay), mock.patch.object(
+                    process_type, "join", timed_join
+                ):
                     with self.assertRaisesRegex(smoke_release.ReleaseSmokeError, "time limit"):
                         smoke_release.download(str(marker), destination, 1024, timeout=3)
-                self.assertLess(time.monotonic() - started, 6)
+                self.assertLess(time.monotonic() - started, 27)
                 self.assertTrue(marker.is_file(), "worker must reach the blocking operation before timeout")
+                self.assertIsNotNone(ready_at)
+                self.assertIsNotNone(join_returned_at)
+                self.assertGreaterEqual(join_returned_at - ready_at, 2.5)
                 pid = int(marker.read_text(encoding="utf-8"))
                 self.assertNotIn(pid, [child.pid for child in multiprocessing.active_children()])
                 self.assertFalse(destination.exists())
                 self.assertEqual(list(root.iterdir()), [marker])
+
+    def test_download_deadline_includes_worker_startup(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            destination = root / "asset"
+            process_type = multiprocessing.get_context("spawn").Process
+            original_start = process_type.start
+            started_pids = []
+
+            def delayed_start(process: multiprocessing.Process) -> None:
+                original_start(process)
+                started_pids.append(process.pid)
+                process.join(timeout=15)
+                if process.is_alive():
+                    raise AssertionError("fixture worker did not finish during startup")
+                time.sleep(0.3)
+
+            with mock.patch.object(smoke_release, "_download_worker", _bytes_worker), mock.patch.object(
+                process_type, "start", delayed_start
+            ):
+                with self.assertRaisesRegex(smoke_release.ReleaseSmokeError, "time limit"):
+                    smoke_release.download("https://example.invalid/asset", destination, 1024, timeout=0.1)
+            self.assertEqual(len(started_pids), 1)
+            self.assertNotIn(started_pids[0], [child.pid for child in multiprocessing.active_children()])
+            self.assertFalse(destination.exists())
+            self.assertEqual(list(root.iterdir()), [])
 
     def test_supervised_download_publishes_success_and_cleans_failed_staging(self) -> None:
         for limit in (13, 2):
