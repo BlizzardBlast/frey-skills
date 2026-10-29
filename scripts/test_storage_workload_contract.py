@@ -40,6 +40,14 @@ EXPECTED_CASES = {
         "Missing scale or consistency evidence could change the planned design",
         "Preserve the material unknown and mark planning PARTIAL / NOT_READY instead of inventing targets",
     ),
+    "SWR-CASE-008": (
+        "Repeated selective lookups are slow but read and preparation costs are unknown",
+        "Inspect pruning and query plans versus metadata, planning, scheduling, and cache overhead; propose a bounded comparable measurement without declaring a fix",
+    ),
+    "SWR-CASE-009": (
+        "A project without a relevant Parquet workload is offered settings from a point-query benchmark",
+        "Retain existing storage; do not add DataFusion, Parquet, or copied tuning values without a measured and justified workload",
+    ),
 }
 
 
@@ -96,6 +104,22 @@ class StorageWorkloadContractTests(unittest.TestCase):
             with self.subTest(trigger=trigger):
                 row = next(line for line in rows if trigger in line)
                 self.assertIn(required, row)
+
+    def test_point_lookup_guidance_is_conditional_and_engine_aware(self) -> None:
+        section = self.rules.split(
+            "## Point lookups versus analytical scans (conditional)\n", 1
+        )[1].split("## Plan the smallest sufficient control\n", 1)[0]
+        for invariant in (
+            "only when a proposed or existing storage path",
+            "preparation/optimization",
+            "Only when Parquet is already relevant",
+            "do not copy another dataset's Parquet settings",
+            "Do not assume an engine supports reusable physical plans",
+            "do not introduce\n  a mandatory benchmark",
+            "https://datafusion.apache.org/blog/2026/10/24/point-queries/",
+        ):
+            with self.subTest(invariant=invariant):
+                self.assertIn(invariant, section)
 
     def test_evidence_authority_and_negative_cases_remain_explicit(self) -> None:
         normalized = " ".join(self.rules.split())
