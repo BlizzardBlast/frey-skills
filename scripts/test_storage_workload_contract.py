@@ -52,6 +52,11 @@ EXPECTED_CASES = {
 
 
 class StorageWorkloadContractTests(unittest.TestCase):
+    @staticmethod
+    def section_text(document: str, heading: str) -> str:
+        """Read one Markdown section, ending at the next level-2 heading."""
+        return document.split(f"## {heading}\n", 1)[1].split("\n## ", 1)[0]
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.skill = (ROOT / "implementation-plan" / "SKILL.md").read_text(encoding="utf-8")
@@ -89,9 +94,7 @@ class StorageWorkloadContractTests(unittest.TestCase):
         self.assertIn("references/alternatives-and-evidence-rules.md", self.arch_skill)
 
     def test_trigger_matrix_covers_relevant_failure_boundaries(self) -> None:
-        matrix = self.rules.split("## Conditional planning checks\n", 1)[1].split(
-            "## Plan the smallest sufficient control\n", 1
-        )[0]
+        matrix = self.section_text(self.rules, "Conditional planning checks")
         rows = [line for line in matrix.splitlines() if line.startswith("| ")]
         self.assertEqual(len(rows), 7)  # Header, separator, five scenarios
         for trigger, required in (
@@ -106,20 +109,30 @@ class StorageWorkloadContractTests(unittest.TestCase):
                 self.assertIn(required, row)
 
     def test_point_lookup_guidance_is_conditional_and_engine_aware(self) -> None:
-        section = self.rules.split(
-            "## Point lookups versus analytical scans (conditional)\n", 1
-        )[1].split("## Plan the smallest sufficient control\n", 1)[0]
+        section = " ".join(
+            self.section_text(self.rules, "Point lookups versus analytical scans (conditional)").split()
+        )
         for invariant in (
             "only when a proposed or existing storage path",
             "preparation/optimization",
             "Only when Parquet is already relevant",
             "do not copy another dataset's Parquet settings",
             "Do not assume an engine supports reusable physical plans",
-            "do not introduce\n  a mandatory benchmark",
+            "do not introduce a mandatory benchmark",
             "https://datafusion.apache.org/blog/2026/10/24/point-queries/",
         ):
             with self.subTest(invariant=invariant):
                 self.assertIn(invariant, section)
+
+    def test_point_lookup_section_isolated_from_matrix(self) -> None:
+        marker = "## Point lookups versus analytical scans (conditional)\n"
+        extra_table = "| Example | Detail |\n| --- | --- |\n| Later case | Point lookup only |\n"
+        expanded = self.rules.replace(marker, marker + extra_table, 1)
+        self.assertNotEqual(expanded, self.rules)
+        self.assertEqual(
+            self.section_text(self.rules, "Conditional planning checks"),
+            self.section_text(expanded, "Conditional planning checks"),
+        )
 
     def test_evidence_authority_and_negative_cases_remain_explicit(self) -> None:
         normalized = " ".join(self.rules.split())
