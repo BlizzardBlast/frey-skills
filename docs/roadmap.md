@@ -26,8 +26,10 @@ installation and smoke-check pins are updated, and the release timeout-test fix
 is merged. All thirteen [post-merge CI jobs](https://github.com/BlizzardBlast/frey-skills/actions/runs/40871804460)
 passed on this baseline. The inspected public open issue and PR lists were empty.
 This is a bounded delivery checkpoint, not a usage or demand assessment. Desktop
-acceptance for v1.14.0 remains untested, and deterministic checks do not certify
-model behavior.
+acceptance had not yet been reported at this checkpoint, and deterministic
+checks do not certify model behavior. A later
+[maintainer report](compatibility.md#maintainer-reported-v1130-to-v1140-desktop-check)
+records a successful general desktop check; individual outcomes remain unverified.
 
 Historical checkpoint: **DELIVERY COMPLETE / NO IMPLEMENTATION QUEUED** on
 2026-10-26 at `2f56b54f893fd3d125ee6877a4d7d6e49ea546fc`. The twelve-skill

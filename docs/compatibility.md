@@ -3,7 +3,7 @@
 The current published release is v1.14.0; see the separate
 [v1.14.0 verification](#v1140-verification) for its public archive, CLI checks,
 and desktop coverage limits. Historical Windows desktop observations remain
-version-specific and do not establish v1.14.0 desktop acceptance.
+version-specific; the later v1.14.0 maintainer report is recorded separately.
 
 Historical v1.8.1/v1.8.2 checks were recorded on 2026-10-17 with Windows 11
 build 26300 and Codex CLI 0.150.1.
@@ -335,12 +335,29 @@ Skills CLI 1.7.2, and Codex CLI 0.150.1 with disposable projects and homes.
 | Public archive | PASS | `scripts/smoke_release.py` checked the checksum, license, manifest, twelve skills, and all 145 archive files against the exact tagged source. |
 | Skills CLI installations | PASS | `scripts/smoke_install.py` checked checkout and pinned v1.14.0 sources with selected and complete sets, default and copy modes, and file-byte parity. |
 | Codex CLI transitions | PASS | `scripts/smoke_codex.py` checked v1.13.0 installation, v1.14.0 upgrade, and v1.13.0 rollback, separately for the published archive and checkout candidate. Each phase had twelve enabled skills and installed-byte parity. |
-| v1.14.0 desktop UI | NOT_TESTED | No desktop discovery, restart, upgrade, or rollback observation was supplied for this release. |
+| v1.14.0 desktop UI | PARTIAL (maintainer-reported) | On 2026-10-29 the maintainer reported completing the desktop check thoroughly and said repeated changes from v1.13.0 to v1.14.0 worked; individual checklist outcomes were not supplied. |
 
 The shared source/archive pin is v1.14.0; the Codex baseline is v1.13.0 at
-`b6570ef81cacfb8a4f3f1f3ea0da5764c1417a41`. The checks above do not establish
-desktop acceptance or certify model behavior. Hosted CI for this pin update
-must be evaluated on its own revision.
+`b6570ef81cacfb8a4f3f1f3ea0da5764c1417a41`. The automated checks above do not
+independently establish desktop acceptance or certify model behavior. Hosted CI
+for this pin update must be evaluated on its own revision.
+
+### Maintainer-reported v1.13.0 to v1.14.0 desktop check
+
+On 2026-10-29, after a local marketplace check was prepared, the maintainer
+reported: "The desktop check is done thoroughly. Even after repeatedly changing
+from v1.13.0 to v1.14.0, it works." Record this as a successful general desktop
+check and repeated v1.13.0-to-v1.14.0 changes reported by the maintainer, not as
+automated observation.
+
+The report did not provide separate results for exact skill counts or
+uniqueness, selector and starter-prompt display, restart persistence, rollback,
+unrelated-installation preservation, or installed-cache byte parity. Those
+individual outcomes remain **NOT_TESTED** as separately evidenced criteria; this
+does not assert that the maintainer omitted them from the check. The test project
+was prepared on Windows 11 build 26300 with package `OpenAI.Codex 26.1023.6621.0`;
+the report did not independently confirm the client version or test environment.
+No behavioral model evaluation or desktop automation was run by the assistant.
 
 ## v1.13.0 verification
 
