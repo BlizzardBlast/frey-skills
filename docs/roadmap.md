@@ -19,7 +19,17 @@ Other specialists remain deferred.
 The research baseline and historical milestone records below retain their
 original observation dates and evidence limits.
 
-Post-release checkpoint: **DELIVERY COMPLETE / NO IMPLEMENTATION QUEUED** on
+Post-release checkpoint: **v1.14.0 VERIFIED / NO IMPLEMENTATION QUEUED** on
+2026-10-29 at `6509fd0fbd9c4666043f49c74a24907be81c5fc7`. The
+[release record](release-v1.14.0.md) identifies the verified public artifacts;
+installation and smoke-check pins are updated, and the release timeout-test fix
+is merged. All thirteen [post-merge CI jobs](https://github.com/BlizzardBlast/frey-skills/actions/runs/40871804460)
+passed on this baseline. The inspected public open issue and PR lists were empty.
+This is a bounded delivery checkpoint, not a usage or demand assessment. Desktop
+acceptance for v1.14.0 remains untested, and deterministic checks do not certify
+model behavior.
+
+Historical checkpoint: **DELIVERY COMPLETE / NO IMPLEMENTATION QUEUED** on
 2026-10-26 at `2f56b54f893fd3d125ee6877a4d7d6e49ea546fc`. The twelve-skill
 v1.13.0 release, installation pins, and bounded desktop reports are recorded.
 All thirteen CI checks passed on that baseline. The public open-issue/PR
@@ -430,3 +440,4 @@ they should constrain future implementation scope.
 | 2026-10-25 | Delivery-handoff planning complete; READY_TO_IMPLEMENT | [Four-step implementation plan](delivery-handoff-implementation-plan.md) at `1955752d86c8c5de47256da2de370ba52e67aa70` traces RM-AC01 through RM-AC08 to canonical authoring, fourteen planned decision cases, native test registration, documentation, and verification. No skill implementation or future check result is claimed. | Execute the bounded plan when separately requested; preserve the planning-only guide and adjacent authority boundaries. |
 | 2026-10-25 | Delivery-handoff extension delivered; IMPLEMENTED / UNRELEASED | [Execution record](delivery-handoff-implementation-plan.md#execution-record) at baseline `3ac6a2795a0634e48c240a6e789071dd9a1f5f1d`: 34 focused tests and the full 465-test gate passed (459 passed, six expected Windows skips), all twelve specifications and bundle parity passed, and scoped review found no actionable findings. Fourteen cases are static contracts, not model or live-delivery certification. | Maintain the planning extension; release preparation/publication requires a separate scoped request. No broader operator or specialist is queued automatically. |
 | 2026-10-26 | v1.13.0 delivery cycle complete; RETAIN PORTFOLIO | [Release record](release-v1.13.0.md) and [paired desktop report](compatibility.md#maintainer-reported-v1120-and-v1130-desktop-trials), baseline `2f56b54f893fd3d125ee6877a4d7d6e49ea546fc`, and thirteen passing baseline CI checks. Empty public open items and ten closed-PR metadata records establish no new unmet workflow in this bounded sample; no broader demand or model effectiveness is inferred. | No implementation is queued. Revisit an existing owner or deferred candidate when a concrete requested problem or qualifying authorized task evidence supplies its scope. |
+| 2026-10-29 | v1.14.0 verified; NO IMPLEMENTATION QUEUED | [Release record](release-v1.14.0.md), updated installation pins, merged timeout-test fix, and thirteen passing [baseline CI jobs](https://github.com/BlizzardBlast/frey-skills/actions/runs/40871804460) at `6509fd0fbd9c4666043f49c74a24907be81c5fc7`. Public open issue and PR lists were empty; usage and desktop acceptance were not assessed. | Retain existing revisit conditions; scope future work from a concrete requested problem or qualifying authorized task evidence. |
