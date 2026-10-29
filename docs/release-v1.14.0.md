@@ -23,6 +23,8 @@ used stdin; a newly authorized file-based verification completed successfully.
 No tag replacement, workflow rerun, or release/asset overwrite was performed.
 
 See the [v1.14.0 compatibility record](compatibility.md#v1140-verification)
-for local CLI checks and desktop limits. Publication and archive verification
-do not establish desktop compatibility, marketplace acceptance, or model
-behavior. This record does not authorize publication or external writes.
+for local CLI checks and desktop limits. On 2026-10-29 the maintainer reported
+that a thorough desktop check and repeated v1.13.0-to-v1.14.0 changes worked;
+individual checklist outcomes remain unverified. Publication and archive
+verification do not establish desktop compatibility, marketplace acceptance, or
+model behavior. This record does not authorize publication or external writes.

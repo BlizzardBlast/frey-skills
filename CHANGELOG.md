@@ -6,9 +6,12 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Record the maintainer's successful v1.13.0-to-v1.14.0 desktop check as
+  reported evidence; retain unreported individual observations as unverified.
+
 - Pin installation and archive smoke checks to verified v1.14.0 and move the
   Codex upgrade/rollback baseline to v1.13.0. Record public artifact and local
-  CLI evidence separately from untested v1.14.0 desktop compatibility.
+  CLI evidence separately from the then-untested v1.14.0 desktop compatibility.
 
 ## [1.14.0] - 2026-10-28
 
