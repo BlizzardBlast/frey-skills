@@ -35,6 +35,7 @@ Run this checklist before finalizing a `change-specification` output.
 - [ ] Applicable validation, authentication/authorization, empty/loading/error, retry/timeout, duplicate/idempotency, concurrency/ordering, compatibility, accessibility, degraded dependency, recovery, and observability behavior is covered.
 - [ ] Criteria do not name internal functions, hooks, classes, files, mocks, or test frameworks.
 - [ ] Failure criteria state whether side effects occurred and what the actor observes.
+- [ ] For a user-reported passing-check/unmet-outcome case, observed results are reconciled with authorized goals; existing failed criteria, missing coverage and new/conflicting requirements are distinguished without silently weakening or replacing the baseline.
 
 ## Contract completeness
 

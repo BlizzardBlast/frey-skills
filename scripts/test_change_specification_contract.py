@@ -105,6 +105,29 @@ class ChangeSpecificationContractTests(unittest.TestCase):
             self.assertIn(concern, self.skill_content)
         self.assertIn("externally observable outcomes", self.skill_content)
 
+    def test_outcome_criteria_mismatch_preserves_requirement_authority(self) -> None:
+        rules = (SKILL_ROOT / "references" / "requirement-and-contract-rules.md").read_text(
+            encoding="utf-8"
+        )
+        checklist = (SKILL_ROOT / "references" / "specification-quality-checklist.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("reported outcome/criteria mismatch", self.skill_content)
+        self.assertIn("Feedback and AI-judge scores are evidence", self.skill_content)
+        self.assertIn("## Outcome/criteria mismatch (conditional refinement)", rules)
+        for boundary in (
+            "Existing criterion not met",
+            "Authorized behavior missing from criteria",
+            "New or conflicting desired behavior",
+            "Do not edit the specification to hide it",
+            "Tests, agent feedback and stakeholder",
+            "PARTIAL",
+            "NOT_READY",
+        ):
+            self.assertIn(boundary, rules)
+        self.assertIn("passing-check/unmet-outcome", checklist)
+        self.assertIn("without silently weakening or replacing the baseline", checklist)
+
     def test_skill_keeps_contract_and_state_inventory(self) -> None:
         self.assertIn("`CONTRACT-001`", self.skill_content)
         for category in (

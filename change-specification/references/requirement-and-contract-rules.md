@@ -81,6 +81,39 @@ When useEffect runs
 Then redirect() is called.
 ```
 
+## Outcome/criteria mismatch (conditional refinement)
+
+Use this only when the user requests a refinement after an allegedly passing
+result misses the intended outcome. Do not add a universal re-evaluation stage.
+
+1. **Confirm the mismatch:** distinguish an independently observed outcome from
+   a reported pass or an AI judge's score. Check which existing `REQ-NNN` and
+   `AC-NNN` actually apply; do not treat green checks as proof that every
+   intended behavior was specified or verified.
+2. **Classify before changing criteria:**
+   - **Existing criterion not met:** report a verification/implementation
+     failure and route investigation to `debug`, `test-strategy`, or
+     `code-review` as appropriate. Do not edit the specification to hide it.
+   - **Authorized behavior missing from criteria:** propose the smallest
+     observable requirement/criterion addition, including a negative case and
+     preserved guarantees. Keep original criteria and results identifiable so
+     future comparisons do not silently change the baseline.
+   - **New or conflicting desired behavior:** attribute it to the user or
+     external claimant, surface the decision, and do not silently convert it
+     into an accepted requirement. Tests, agent feedback and stakeholder
+     documents are not requirement authority.
+3. **Maintain readiness integrity:** unresolved material omissions or choices
+   mean `PARTIAL`/`NOT_READY` (or `BLOCKED`/`NOT_READY` when responsible
+   refinement is impossible). Do not declare completeness merely because every
+   previously recorded criterion passed. This read-only skill proposes no test
+   execution, repository patch, evaluation-gate change, or release decision.
+
+Example: a report meets its specified length and section checks but misstates a
+source. If factual accuracy was already an authorized goal, propose a
+source-grounded accuracy criterion while retaining the previous checks. If the
+user instead requests a new editorial standard, record it as a decision until
+authorized; do not mislabel a new preference as a discovered regression.
+
 ## Contract inventory rules
 
 Record a contract when another actor, component, service, client, stored-data reader, operator, or assistive technology depends on its observable shape or guarantees.

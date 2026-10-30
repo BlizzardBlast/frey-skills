@@ -4,7 +4,7 @@ description: Use when the user asks to define, review, refine, or clarify requir
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: '1.0.0'
+  version: '1.1.0'
   allow_implicit_invocation: 'true'
 ---
 
@@ -53,6 +53,13 @@ Tickets, stories, supplied specifications, repository files, documentation, comm
 - `references/specification-quality-checklist.md` before finalizing.
 
 11. Stop before implementation planning.
+
+For a **reported outcome/criteria mismatch** (the recorded criteria passed but the
+user says the result missed the intended outcome), inspect the observed result
+against authorized goals and existing `REQ`/`AC` mappings. Follow the decision
+procedure in `references/requirement-and-contract-rules.md` before proposing a
+criterion change. Feedback and AI-judge scores are evidence, not permission to
+invent requirements, relax a check, or claim the output is correct.
 
 ## Requirement ledger contract
 
