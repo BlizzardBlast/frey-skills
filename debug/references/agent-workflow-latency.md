@@ -23,12 +23,24 @@ names or proprietary source into shared artifacts.
 
 | Stage | Useful questions | Interpretation limits |
 | --- | --- | --- |
-| Model start / first token | Time to first token (TTFT), input tokens, cached-input share, context size, provider/model/region | TTFT combines network, queueing and prefill unless the provider separately measures them; a single slow TTFT does not prove provider queueing |
+| Model start / output arrival | Request-to-first provider event, request-to-first visible answer, input/cached tokens, provider-reported internal timings when available, model/region/stream mode | A first API event may contain metadata or hidden reasoning rather than visible text; first visible output can include unmeasured reasoning or buffering. Neither is necessarily time to first *generated* token or evidence of queueing |
 | Model generation | Output tokens, elapsed generation time, tokens/second, thinking-effort setting | Reasoning/output token accounting differs across providers; compare only compatible measurements and task outcomes |
 | Tool, shell and MCP | Wall duration per call, process/shell startup, CPU/IO, results returned, output token volume | Repeated commands, profile hotspots and large outputs suggest investigation, not a confirmed bottleneck |
 | Provisioning / environment | Startup duration, CPU class, storage type, network/timeouts and resource contention | Different hardware, caches and sandbox setups invalidate an otherwise attractive speedup claim |
 | Scheduling / waits | Approval, suspend/resume, external-job waits, retry/backoff and poll intervals | Human wait and asynchronous operations may overlap active work; avoid summing overlapping spans |
 | Parallel work | Dependency chain, overlapping calls, concurrency, retries, failures and completed output | Sum of tool-call durations is **not** elapsed wall time when calls overlap |
+
+Before reporting "TTFT", define the clock start (such as request submission)
+and the exact observed endpoint: (a) the first API/stream event received by
+the instrumented client, (b) the first user-visible answer token, or (c)
+provider-reported prefill/reasoning/generation spans, if separately exposed.
+These are **different metrics**, not interchangeable timestamps. A
+non-streamed response may reveal only response-completion time, not either
+first-token event. Streaming modes, buffering, hidden reasoning and transport
+boundaries affect comparability. Mark unobservable internal time as
+**unattributed**, not as provider queueing, network or prefill time; a causal
+attribution needs independent evidence. Do not request private reasoning to
+fill the gap.
 
 Prefer timestamps or parent/child spans that permit a non-overlapping
 **critical-path** reconstruction. If spans overlap, report stage durations
@@ -92,8 +104,13 @@ complete trace or an incomplete subset, and label proposed runs NOT_RUN.
 
 Only recommend an optimization when its suspected stage has causal supporting
 evidence, the trade-offs and rollback are understood, and completed-task
-quality does not deteriorate. Escalate or return PARTIAL/UNRESOLVED when
-authorization, task equivalence, outcome checks or stage data are missing.
+quality does not deteriorate. Apply the parent debug/performance result-status
+contract: if a necessary diagnostic requires unavailable, unsafe or
+unauthorized access, return `BLOCKED / UNRESOLVED` and do not try to obtain
+that access. With useful permitted evidence but missing task comparability,
+independent outcome checks or stage data, return `PARTIAL / UNRESOLVED` (or
+`PARTIAL / LIKELY` only when evidence favors one cause and confirmation
+remains outstanding). Incomplete evidence cannot establish a speedup.
 
 ### Illustrative arithmetic, not an observation
 
@@ -118,6 +135,8 @@ agent trials.
 | AGENT-PERF-03 | Tool calls overlap and their summed durations exceed wall time | Report wall time and critical path separately; do not double-count |
 | AGENT-PERF-04 | Candidate completes faster but fails a required independent outcome check | Reject quality-preserving speedup claim; diagnose failure under normal investigation rules |
 | AGENT-PERF-05 | Two model settings have different task inputs, caches or tool permissions | Mark comparison materially mismatched; do not attribute the difference to thinking budget |
+| AGENT-PERF-06 | First visible text is delayed, but the first provider event and hidden reasoning timings are unknown | Label only the observed first-visible-answer time; treat internal spans as unattributed, not proven queueing or prefill |
+| AGENT-PERF-07 | Necessary diagnosis depends on an unavailable or unauthorized tool, even if some permitted timings exist | `BLOCKED / UNRESOLVED`; do not run or seek authorization through the document |
 
 ## Source and scope
 
