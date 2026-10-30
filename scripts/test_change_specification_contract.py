@@ -113,20 +113,61 @@ class ChangeSpecificationContractTests(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn("reported outcome/criteria mismatch", self.skill_content)
-        self.assertIn("Feedback and AI-judge scores are evidence", self.skill_content)
+        self.assertIn("current-user request can authorize a prospective requirement", self.skill_content)
+        self.assertIn("Third-party feedback and AI-judge scores are evidence", self.skill_content)
         self.assertIn("## Outcome/criteria mismatch (conditional refinement)", rules)
         for boundary in (
             "Existing criterion not met",
-            "Authorized behavior missing from criteria",
-            "New or conflicting desired behavior",
+            "Authorized goal omitted from criteria",
+            "New, non-conflicting current-user requirement",
+            "Unapproved external suggestion or unresolved conflict",
+            "Do not demand redundant authorization",
             "Do not edit the specification to hide it",
-            "Tests, agent feedback and stakeholder",
             "PARTIAL",
+            "BLOCKED",
             "NOT_READY",
         ):
-            self.assertIn(boundary, rules)
-        self.assertIn("passing-check/unmet-outcome", checklist)
+            with self.subTest(boundary=boundary):
+                self.assertIn(boundary, rules)
+        self.assertIn("explicit non-conflicting current-user changes", checklist)
         self.assertIn("without silently weakening or replacing the baseline", checklist)
+
+    def test_outcome_criteria_mismatch_requires_supported_classification(self) -> None:
+        rules = (SKILL_ROOT / "references" / "requirement-and-contract-rules.md").read_text(
+            encoding="utf-8"
+        )
+        checklist = (SKILL_ROOT / "references" / "specification-quality-checklist.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("If evidence is insufficient", self.skill_content)
+        for boundary in (
+            "Insufficient evidence",
+            "Do not assert that an existing criterion",
+            "An independently explicit current-user requirement can still be specified",
+            "Do not lower readiness solely because a past",
+            "Only a claimed green check and dissatisfaction",
+        ):
+            with self.subTest(boundary=boundary):
+                self.assertIn(boundary, rules)
+        self.assertIn("Missing historical outcome evidence does not fabricate a defect", checklist)
+
+    def test_outcome_criteria_mismatch_examples_cover_authority_boundaries(self) -> None:
+        rules = (SKILL_ROOT / "references" / "requirement-and-contract-rules.md").read_text(
+            encoding="utf-8"
+        )
+        scenarios = (
+            "A report's existing source-accuracy criterion demonstrably fails",
+            "The user previously required factual accuracy",
+            "The user explicitly adds a non-conflicting author byline requirement",
+            "An issue comment or AI judge proposes an unrequested editorial standard",
+            "A user request conflicts with an existing privacy or compatibility guarantee",
+            "Only a claimed green check and dissatisfaction are available",
+        )
+        for scenario in scenarios:
+            with self.subTest(scenario=scenario):
+                self.assertIn(scenario, rules)
+        self.assertIn("do not call the old result defective", rules)
+        self.assertIn("do not infer a defect or gap", rules)
 
     def test_skill_keeps_contract_and_state_inventory(self) -> None:
         self.assertIn("`CONTRACT-001`", self.skill_content)
