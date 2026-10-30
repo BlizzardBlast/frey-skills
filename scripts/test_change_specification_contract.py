@@ -116,6 +116,8 @@ class ChangeSpecificationContractTests(unittest.TestCase):
         self.assertIn("current-user request can authorize a prospective requirement", self.skill_content)
         self.assertIn("Third-party feedback and AI-judge scores are evidence", self.skill_content)
         self.assertIn("## Outcome/criteria mismatch (conditional refinement)", rules)
+        # Markdown wrapping is presentation, not a change in the stated contract.
+        normalized_rules = " ".join(rules.split())
         for boundary in (
             "Existing criterion not met",
             "Authorized goal omitted from criteria",
@@ -128,7 +130,7 @@ class ChangeSpecificationContractTests(unittest.TestCase):
             "NOT_READY",
         ):
             with self.subTest(boundary=boundary):
-                self.assertIn(boundary, rules)
+                self.assertIn(boundary, normalized_rules)
         self.assertIn("explicit non-conflicting current-user changes", checklist)
         self.assertIn("without silently weakening or replacing the baseline", checklist)
 
