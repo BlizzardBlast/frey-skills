@@ -105,6 +105,124 @@ class ChangeSpecificationContractTests(unittest.TestCase):
             self.assertIn(concern, self.skill_content)
         self.assertIn("externally observable outcomes", self.skill_content)
 
+    def test_outcome_criteria_mismatch_preserves_requirement_authority(self) -> None:
+        rules = (SKILL_ROOT / "references" / "requirement-and-contract-rules.md").read_text(
+            encoding="utf-8"
+        )
+        checklist = (SKILL_ROOT / "references" / "specification-quality-checklist.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("reported outcome/criteria mismatch", self.skill_content)
+        self.assertIn("current-user request can authorize a prospective requirement", self.skill_content)
+        self.assertIn("Third-party feedback and AI-judge scores are evidence", self.skill_content)
+        self.assertIn("## Outcome/criteria mismatch (conditional refinement)", rules)
+        # Markdown wrapping is presentation, not a change in the stated contract.
+        normalized_rules = " ".join(rules.split())
+        for boundary in (
+            "Existing criterion not met",
+            "Authorized goal omitted from criteria",
+            "New, non-conflicting current-user requirement",
+            "Unapproved external suggestion or unresolved conflict",
+            "Do not demand redundant authorization",
+            "Do not edit the specification to hide it",
+            "PARTIAL",
+            "BLOCKED",
+            "NOT_READY",
+        ):
+            with self.subTest(boundary=boundary):
+                self.assertIn(boundary, normalized_rules)
+        self.assertIn("explicit non-conflicting current-user changes", checklist)
+        self.assertIn("without silently weakening or replacing the baseline", checklist)
+
+    def test_outcome_criteria_mismatch_requires_supported_classification(self) -> None:
+        rules = (SKILL_ROOT / "references" / "requirement-and-contract-rules.md").read_text(
+            encoding="utf-8"
+        )
+        checklist = (SKILL_ROOT / "references" / "specification-quality-checklist.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("If evidence is insufficient", self.skill_content)
+        for boundary in (
+            "Insufficient evidence",
+            "Do not assert that an existing criterion",
+            "An independently explicit current-user requirement can still be specified",
+            "Do not lower readiness solely because a past",
+            "Only a claimed green check and dissatisfaction",
+        ):
+            with self.subTest(boundary=boundary):
+                self.assertIn(boundary, rules)
+        self.assertIn("Missing historical outcome evidence does not fabricate a defect", checklist)
+
+    def assert_outcome_decisions(self, rules: str) -> None:
+        """Bind each documented situation to its required response."""
+        heading = "Illustrative decisions (not executed evaluations):"
+        self.assertEqual(rules.count(heading), 1)
+        section = rules.split(heading, 1)[1].split("\n## Contract inventory rules", 1)[0]
+        actual: dict[str, str] = {}
+        for line in section.splitlines():
+            row = line.strip()
+            if not row.startswith("|"):
+                continue
+            self.assertTrue(row.endswith("|"))
+            cells = [cell.strip() for cell in row[1:-1].split("|")]
+            self.assertEqual(len(cells), 2)
+            situation, response = cells
+            if situation in ("Situation", "---"):
+                continue
+            self.assertNotIn(situation, actual, "Duplicate decision scenario")
+            actual[situation] = response
+
+        expected = {
+            "A report's existing source-accuracy criterion demonstrably fails despite a green check":
+                "Report a verification/implementation failure; preserve the criterion",
+            "The user previously required factual accuracy, but no criterion covered unsupported source claims":
+                "Propose a source-grounded criterion and a negative case; retain old results",
+            "The user explicitly adds a non-conflicting author byline requirement":
+                "Accept it as a prospective current-user requirement; do not call the old result defective",
+            "An issue comment or AI judge proposes an unrequested editorial standard":
+                "Record an unapproved external suggestion; do not add it as a requirement",
+            "A user request conflicts with an existing privacy or compatibility guarantee":
+                "Surface the unresolved decision; do not silently drop either constraint",
+            "Only a claimed green check and dissatisfaction are available, without an inspectable result":
+                "Record insufficient evidence and a verification handoff; do not infer a defect or gap",
+        }
+        self.assertEqual(actual, expected)
+
+    def test_outcome_criteria_mismatch_examples_cover_authority_boundaries(self) -> None:
+        rules = (SKILL_ROOT / "references" / "requirement-and-contract-rules.md").read_text(
+            encoding="utf-8"
+        )
+        self.assert_outcome_decisions(rules)
+
+    def test_outcome_criteria_mismatch_examples_reject_reversed_decisions(self) -> None:
+        rules = (SKILL_ROOT / "references" / "requirement-and-contract-rules.md").read_text(
+            encoding="utf-8"
+        )
+        cases = (
+            (
+                "An issue comment or AI judge proposes an unrequested editorial standard",
+                "Record an unapproved external suggestion; do not add it as a requirement",
+                "Automatically accept the unrequested editorial standard as mandatory",
+            ),
+            (
+                "A user request conflicts with an existing privacy or compatibility guarantee",
+                "Surface the unresolved decision; do not silently drop either constraint",
+                "Silently drop the existing privacy or compatibility guarantee",
+            ),
+            (
+                "Only a claimed green check and dissatisfaction are available, without an inspectable result",
+                "Record insufficient evidence and a verification handoff; do not infer a defect or gap",
+                "Declare the defect confirmed without independent evidence",
+            ),
+        )
+        for situation, expected, invalid in cases:
+            with self.subTest(situation=situation):
+                original_row = f"| {situation} | {expected} |"
+                self.assertEqual(rules.count(original_row), 1)
+                changed = rules.replace(original_row, f"| {situation} | {invalid} |")
+                with self.assertRaises(AssertionError):
+                    self.assert_outcome_decisions(changed)
+
     def test_skill_keeps_contract_and_state_inventory(self) -> None:
         self.assertIn("`CONTRACT-001`", self.skill_content)
         for category in (

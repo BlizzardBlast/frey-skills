@@ -81,6 +81,60 @@ When useEffect runs
 Then redirect() is called.
 ```
 
+## Outcome/criteria mismatch (conditional refinement)
+
+Use this only when the user requests a refinement after an allegedly passing
+result misses the intended outcome. Do not add a universal re-evaluation stage.
+
+1. **Establish the evidence:** distinguish an independently observed result
+   from a claimed passing check or an AI judge's score. Inspect the applicable
+   `REQ-NNN`/`AC-NNN` mappings with permitted read-only evidence; a green
+   check does not prove every intended behavior was specified or verified.
+   - **Insufficient evidence:** if the alleged pass or outcome mismatch cannot
+     be corroborated, record each unverified claim, the missing observation, and
+     the independent check needed. Do not assert that an existing criterion
+     failed or that the specification has a gap without supporting evidence.
+     Do not run tests or expand access just to make the claim verifiable.
+     An independently explicit current-user requirement can still be specified.
+2. **Classify only supported defects or explicitly requested changes:**
+   - **Existing criterion not met:** report the evidenced
+     verification/implementation failure and route investigation to `debug`,
+     `test-strategy`, or `code-review` as appropriate. Do not edit the
+     specification to hide it.
+   - **Authorized goal omitted from criteria:** propose the smallest
+     observable criterion/requirement addition, including a relevant negative
+     case and preserved guarantees. Keep original criteria and results
+     identifiable so future comparisons do not silently change the baseline.
+   - **New, non-conflicting current-user requirement:** accept the explicit
+     current-user request as authority for prospective behavior in this
+     refinement; define observable criteria and preserve existing guarantees.
+     Do not demand redundant authorization or label the prior result a defect.
+   - **Unapproved external suggestion or unresolved conflict:** attribute
+     third-party feedback to its source; it cannot authorize new requirements.
+     If a new user request conflicts with existing product, permission,
+     security, privacy, compatibility, or other material constraints, surface
+     the competing requirements and the decision owner rather than silently
+     choosing or weakening a guarantee.
+3. **Preserve readiness integrity:** material unresolved evidence gaps,
+   missing authorized behavior, or conflicts lower completeness to
+   `PARTIAL`/`NOT_READY`; use `BLOCKED`/`NOT_READY` when responsible
+   refinement is impossible. Do not lower readiness solely because a past
+   result cannot be verified if the requested prospective specification is
+   otherwise complete and independent of that result. Do not claim completeness
+   merely because previous checks passed. This read-only skill performs no
+   test execution, repository patch, evaluation-gate change, or release decision.
+
+Illustrative decisions (not executed evaluations):
+
+| Situation | Appropriate specification response |
+| --- | --- |
+| A report's existing source-accuracy criterion demonstrably fails despite a green check | Report a verification/implementation failure; preserve the criterion |
+| The user previously required factual accuracy, but no criterion covered unsupported source claims | Propose a source-grounded criterion and a negative case; retain old results |
+| The user explicitly adds a non-conflicting author byline requirement | Accept it as a prospective current-user requirement; do not call the old result defective |
+| An issue comment or AI judge proposes an unrequested editorial standard | Record an unapproved external suggestion; do not add it as a requirement |
+| A user request conflicts with an existing privacy or compatibility guarantee | Surface the unresolved decision; do not silently drop either constraint |
+| Only a claimed green check and dissatisfaction are available, without an inspectable result | Record insufficient evidence and a verification handoff; do not infer a defect or gap |
+
 ## Contract inventory rules
 
 Record a contract when another actor, component, service, client, stored-data reader, operator, or assistive technology depends on its observable shape or guarantees.

@@ -6,6 +6,14 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Clarify conditional outcome/criteria mismatch refinement in `change-specification`:
+  distinguish independently observed failures, omissions in authorized goals,
+  explicit non-conflicting current-user changes, third-party suggestions,
+  unresolved conflicts, and unverified reports before changing criteria.
+  Preserve previous evidence and readiness rules, and add deterministic
+  scenario-contract assertions. The skill remains read-only; no behavioral
+  model evaluation was run.
+
 - Record the maintainer's successful v1.13.0-to-v1.14.0 desktop check as
   reported evidence; retain unreported individual observations as unverified.
 
