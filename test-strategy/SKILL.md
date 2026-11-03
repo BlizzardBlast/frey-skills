@@ -4,7 +4,7 @@ description: Use when the user asks to design, review, refine, or assess a risk-
 license: MIT
 metadata:
   author: BlizzardBlast
-  version: '1.4.0'
+  version: '1.5.0'
   allow_implicit_invocation: 'true'
 ---
 
