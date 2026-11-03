@@ -57,8 +57,15 @@ def read_json(path: Path) -> Any:
         if len(payload) > MAX_BYTES:
             raise AssessmentError("input exceeds size limit")
         return json.loads(payload.decode("utf-8"), object_pairs_hook=unique_object)
+    except AssessmentError:
+        # Preserve controlled structural errors raised by the JSON object hook.
+        raise
     except (OSError, UnicodeError, json.JSONDecodeError, RecursionError) as exc:
         raise AssessmentError(f"cannot read valid JSON: {exc}") from exc
+    except ValueError as exc:
+        # Python's JSON integer parser can raise a plain ValueError for very
+        # long numeric literals, which must not escape as a CLI traceback.
+        raise AssessmentError("cannot read valid JSON: invalid numeric value") from exc
 
 
 def nonempty(value: Any) -> bool:

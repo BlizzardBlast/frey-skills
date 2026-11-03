@@ -239,6 +239,29 @@ class AgenticAssessmentTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("Structure valid", result.stdout)
 
+    def test_json_parser_value_error_becomes_assessment_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "unexpected-number.json"
+            path.write_text("{}", encoding="utf-8")
+            with mock.patch.object(module.json, "loads", side_effect=ValueError("unexpected numeric conversion")):
+                with self.assertRaisesRegex(module.AssessmentError, "invalid numeric value"):
+                    module.read_json(path)
+
+    def test_oversized_json_integer_has_controlled_cli_error(self):
+        if not hasattr(sys, "get_int_max_str_digits") or sys.get_int_max_str_digits() == 0:
+            self.skipTest("Python integer digit restriction is unavailable or disabled")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "oversized-number.json"
+            path.write_text('{"value":' + ("9" * 10000) + "}", encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), str(path)],
+                capture_output=True, text=True, check=False, timeout=10,
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("Invalid agentic assessment: cannot read valid JSON:", result.stderr)
+            self.assertNotIn("Traceback", result.stderr)
+            self.assertNotIn("ValueError", result.stderr)
+
     def test_duplicate_catalog_criteria_rejected(self):
         catalog = copy.deepcopy(self.catalog)
         catalog["criteria"].append(copy.deepcopy(catalog["criteria"][0]))
