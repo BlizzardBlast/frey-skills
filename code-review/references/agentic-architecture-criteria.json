@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "catalog_version": "2026-11-03.1",
+  "criteria": [
+    {
+      "id": "AA-SEC-001",
+      "area": "security",
+      "risk": "high",
+      "question": "Are untrusted model, tool, and retrieved outputs prevented from becoming instructions or authorization?"
+    },
+    {
+      "id": "AA-SEC-002",
+      "area": "security",
+      "risk": "high",
+      "question": "Are tool permissions scoped and enforced at the execution boundary for the current user and task?"
+    },
+    {
+      "id": "AA-REL-001",
+      "area": "reliability",
+      "risk": "high",
+      "question": "Are retries, external side effects, cancellation, and partial failures handled safely and idempotently where needed?"
+    },
+    {
+      "id": "AA-REL-002",
+      "area": "reliability",
+      "risk": "medium",
+      "question": "Can durable state and interrupted work be recovered without silently repeating unsafe actions?"
+    },
+    {
+      "id": "AA-OPS-001",
+      "area": "operations",
+      "risk": "medium",
+      "question": "Can authorized maintainers trace agent decisions, tool calls, and failures without leaking sensitive data?"
+    },
+    {
+      "id": "AA-OPS-002",
+      "area": "operations",
+      "risk": "high",
+      "question": "Do consequential writes, promotion, financial actions, or other high-impact outcomes retain required human authorization?"
+    },
+    {
+      "id": "AA-EVAL-001",
+      "area": "evaluation",
+      "risk": "high",
+      "question": "Do tests exercise realistic positive, negative, and adversarial cases with independently checkable expected outcomes?"
+    },
+    {
+      "id": "AA-EVAL-002",
+      "area": "evaluation",
+      "risk": "medium",
+      "question": "Are performance and safety claims tied to observed, reproducible evaluation rather than agent self-reports?"
+    },
+    {
+      "id": "AA-PERF-001",
+      "area": "performance",
+      "risk": "medium",
+      "question": "Are task-level latency, context growth, and failure paths measured when performance is material?"
+    },
+    {
+      "id": "AA-COST-001",
+      "area": "cost",
+      "risk": "medium",
+      "question": "Are model/tool usage, retries, polling, and automation frequency bounded for the expected workload?"
+    }
+  ]
+}
