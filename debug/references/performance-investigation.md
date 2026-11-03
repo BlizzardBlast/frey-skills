@@ -72,6 +72,16 @@ request for privileged access.
   observed contract violation from its cause. Numeric differences, correlation,
   high utilization, or a hotspot alone do not establish the causal chain.
 
+## Coding-agent workflow latency (conditional)
+
+For a concrete slow coding-agent task, additionally use
+[agent-workflow-latency.md](agent-workflow-latency.md) to attribute
+first-token, generation, tool/shell/MCP, wait and environment costs without
+double-counting parallel spans. It does not authorize agent-session capture,
+provider changes, parallel execution or a new performance runner. The
+measurement, privacy, bounded-diagnostic and result-status rules above remain
+authoritative.
+
 ## Bounded diagnostic proposal
 
 Propose only a check that can distinguish open hypotheses. Before any run, state:
