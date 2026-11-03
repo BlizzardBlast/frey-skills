@@ -136,6 +136,37 @@ class TestStrategyContractTests(unittest.TestCase):
         self.assertIn("No repository or external-system mutation was performed", self.skill_content)
         self.assertIn("Missing context and blocked checks are honest", self.skill_content)
 
+    def test_git_ref_consistency_profile_is_conditional_and_traceable(self) -> None:
+        profile = (SKILL_ROOT / "references" / "repository-testing-profiles.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("## Git-backed published state and concurrent agents (conditional)", profile)
+        for boundary in (
+            "only** when the changed system actually publishes",
+            "Do not assume all Git servers provide Pando's consistency model",
+            "a failed subprocess acknowledgment is not proof",
+        ):
+            self.assertIn(boundary.casefold(), profile.casefold())
+
+        case_rows = {
+            match.group(1): match.group(0)
+            for match in re.finditer(r"(?m)^\| `(GIT-CASE-\d{3})` \|[^\n]+$", profile)
+        }
+        expected = {
+            "GIT-CASE-001": ("No Git ref", "do not add Git-specific scenarios"),
+            "GIT-CASE-002": ("Two agents target one ref", "stale expected-OID", "survives"),
+            "GIT-CASE-003": ("Independent refs", "repository-wide snapshot"),
+            "GIT-CASE-004": ("acknowledgment is lost", "unresolved outcome", "blind retry"),
+            "GIT-CASE-005": ("reader fetches", "reachable objects", "independent reader"),
+        }
+        self.assertEqual(set(case_rows), set(expected))
+        for case_id, phrases in expected.items():
+            with self.subTest(case=case_id):
+                for phrase in phrases:
+                    self.assertIn(phrase, case_rows[case_id])
+        self.assertIn("not a requirement to run Git commands", profile)
+        self.assertIn("Respect the parent skill's read-only", profile)
+
     def test_agent_metadata_keeps_discovery_contract(self) -> None:
         content = AGENT_FILE.read_text(encoding="utf-8")
         self.assertRegex(content, r"(?m)^\s*display_name:\s*['\"]?Test Strategy['\"]?\s*$")

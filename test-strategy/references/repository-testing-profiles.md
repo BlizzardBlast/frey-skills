@@ -56,6 +56,26 @@ Inspect scheduling, ordering, deduplication, idempotency, retry policy, timeouts
 
 Consider duplicate delivery, out-of-order messages, worker restart, poison messages, retry exhaustion, race conditions, and recovery evidence.
 
+## Git-backed published state and concurrent agents (conditional)
+
+Use this profile **only** when the changed system actually publishes, reads, or synchronizes Git refs or treats Git history as authoritative application state. Ordinary Git usage in a project, routine PR review, or a monorepo alone does not trigger it. First inspect the existing Git implementation, tests, host and backend contract; distinguish local `update-ref` from remote push/fetch semantics. Do not assume all Git servers provide Pando's consistency model.
+
+- **Same-ref updates:** identify the expected previous tip and the publisher's atomic compare-and-swap or lease check (such as `git update-ref <ref> <new> <old>` locally, or an appropriately constrained remote push). A stale competing writer must not silently overwrite another writer. Verify which outcomes are observable and which need reconciliation.
+- **Independent refs and cross-ref reads:** allow independent branches to progress unless a documented cross-ref invariant needs coordination. Do not infer a repository-wide point-in-time snapshot from individually observed refs; explicitly test any required multi-ref consistency rather than globally serializing all writers by default.
+- **Publication and acknowledgment:** distinguish prepared Git objects, successfully published refs, confirmed rejection, and an uncertain outcome after a timeout or lost reply. A failed subprocess acknowledgment is not proof the ref update failed. Check the exact intended ref and commit where trusted observations permit; a ref that has moved *again* cannot by itself prove whether the original publication happened. Do not blindly retry a possibly successful write or claim certainty without evidence.
+- **Fetch and recovery:** after an acknowledged publication, verify that a separate reader can fetch the intended tip **and every required reachable object** under the documented visibility contract. Include interrupted transfers, retry, or stale-cache cases only if those paths exist. Preserve independent changes and uncommitted local work during recovery.
+- **Deterministic verification:** for material races, prefer disposable real-Git repositories, explicit scheduling barriers, and fault injection immediately before/after publication over sleeps or random stress alone. Keep unit tests for isolated rules; use bounded integration or protocol conformance checks where mocked operations cannot prove Git behavior. State which interleavings and backend guarantees were actually exercised.
+
+| Case | Condition | Observable test-strategy decision |
+| --- | --- | --- |
+| `GIT-CASE-001` | No Git ref or Git-backed state change | Use ordinary risk selection; do not add Git-specific scenarios |
+| `GIT-CASE-002` | Two agents target one ref | A stale expected-OID update is rejected and earlier committed work survives |
+| `GIT-CASE-003` | Independent refs change during a multi-ref read | Check documented consistency needs; do not assume a repository-wide snapshot |
+| `GIT-CASE-004` | Publication acknowledgment is lost | Reconcile the intended ref/commit; an unresolved outcome must not prompt blind retry |
+| `GIT-CASE-005` | A new ref is acknowledged before a reader fetches | Verify the intended tip and reachable objects from an independent reader |
+
+This is a **conditional test-design reference**, not a requirement to run Git commands, build a Git server, install OpenAI's Git fork, adopt Pando, add formal verification, or enable hosted CI. Model designs and production claims in [OpenAI's Pando article](https://openai.com/index/scaling-git-at-openai/) (2026-11-02) motivate failure modes, but are not evidence of this repository's performance or guarantees. Respect the parent skill's read-only and evidence/readiness boundaries.
+
 ## Performance and resilience
 
 Inspect latency-sensitive paths, resource limits, query plans, memory use, connection pools, backpressure, caching, and dependency failure.
