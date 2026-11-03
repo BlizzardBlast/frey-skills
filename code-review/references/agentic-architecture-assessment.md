@@ -14,12 +14,13 @@ Inspired by [AWS's Smarsh case study (2026-10-28)](https://aws.amazon.com/blogs/
 
 ## Report contract
 
-`agentic-architecture-criteria.json` is the canonical versioned criteria list. Never invent, rename, or silently skip an ID. A comprehensive report must contain exactly one entry for every catalog ID, with the exact `schema_version` and `catalog_version`, a nonempty `scope` that identifies the reviewed revision, and the following form:
+`agentic-architecture-criteria.json` is the canonical versioned criteria list. Never invent, rename, or silently skip an ID. A comprehensive report must contain exactly one entry for every catalog ID, with the exact `schema_version`, `catalog_version`, and canonical `catalog_sha256`, a nonempty `scope` that identifies the reviewed revision, and the following form:
 
 ```json
 {
-  "schema_version": 1,
-  "catalog_version": "2026-11-03.1",
+  "schema_version": 2,
+  "catalog_version": "2026-11-03.2",
+  "catalog_sha256": "99fe116a4503a5fe8c2af8557167ac892a5eaf93980696be3d69668a96d9d75a",
   "scope": "example-agent @ commit abc123 (source + tests; production telemetry unavailable)",
   "assessments": {
     "AA-SEC-001": {
@@ -33,7 +34,15 @@ Inspired by [AWS's Smarsh case study (2026-10-28)](https://aws.amazon.com/blogs/
 }
 ```
 
-The shortened example deliberately omits the other IDs and therefore **will not pass** whole-catalog validation. To validate a real complete report:
+The shortened example deliberately omits the other IDs and therefore **will not pass** whole-catalog validation. The `catalog_sha256` binds reports to the actual catalog content (including questions, areas and risks), not only its version string. Whitespace and JSON object key order do not affect the digest. A catalog change invalidates existing reports unless they are deliberately re-assessed; do not copy the new digest into old reports to bypass review. The report schema is version 2 because this field is mandatory.
+
+To obtain the current catalog digest, invoke the installed validator with `--print-catalog-sha256` in place of the report filename. For example, for a local Codex project installation:
+
+```sh
+python ".agents/skills/code-review/scripts/validate_agentic_assessment.py" --print-catalog-sha256
+```
+
+Copy the output into the report's `catalog_sha256` field. To validate a real complete report:
 
 Resolve the **installed** `code-review` skill directory from the active agent's skill/plugin installation, then run its script by path. The current working directory may be an unrelated consumer repository; a source-checkout-relative `code-review/scripts/...` path will generally not exist there. Quote paths containing spaces. For example, from a Codex project with a local skills installation:
 
@@ -52,4 +61,4 @@ Every entry has exactly `status`, `evidence`, `reason`, `gap`, and `remediation`
 
 Each evidence record is an object with nonempty `source` (repository path with line/revision, or another approved inspectable reference) and `observation`. Sources and descriptions must be independently checked by the reviewer. Redact secrets and restricted material; don't copy private source material into a shared skill, report or PR without source permission.
 
-The script uses only the Python standard library, reads bounded local regular-file inputs without network calls or repository mutation, rejects missing/extra IDs, duplicate JSON keys, invalid statuses and missing mandatory evidence. It omits untrusted JSON key names from errors to avoid injecting or leaking content into terminal logs. A successful structural check does **not** establish actual code coverage, applicability, runtime behavior, user approval, or correctness of the evidence. The ordinary `Review completeness` and GitHub decision contract remain separate and authoritative. No new behavioral model evaluations or automatic architecture reviews are required by this addition.
+The script uses only the Python standard library, reads bounded local regular-file inputs with opened-file identity verification without network calls or repository mutation, rejects missing/extra IDs, duplicate JSON keys, invalid statuses and missing mandatory evidence. It omits untrusted JSON key names from errors to avoid injecting or leaking content into terminal logs. A successful structural check does **not** establish actual code coverage, applicability, runtime behavior, user approval, or correctness of the evidence. The ordinary `Review completeness` and GitHub decision contract remain separate and authoritative. No new behavioral model evaluations or automatic architecture reviews are required by this addition.

@@ -12,9 +12,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
-from pathlib import Path
 
 SCRIPT = Path(__file__).with_name("validate_agentic_assessment.py")
 SPEC = importlib.util.spec_from_file_location("validate_agentic_assessment", SCRIPT)
@@ -31,8 +31,9 @@ class AgenticAssessmentTests(unittest.TestCase):
 
     def report(self):
         return {
-            "schema_version": 1,
+            "schema_version": self.catalog["schema_version"],
             "catalog_version": self.catalog["catalog_version"],
+            "catalog_sha256": module.catalog_sha256(self.catalog),
             "scope": "synthetic repository @ fixed commit: no runtime access",
             "assessments": {
                 criterion_id: {
@@ -47,6 +48,63 @@ class AgenticAssessmentTests(unittest.TestCase):
         self.assertEqual(len(self.ids), 10)
         self.assertEqual(len(self.ids), len(set(self.ids)))
         self.assertTrue(all(i.startswith("AA-") for i in self.ids))
+
+    def test_catalog_content_changes_require_new_digest(self):
+        report = self.report()
+        for field, replacement in (("question", "A different question?"), ("risk", "low"), ("area", "different")):
+            catalog = copy.deepcopy(self.catalog)
+            catalog["criteria"][0][field] = replacement
+            with self.subTest(field=field), self.assertRaisesRegex(module.AssessmentError, "catalog_sha256"):
+                module.validate_assessment(report, catalog)
+
+    def test_catalog_digest_is_canonical_and_required(self):
+        report = self.report()
+        catalog = {key: self.catalog[key] for key in reversed(self.catalog)}
+        self.assertEqual(module.catalog_sha256(catalog), report["catalog_sha256"])
+        module.validate_assessment(report, catalog)
+        report.pop("catalog_sha256")
+        with self.assertRaises(module.AssessmentError):
+            module.validate_assessment(report, self.catalog)
+
+    def test_file_identity_changes_without_no_follow(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source.json"
+            replacement = Path(directory) / "replacement.json"
+            source.write_text('{"value":1}', encoding="utf-8")
+            replacement.write_text('{"value":2}', encoding="utf-8")
+            original_open = os.open
+
+            def replace_before_open(path, flags):
+                source.unlink()
+                replacement.rename(source)
+                return original_open(path, flags)
+
+            # Simulate Windows (no O_NOFOLLOW). Both files are regular and the
+            # same size, so only opened-file identity detects the replacement.
+            with mock.patch.object(module.os, "O_NOFOLLOW", 0, create=True):
+                with mock.patch.object(module.os, "open", side_effect=replace_before_open):
+                    with self.assertRaisesRegex(module.AssessmentError, "input changed"):
+                        module.read_json(source)
+
+    def test_file_identity_unavailable_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source.json"
+            source.write_text("{}", encoding="utf-8")
+            previous = source.stat()
+            with mock.patch.object(module.os, "fstat", return_value=SimpleNamespace(
+                st_mode=previous.st_mode, st_size=previous.st_size,
+                st_dev=previous.st_dev, st_ino=0,
+            )):
+                with self.assertRaisesRegex(module.AssessmentError, "identity unavailable"):
+                    module.read_json(source)
+
+    def test_cli_prints_current_digest(self):
+        result = subprocess.run(
+            [sys.executable, str(SCRIPT), "--print-catalog-sha256"],
+            capture_output=True, text=True, check=False, timeout=10,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), module.catalog_sha256(self.catalog))
 
     def test_valid_all_statuses_with_independent_evidence(self):
         report = self.report()
@@ -138,7 +196,11 @@ class AgenticAssessmentTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             file = Path(directory) / "expanded.json"
             file.write_bytes(b"x" * (module.MAX_BYTES + 1))
-            with mock.patch.object(module.os, "fstat", return_value=SimpleNamespace(st_mode=stat.S_IFREG, st_size=0)):
+            identity = file.stat()
+            with mock.patch.object(module.os, "fstat", return_value=SimpleNamespace(
+                st_mode=stat.S_IFREG, st_size=0,
+                st_dev=identity.st_dev, st_ino=identity.st_ino,
+            )):
                 with self.assertRaisesRegex(module.AssessmentError, "size limit"):
                     module.read_json(file)
 

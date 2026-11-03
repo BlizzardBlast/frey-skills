@@ -1,6 +1,6 @@
 {
-  "schema_version": 1,
-  "catalog_version": "2026-11-03.1",
+  "schema_version": 2,
+  "catalog_version": "2026-11-03.2",
   "criteria": [
     {
       "id": "AA-SEC-001",
