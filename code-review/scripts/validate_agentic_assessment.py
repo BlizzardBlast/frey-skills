@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import stat
 import sys
 from pathlib import Path
 from typing import Any
@@ -23,17 +25,29 @@ def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     obj: dict[str, Any] = {}
     for key, value in pairs:
         if key in obj:
-            raise AssessmentError(f"duplicate JSON key: {key}")
+            raise AssessmentError("duplicate JSON key (name omitted to protect log output)")
         obj[key] = value
     return obj
 
 
 def read_json(path: Path) -> Any:
     try:
-        if path.stat().st_size > MAX_BYTES:
+        # Reject pipes, devices, directories and symlinks before opening. An
+        # opened descriptor is checked again to detect a replaced path.
+        if not stat.S_ISREG(path.lstat().st_mode):
+            raise AssessmentError("input must be a regular file")
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NONBLOCK", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0)
+        with os.fdopen(os.open(path, flags), "rb") as stream:
+            opened = os.fstat(stream.fileno())
+            if not stat.S_ISREG(opened.st_mode):
+                raise AssessmentError("input must be a regular file")
+            if opened.st_size > MAX_BYTES:
+                raise AssessmentError("input exceeds size limit")
+            payload = stream.read(MAX_BYTES + 1)
+        if len(payload) > MAX_BYTES:
             raise AssessmentError("input exceeds size limit")
-        with path.open("r", encoding="utf-8") as stream:
-            return json.load(stream, object_pairs_hook=unique_object)
+        return json.loads(payload.decode("utf-8"), object_pairs_hook=unique_object)
     except (OSError, UnicodeError, json.JSONDecodeError, RecursionError) as exc:
         raise AssessmentError(f"cannot read valid JSON: {exc}") from exc
 
@@ -80,7 +94,8 @@ def validate_assessment(report: Any, catalog: Any) -> None:
         raise AssessmentError("report scope is missing")
     results = report["assessments"]
     if not isinstance(results, dict) or set(results) != set(ids):
-        raise AssessmentError(f"assessments must contain exactly the catalog IDs; missing={sorted(set(ids) - set(results)) if isinstance(results, dict) else ids}, extra={sorted(set(results) - set(ids)) if isinstance(results, dict) else []}")
+        # Report keys are untrusted: never echo unknown keys into terminal logs.
+        raise AssessmentError("assessments must contain exactly the catalog IDs")
 
     for criterion_id in ids:
         item = results[criterion_id]
@@ -102,7 +117,9 @@ def validate_assessment(report: Any, catalog: Any) -> None:
         elif status in ("partially_compliant", "non_compliant"):
             valid = bool(evidence) and nonempty(item["gap"]) and nonempty(item["remediation"]) and not item["reason"].strip()
         else:
-            valid = not evidence and nonempty(item["reason"]) and not item["gap"].strip() and not item["remediation"].strip()
+            # Uncertain/inapplicable conclusions can retain verified inspection
+            # references while explaining why no definitive judgment follows.
+            valid = nonempty(item["reason"]) and not item["gap"].strip() and not item["remediation"].strip()
         if not valid:
             raise AssessmentError(f"{criterion_id}: required fields conflict with status {status}")
 

@@ -4,8 +4,16 @@ from __future__ import annotations
 
 import copy
 import importlib.util
+import json
+import os
+import shutil
+import stat
+import subprocess
+import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest import mock
 from pathlib import Path
 
 SCRIPT = Path(__file__).with_name("validate_agentic_assessment.py")
@@ -94,6 +102,80 @@ class AgenticAssessmentTests(unittest.TestCase):
             file.write_text('{"status":"compliant","status":"not_reviewed"}', encoding="utf-8")
             with self.assertRaises(module.AssessmentError):
                 module.read_json(file)
+
+
+    def test_uncertain_and_inapplicable_preserve_inspected_evidence(self):
+        for status in ("not_reviewed", "not_applicable"):
+            report = self.report()
+            report["assessments"][self.ids[0]].update(
+                status=status,
+                reason="Deployment proof unavailable" if status == "not_reviewed" else "No tools are configured",
+                evidence=[{"source": "src/agent.py@abc:12", "observation": "Reviewed local configuration"}],
+            )
+            with self.subTest(status=status):
+                module.validate_assessment(report, self.catalog)
+
+    def test_uncertain_evidence_without_reason_is_invalid(self):
+        report = self.report()
+        report["assessments"][self.ids[0]].update(
+            status="not_reviewed", reason="",
+            evidence=[{"source": "src/agent.py@abc:12", "observation": "Reviewed local configuration"}],
+        )
+        with self.assertRaises(module.AssessmentError):
+            module.validate_assessment(report, self.catalog)
+
+    def test_nonregular_input_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(module.AssessmentError):
+                module.read_json(Path(directory))
+            if hasattr(os, "mkfifo"):
+                fifo = Path(directory) / "source.fifo"
+                os.mkfifo(fifo)
+                with self.assertRaises(module.AssessmentError):
+                    module.read_json(fifo)
+
+    def test_actual_read_limit_catches_stale_metadata(self):
+        with tempfile.TemporaryDirectory() as directory:
+            file = Path(directory) / "expanded.json"
+            file.write_bytes(b"x" * (module.MAX_BYTES + 1))
+            with mock.patch.object(module.os, "fstat", return_value=SimpleNamespace(st_mode=stat.S_IFREG, st_size=0)):
+                with self.assertRaisesRegex(module.AssessmentError, "size limit"):
+                    module.read_json(file)
+
+    def test_rejects_control_characters_in_untrusted_diagnostics(self):
+        secret_key = "HIDDEN_SECRET\n\x1b[31m"
+        with self.assertRaises(module.AssessmentError) as duplicate:
+            module.unique_object([(secret_key, 1), (secret_key, 2)])
+        self.assertNotIn("HIDDEN_SECRET", str(duplicate.exception))
+        self.assertNotIn("\x1b", str(duplicate.exception))
+
+        report = self.report()
+        report["assessments"][secret_key] = report["assessments"][self.ids[0]]
+        with self.assertRaises(module.AssessmentError) as unexpected:
+            module.validate_assessment(report, self.catalog)
+        self.assertNotIn("HIDDEN_SECRET", str(unexpected.exception))
+        self.assertNotIn("\x1b", str(unexpected.exception))
+
+    def test_cli_from_simulated_installed_skill_outside_source_checkout(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            skill_root = root / "plugin with spaces" / "skills" / "code-review"
+            scripts_dir = skill_root / "scripts"
+            references_dir = skill_root / "references"
+            scripts_dir.mkdir(parents=True)
+            references_dir.mkdir()
+            installed_script = scripts_dir / SCRIPT.name
+            shutil.copy2(SCRIPT, installed_script)
+            shutil.copy2(module.CATALOG, references_dir / module.CATALOG.name)
+            consumer = root / "unrelated consumer"
+            consumer.mkdir()
+            (consumer / "assessment.json").write_text(json.dumps(self.report()), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(installed_script), "assessment.json"],
+                cwd=consumer, capture_output=True, text=True, check=False, timeout=10,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Structure valid", result.stdout)
 
     def test_duplicate_catalog_criteria_rejected(self):
         catalog = copy.deepcopy(self.catalog)
