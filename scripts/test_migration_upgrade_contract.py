@@ -21,8 +21,8 @@ EXPECTED_CASES = {
         "MIG-TEST-001": ("All material scenarios have observable outcomes and provisionable isolated synthetic data, but their proposed checks have not run", "COMPLETE", "READY"),
         "MIG-TEST-002": ("Required restore fidelity cannot be tested with authorized data or a safe alternative", "PARTIAL", "NOT_READY"),
         "MIG-TEST-003": ("New-version unit tests pass but a required mixed-version writer scenario cannot be tested", "PARTIAL", "NOT_READY"),
-        "MIG-TEST-004": ("A public web rewrite has approved URL and SEO outcomes plus safely provisionable old/new parity and browser checks, none of which have run", "COMPLETE", "READY"),
-        "MIG-TEST-005": ("A required public route canonical or 404 outcome lacks an established expected result and any authorized safe way to verify it", "PARTIAL", "NOT_READY"),
+        "MIG-TEST-004": ("A public web rewrite has approved URL/SEO and browser outcomes; all material risks, scenario expectations, recovery checks, and critical environments are understood and safely provisionable, but proposed tests have not run", "COMPLETE", "READY"),
+        "MIG-TEST-005": ("A required public route canonical or 404 outcome lacks an established expected result and any authorized safe way to verify it", "BLOCKED", "NOT_READY"),
     },
     "implementation-execution": {
         "MIG-EXEC-001": ("All approved transition objectives and required compatibility and recovery checks are verified within the approved bounds for the current target and state", "completed", "IMPLEMENTED"),
@@ -96,6 +96,37 @@ class MigrationUpgradeContractTests(unittest.TestCase):
         ):
             with self.subTest(invariant=invariant):
                 self.assertIn(invariant, normalized)
+
+    def test_web_migrations_route_without_ordinary_ui_overreach(self) -> None:
+        skill = (ROOT / "test-strategy" / "SKILL.md").read_text(encoding="utf-8")
+        lines = skill.splitlines()
+        index = next(
+            i for i, line in enumerate(lines)
+            if "`references/migration-and-upgrade-rules.md`" in line
+        )
+        route = " ".join(lines[index:index + 2])
+        self.assertIn("material web-renderer, route-tree, or edge-delivery migrations", route)
+        self.assertIn("even when the framework and dependencies are unchanged", route)
+        self.assertIn("Routine UI changes do not trigger migration guidance", route)
+        self.assertIn("Materially unresolved expected behavior maps to `BLOCKED` and `NOT_READY`", skill)
+
+    def test_web_specific_guidance_does_not_capture_general_migration_rules(self) -> None:
+        rules = self.rules["test-strategy"]
+        section = "## Public web rendering parity (conditional)"
+        self.assertEqual(rules.count(section), 1)
+        self.assertLess(rules.index("Do not force every cell into every task"), rules.index(section))
+        self.assertLess(rules.index("## Authority and evidence"), rules.index(section))
+        self.assertLess(rules.index(section), rules.index("## Published decision cases"))
+        self.assertIn("or a material web-renderer, route-tree,", rules.split("## Map scenarios")[0])
+
+    def test_web_migration_cases_respect_complete_and_blocked_readiness(self) -> None:
+        positive = EXPECTED_CASES["test-strategy"]["MIG-TEST-004"]
+        negative = EXPECTED_CASES["test-strategy"]["MIG-TEST-005"]
+        self.assertEqual(positive[1:], ("COMPLETE", "READY"))
+        self.assertEqual(negative[1:], ("BLOCKED", "NOT_READY"))
+        for boundary in ("all material risks", "scenario expectations", "recovery checks", "critical environments"):
+            self.assertIn(boundary, positive[0])
+        self.assertIn("lacks an established expected result", negative[0])
 
     def test_execution_keeps_reconciliation_bounds_and_recovery_holds(self) -> None:
         normalized = " ".join(self.rules["implementation-execution"].split())

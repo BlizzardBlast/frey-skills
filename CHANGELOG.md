@@ -11,7 +11,10 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
   lab-versus-field evidence. Preserve approved deviations, safe test boundaries
   and existing readiness statuses; add two static cases and contract checks.
   Inspired by [X Engineering's rebuild](https://blog.x.com/en/engineering/rebuilding-the-global-town-square-from-scratch).
-  No new skill, tool, dependency, CI workflow, live probe, or model trial.
+  Route same-framework web migrations explicitly, preserve general migration
+  guidance outside the conditional section, and align readiness cases with
+  the parent skill contract. No new skill, tool, dependency, CI workflow,
+  live probe, or model trial.
 
 - Extend `test-strategy` 1.5.0 with conditional Git-backed state and multi-agent
   ref consistency testing guidance, inspired by OpenAI's Pando design:
