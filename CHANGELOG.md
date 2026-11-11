@@ -14,6 +14,13 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
   scenario-contract assertions. The skill remains read-only; no behavioral
   model evaluation was run.
 
+- Extend `test-strategy` 1.5.0 with conditional Git-backed state and multi-agent
+  ref consistency testing guidance, inspired by OpenAI's Pando design:
+  same-ref contention, cross-ref reads, lost acknowledgments, reachable
+  objects and deterministic interleavings. Add six static decision cases
+  and contract coverage. No Git server, runtime changes, execution
+  authority, external tests, CI expansion, or model behavior claim.
+
 - Record the maintainer's successful v1.13.0-to-v1.14.0 desktop check as
   reported evidence; retain unreported individual observations as unverified.
 
