@@ -21,6 +21,8 @@ EXPECTED_CASES = {
         "MIG-TEST-001": ("All material scenarios have observable outcomes and provisionable isolated synthetic data, but their proposed checks have not run", "COMPLETE", "READY"),
         "MIG-TEST-002": ("Required restore fidelity cannot be tested with authorized data or a safe alternative", "PARTIAL", "NOT_READY"),
         "MIG-TEST-003": ("New-version unit tests pass but a required mixed-version writer scenario cannot be tested", "PARTIAL", "NOT_READY"),
+        "MIG-TEST-004": ("A public web rewrite has approved URL and SEO outcomes plus safely provisionable old/new parity and browser checks, none of which have run", "COMPLETE", "READY"),
+        "MIG-TEST-005": ("A required public route canonical or 404 outcome lacks an established expected result and any authorized safe way to verify it", "PARTIAL", "NOT_READY"),
     },
     "implementation-execution": {
         "MIG-EXEC-001": ("All approved transition objectives and required compatibility and recovery checks are verified within the approved bounds for the current target and state", "completed", "IMPLEMENTED"),
@@ -70,11 +72,30 @@ class MigrationUpgradeContractTests(unittest.TestCase):
     def test_strategy_maps_transition_boundaries_without_claiming_execution(self) -> None:
         rules = self.rules["test-strategy"]
         fields = {row.split("|")[1].strip() for row in rules.splitlines() if row.startswith("|")}
-        self.assertTrue({"Compatibility", "Data movement", "Dependency upgrade", "Contraction", "Recovery", "Limits"}.issubset(fields))
+        self.assertTrue({"Compatibility", "Public web delivery", "Data movement", "Dependency upgrade", "Contraction", "Recovery", "Limits"}.issubset(fields))
         normalized = " ".join(rules.split())
         self.assertIn("A proposed check is `NOT_RUN`, not a pass", normalized)
         self.assertIn("A complete actionable strategy may be `READY` before tests run", normalized)
         self.assertIn("no plan, scenario, or green check grants execution authority", normalized)
+
+    def test_public_web_migration_parity_is_scoped_and_verifiable(self) -> None:
+        normalized = " ".join(self.rules["test-strategy"].split())
+        for invariant in (
+            "observed baseline",
+            "record explicitly approved differences",
+            "HTTP status, redirect chain/Location",
+            "canonical URL, robots directives",
+            "language alternatives, structured-data types",
+            "important public content appears in HTML without browser JavaScript",
+            "A forged User-Agent does **not** establish a verified crawler identity",
+            "hydration, client navigation, data-request waterfalls",
+            "report lab measurements separately from field metrics",
+            "old-route fallback, progressive cohort routing (if used)",
+            "does not authorize calling protected endpoints",
+            "Proposed probes remain `NOT_RUN` until executed",
+        ):
+            with self.subTest(invariant=invariant):
+                self.assertIn(invariant, normalized)
 
     def test_execution_keeps_reconciliation_bounds_and_recovery_holds(self) -> None:
         normalized = " ".join(self.rules["implementation-execution"].split())
