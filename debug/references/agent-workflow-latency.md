@@ -136,8 +136,9 @@ and bounded budget; otherwise mark the experiment `NOT_RUN`.
 Compare the applicable routes rather than declaring a universal winner:
 
 - **Existing authorized CLI:** Request only needed fields (for example,
-  `gh release view --json tagName,publishedAt`) and keep command effects,
-  authentication and environment boundaries explicit.
+  `gh release view -R OWNER/REPO --json tagName,publishedAt`). Bind the
+  repository and release-selection semantics to the same targets as the MCP
+  comparison; preserve command effects, authentication and environment boundaries.
 - **CLI plus a selectively loaded skill:** Use when a workflow needs
   nonobvious commands or repeatable instructions; count loaded skill text
   rather than assuming skills have no context cost.
