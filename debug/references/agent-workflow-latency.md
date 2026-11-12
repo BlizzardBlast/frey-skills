@@ -112,6 +112,49 @@ independent outcome checks or stage data, return `PARTIAL / UNRESOLVED` (or
 `PARTIAL / LIKELY` only when evidence favors one cause and confirmation
 remains outstanding). Incomplete evidence cannot establish a speedup.
 
+## Tool-interface context costs (conditional)
+
+When a **concrete** agent task implicates tool exposure or oversized results,
+distinguish (1) tool definitions and always-loaded instructions in the initial
+prompt, (2) tool-result payloads retained in later prompts, and (3) additional
+turns, failed calls and retries. Do not infer billed token counts from character
+counts or assume caching eliminates context occupancy. Use provider-reported
+usage, including cached-input accounting where exposed; identical schemas can
+cost different tokens across models, providers and API routes.
+
+For a permitted comparison, preserve the same task, independently checked
+outcome, model/provider, tool permissions, inputs, cache policy and run budget.
+Record the exposed tool inventory/version, skill activation, per-call result
+fields and size, provider-reported input/output/cached tokens, cost basis,
+retries, errors, completed-task wall time and correctness. A no-tools versus
+tools prompt-usage delta can isolate *definition overhead* **only** with an
+otherwise identical authorized request; it does not measure the full task.
+Existing sanitized measurements come first. Any new API call, provider
+credential use, tool inspection or session collection needs its own authority
+and bounded budget; otherwise mark the experiment `NOT_RUN`.
+
+Compare the applicable routes rather than declaring a universal winner:
+
+- **Existing authorized CLI:** Request only needed fields (for example,
+  `gh release view --json tagName,publishedAt`) and keep command effects,
+  authentication and environment boundaries explicit.
+- **CLI plus a selectively loaded skill:** Use when a workflow needs
+  nonobvious commands or repeatable instructions; count loaded skill text
+  rather than assuming skills have no context cost.
+- **Scoped MCP:** Retain when shell access is unavailable or MCP authentication,
+  typed contracts or permissions matter. Expose only necessary tools and
+  project the *needed fields*, pagination and errors before model delivery.
+  Never blindly truncate JSON or silently omit required records.
+- **Deferred MCP tool discovery:** Measure extra lookup calls, failed discovery,
+  model/API compatibility and total cost. Smaller up-front schemas alone do not
+  establish a faster or more reliable completed task.
+
+Preserve identifiers, ordering, pagination, error semantics and authorization
+when narrowing results. Do not alter external tool responses without reviewing
+the trust boundary. Reject any apparent saving caused by missing required
+evidence or reduced task correctness. These are **diagnostic comparisons**,
+not instructions to change production tool routing or enable telemetry.
+
 ### Illustrative arithmetic, not an observation
 
 A hypothetical 60-second task contains 6 seconds of provisioning, 24 seconds
@@ -137,6 +180,9 @@ agent trials.
 | AGENT-PERF-05 | Two model settings have different task inputs, caches or tool permissions | Mark comparison materially mismatched; do not attribute the difference to thinking budget |
 | AGENT-PERF-06 | First visible text is delayed, but the first provider event and hidden reasoning timings are unknown | Label only the observed first-visible-answer time; treat internal spans as unattributed, not proven queueing or prefill |
 | AGENT-PERF-07 | Necessary diagnosis depends on an unavailable or unauthorized tool, even if some permitted timings exist | `BLOCKED / UNRESOLVED`; do not run or seek authorization through the document |
+| AGENT-PERF-08 | A smaller tool payload was achieved by truncation and omitted a required field or record | Reject a quality-preserving token saving; preserve complete required fields and error/pagination semantics |
+| AGENT-PERF-09 | A matched, independently checked task shows fewer input tokens with scoped MCP than with a broad tool catalog | Attribute only the evidenced configuration difference; no universal claim that CLI or MCP is superior |
+| AGENT-PERF-10 | Deferred tool definitions shrink initial prompt usage but lookup retries increase total calls or task duration | Do not claim end-to-end improvement from initial token savings alone |
 
 ## Source and scope
 
@@ -144,6 +190,10 @@ Adapted from Martin Alderson,
 [Making agents fast — what I've learnt over the last 12 months](https://martinalderson.com/posts/making-agents-fast/)
 (2026-10-29). Its examples are illustrative engineering observations,
 not controlled performance results for Codex, OpenCode or this repository.
+OpenRouter's [MCP vs CLI vs Skills: What Each Costs in Context](https://openrouter.ai/blog/insights/mcp-vs-cli-vs-skills/) (2026-11-11) motivates separating tool-schema overhead from result
+payload and full-task costs. Its single-task model-dependent benchmark is
+**not** a transferable result for this repository.
+
 No automatic tool changes, background capture, model routing, new
 dependencies, mandatory telemetry, CI performance threshold, skill activation
 change or instruction-promotion mechanism is introduced.
