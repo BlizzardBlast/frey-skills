@@ -30,6 +30,7 @@ class DebugPerformanceContractTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.skill = (ROOT / "debug" / "SKILL.md").read_text(encoding="utf-8")
         cls.rules = (ROOT / "debug" / "references" / "performance-investigation.md").read_text(encoding="utf-8")
+        cls.agent_guide = (ROOT / "debug" / "references" / "agent-workflow-latency.md").read_text(encoding="utf-8")
         cls.normalized = " ".join(cls.rules.split())
 
     def test_extension_uses_existing_modes_and_a_conditional_resource_route(self) -> None:
@@ -44,6 +45,59 @@ class DebugPerformanceContractTests(unittest.TestCase):
         self.assertIn("Mark proposed checks `NOT_RUN`", self.skill)
         self.assertIn("same completeness and root-cause rules", self.skill)
         self.assertIn("Standalone benchmark execution, optimization implementation, and incident retrospectives", boundary)
+
+    def test_agent_workflow_guide_stays_conditional_and_read_only(self) -> None:
+        self.assertIn("[agent-workflow-latency.md](agent-workflow-latency.md)", self.rules)
+        self.assertIn("For a concrete slow coding-agent task", self.rules)
+        normalized = " ".join(self.agent_guide.split())
+        for contract in (
+            "Load this reference **only** when the concrete performance symptom",
+            "the read-only authorization",
+            "independently verifiable successful outcome",
+            "otherwise mark the experiment `NOT_RUN`",
+            "`BLOCKED / UNRESOLVED`",
+            "Private chain-of-thought access is not a prerequisite",
+            "Never blindly truncate JSON",
+            "gh release view -R OWNER/REPO --json tagName,publishedAt",
+            "No automatic tool changes",
+        ):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, normalized)
+
+    def assert_agent_case_contract(self, guide: str) -> dict[str, tuple[str, str]]:
+        rows = [row for row in guide.splitlines() if row.startswith("| AGENT-PERF-")]
+        cases = {}
+        for row in rows:
+            cells = [cell.strip() for cell in row.strip("|").split("|")]
+            self.assertEqual(len(cells), 3)
+            case_id, condition, interpretation = cells
+            self.assertNotIn(case_id, cases)
+            self.assertTrue(condition)
+            self.assertTrue(interpretation)
+            cases[case_id] = (condition, interpretation)
+        self.assertEqual(list(cases), [f"AGENT-PERF-{number:02d}" for number in range(1, 11)])
+        return cases
+
+    def test_agent_cases_preserve_required_interpretations(self) -> None:
+        cases = self.assert_agent_case_contract(self.agent_guide)
+        required = {
+            "AGENT-PERF-04": "Reject quality-preserving speedup claim",
+            "AGENT-PERF-06": "unattributed",
+            "AGENT-PERF-07": "`BLOCKED / UNRESOLVED`",
+            "AGENT-PERF-08": "error/pagination semantics",
+            "AGENT-PERF-09": "no universal claim",
+            "AGENT-PERF-10": "Do not claim end-to-end improvement",
+        }
+        for case_id, expected in required.items():
+            with self.subTest(case=case_id):
+                self.assertIn(expected, cases[case_id][1])
+
+    def test_agent_case_contract_rejects_missing_or_duplicate_rows(self) -> None:
+        row = next(line for line in self.agent_guide.splitlines() if line.startswith("| AGENT-PERF-08 |"))
+        with self.assertRaises(AssertionError):
+            self.assert_agent_case_contract(self.agent_guide.replace(row + "\n", "", 1))
+        with self.assertRaises(AssertionError):
+            self.assert_agent_case_contract(self.agent_guide + row + "\n")
 
     def test_measurement_ledger_preserves_context_and_comparison_fields(self) -> None:
         ledger = self.rules.split("## Conditional measurement ledger\n", 1)[1].split("\n## ", 1)[0]
