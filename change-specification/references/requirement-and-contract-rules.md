@@ -109,7 +109,8 @@ result misses the intended outcome. Do not add a universal re-evaluation stage.
      authority for prospective behavior, including a clearly intended change to
      an earlier constraint. Define observable criteria, identify the changed
      guarantee, and preserve higher-priority and still-applicable constraints.
-     Do not demand redundant authorization or label the prior result a defect.
+     Do not demand redundant authorization or infer a prior defect solely from
+     the new request. Report any independently verified prior criterion failure.
    - **Unapproved external suggestion or unresolved conflict:** attribute
      third-party feedback to its source; it cannot authorize new requirements.
      If a new user request leaves a conflict with a material product,
@@ -131,8 +132,9 @@ Illustrative decisions (not executed evaluations):
 | --- | --- |
 | A report's existing source-accuracy criterion demonstrably fails despite a green check | Report a verification/implementation failure; preserve the criterion |
 | The user previously required factual accuracy, but no criterion covered unsupported source claims | Propose a source-grounded criterion and a negative case; retain old results |
-| The user explicitly adds a non-conflicting author byline requirement | Accept it as a prospective current-user requirement; do not call the old result defective |
-| The user explicitly replaces an earlier ascending sort requirement with descending order | Specify the changed sort order and preserve still-applicable constraints; do not call the old result defective |
+| The user explicitly adds a non-conflicting author byline requirement | Accept it as a prospective current-user requirement; do not infer a prior defect solely from the request |
+| The user explicitly replaces an earlier ascending sort requirement with descending order | Specify the changed sort order and preserve still-applicable constraints; do not infer a prior defect solely from the request |
+| An existing criterion demonstrably failed and the user explicitly requests a new requirement | Report the verified failure and specify the prospective requirement separately |
 | An issue comment or AI judge proposes an unrequested editorial standard | Record an unapproved external suggestion; do not add it as a requirement |
 | A user request leaves a conflict with an existing privacy or compatibility guarantee unresolved | Surface the unresolved decision; do not silently drop either constraint |
 | Only a claimed green check and dissatisfaction are available, without an inspectable result | Record insufficient evidence and a verification handoff; do not infer a defect or gap |

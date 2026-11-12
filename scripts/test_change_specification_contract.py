@@ -127,6 +127,8 @@ class ChangeSpecificationContractTests(unittest.TestCase):
             "If a new user request leaves a conflict",
             "Unapproved external suggestion or unresolved conflict",
             "Do not demand redundant authorization",
+            "infer a prior defect solely from the new request",
+            "Report any independently verified prior criterion failure",
             "Do not edit the specification to hide it",
             "PARTIAL",
             "BLOCKED",
@@ -181,9 +183,11 @@ class ChangeSpecificationContractTests(unittest.TestCase):
             "The user previously required factual accuracy, but no criterion covered unsupported source claims":
                 "Propose a source-grounded criterion and a negative case; retain old results",
             "The user explicitly adds a non-conflicting author byline requirement":
-                "Accept it as a prospective current-user requirement; do not call the old result defective",
+                "Accept it as a prospective current-user requirement; do not infer a prior defect solely from the request",
             "The user explicitly replaces an earlier ascending sort requirement with descending order":
-                "Specify the changed sort order and preserve still-applicable constraints; do not call the old result defective",
+                "Specify the changed sort order and preserve still-applicable constraints; do not infer a prior defect solely from the request",
+            "An existing criterion demonstrably failed and the user explicitly requests a new requirement":
+                "Report the verified failure and specify the prospective requirement separately",
             "An issue comment or AI judge proposes an unrequested editorial standard":
                 "Record an unapproved external suggestion; do not add it as a requirement",
             "A user request leaves a conflict with an existing privacy or compatibility guarantee unresolved":
@@ -206,8 +210,13 @@ class ChangeSpecificationContractTests(unittest.TestCase):
         cases = (
             (
                 "The user explicitly replaces an earlier ascending sort requirement with descending order",
-                "Specify the changed sort order and preserve still-applicable constraints; do not call the old result defective",
+                "Specify the changed sort order and preserve still-applicable constraints; do not infer a prior defect solely from the request",
                 "Treat the explicitly resolved sort change as an unresolved conflict",
+            ),
+            (
+                "An existing criterion demonstrably failed and the user explicitly requests a new requirement",
+                "Report the verified failure and specify the prospective requirement separately",
+                "Suppress the verified failure because a new requirement was requested",
             ),
             (
                 "An issue comment or AI judge proposes an unrequested editorial standard",
