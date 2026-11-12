@@ -45,6 +45,11 @@ class WorkflowContractTests(unittest.TestCase):
                     actual.add(line.split("==")[0])
             self.assertEqual(actual, names)
 
+    def test_python_39_uses_a_compatible_runner(self) -> None:
+        job = self.read_workflow("ci.yml")["jobs"]["validate"]
+        self.assertEqual(set(job["strategy"]["matrix"]["python-version"]), {"3.9", "3.12"})
+        self.assertEqual(job["runs-on"], "${{ matrix.python-version == '3.9' && 'ubuntu-24.04' || 'ubuntu-latest' }}")
+
     def test_windows_and_macos_run_all_gates_with_read_only_ci_permissions(self) -> None:
         ci = self.read_workflow("ci.yml")
         self.assertEqual(ci["permissions"], {"contents": "read"})

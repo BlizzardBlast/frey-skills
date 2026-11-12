@@ -6,6 +6,19 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Keep Python 3.9 repository validation on Ubuntu 24.04, where its runtime is
+  available, while Python 3.12 continues on the latest Ubuntu runner.
+
+- Add conditional public-web-renderer migration parity to `test-strategy`: old/new
+  URL, status, crawler-visible metadata, browser behavior, rollout/fallback and
+  lab-versus-field evidence. Preserve approved deviations, safe test boundaries
+  and existing readiness statuses; add two static cases and contract checks.
+  Inspired by [X Engineering's rebuild](https://blog.x.com/en/engineering/rebuilding-the-global-town-square-from-scratch).
+  Route same-framework web migrations explicitly, preserve general migration
+  guidance outside the conditional section, and align readiness cases with
+  the parent skill contract. No new skill, tool, dependency, CI workflow,
+  live probe, or model trial.
+
 - Clarify conditional outcome/criteria mismatch refinement in `change-specification`:
   distinguish independently observed failures, omissions in authorized goals,
   explicit current-user changes, third-party suggestions,
