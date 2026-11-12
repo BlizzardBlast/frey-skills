@@ -6,6 +6,9 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Keep Python 3.9 repository validation on Ubuntu 24.04, where its runtime is
+  available, while Python 3.12 continues on the latest Ubuntu runner.
+
 - Add conditional public-web-renderer migration parity to `test-strategy`: old/new
   URL, status, crawler-visible metadata, browser behavior, rollout/fallback and
   lab-versus-field evidence. Preserve approved deviations, safe test boundaries
