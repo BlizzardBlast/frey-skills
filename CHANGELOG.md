@@ -6,6 +6,14 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Clarify conditional outcome/criteria mismatch refinement in `change-specification`:
+  distinguish independently observed failures, omissions in authorized goals,
+  explicit current-user changes, third-party suggestions,
+  unresolved conflicts, and unverified reports before changing criteria.
+  Preserve previous evidence and readiness rules, and add deterministic
+  scenario-contract assertions. The skill remains read-only; no behavioral
+  model evaluation was run.
+
 - Extend `test-strategy` 1.5.0 with conditional Git-backed state and multi-agent
   ref consistency testing guidance, inspired by OpenAI's Pando design:
   same-ref contention, cross-ref reads, lost acknowledgments, reachable
