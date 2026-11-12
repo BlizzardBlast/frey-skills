@@ -16,16 +16,11 @@ concurrency:
 jobs:
   validate:
     name: Validate repository (Python ${{ matrix.python-version }})
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.python-version == '3.9' && 'ubuntu-24.04' || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # Python 3.9 is unavailable for Ubuntu 26.04 (ubuntu-latest).
-          - python-version: '3.9'
-            os: ubuntu-24.04
-          - python-version: '3.12'
-            os: ubuntu-latest
+        python-version: ['3.9', '3.12']
 
     steps:
       - name: Check out repository

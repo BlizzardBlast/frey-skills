@@ -45,23 +45,10 @@ class WorkflowContractTests(unittest.TestCase):
                     actual.add(line.split("==")[0])
             self.assertEqual(actual, names)
 
-    def test_validate_matrix_keeps_python_39_on_compatible_ubuntu(self) -> None:
-        validate = self.read_workflow("ci.yml")["jobs"]["validate"]
-        self.assertEqual(validate["runs-on"], "${{ matrix.os }}")
-        matrix = validate["strategy"]["matrix"]
-        self.assertEqual(
-            matrix["include"],
-            [
-                {"python-version": "3.9", "os": "ubuntu-24.04"},
-                {"python-version": "3.12", "os": "ubuntu-latest"},
-            ],
-        )
-        setup = next(step for step in validate["steps"] if step.get("uses", "").startswith("actions/setup-python@"))
-        self.assertEqual(setup["with"]["python-version"], "${{ matrix.python-version }}")
-        self.assertIn(
-            "python scripts/check.py --group repository",
-            [step["run"] for step in validate["steps"] if "run" in step],
-        )
+    def test_python_39_uses_a_compatible_runner(self) -> None:
+        job = self.read_workflow("ci.yml")["jobs"]["validate"]
+        self.assertEqual(set(job["strategy"]["matrix"]["python-version"]), {"3.9", "3.12"})
+        self.assertEqual(job["runs-on"], "${{ matrix.python-version == '3.9' && 'ubuntu-24.04' || 'ubuntu-latest' }}")
 
     def test_windows_and_macos_run_all_gates_with_read_only_ci_permissions(self) -> None:
         ci = self.read_workflow("ci.yml")

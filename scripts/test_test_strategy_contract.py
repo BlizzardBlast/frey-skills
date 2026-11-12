@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import importlib.util
 import json
-import re
 import unittest
 from pathlib import Path
 from typing import Any
@@ -17,6 +16,36 @@ SKILL_FILE = SKILL_ROOT / "SKILL.md"
 AGENT_FILE = SKILL_ROOT / "agents" / "openai.yaml"
 MANIFEST_PATH = REPOSITORY_ROOT / "plugin-template" / ".codex-plugin" / "plugin.json"
 VALIDATOR_PATH = REPOSITORY_ROOT / "scripts" / "validate_plugin_bundle.py"
+
+
+EXPECTED_GIT_CASES = {
+    "GIT-CASE-001": (
+        "Changed behavior neither reads nor writes Git refs and does not rely on Git "
+        "history as application state",
+        "Use ordinary risk selection; do not add Git-specific scenarios",
+    ),
+    "GIT-CASE-002": (
+        "Two agents target one ref",
+        "A stale expected-OID update is rejected and earlier committed work survives",
+    ),
+    "GIT-CASE-003": (
+        "Independent refs change during a multi-ref read",
+        "Check documented consistency needs; do not assume a repository-wide snapshot",
+    ),
+    "GIT-CASE-004": (
+        "Publication acknowledgment is lost",
+        "Reconcile the intended ref/commit; an unresolved outcome must not prompt blind retry",
+    ),
+    "GIT-CASE-005": (
+        "A new ref is acknowledged before a reader fetches",
+        "Verify the intended tip and reachable objects from an independent reader",
+    ),
+    "GIT-CASE-006": (
+        "A read-only consumer combines refs that can advance independently",
+        "Test required cross-ref consistency and read-time interleavings even without "
+        "writes by the consumer",
+    ),
+}
 
 
 def load_module(path: Path, name: str) -> Any:
@@ -135,6 +164,81 @@ class TestStrategyContractTests(unittest.TestCase):
             self.assertIn(f"`{section}`", self.skill_content)
         self.assertIn("No repository or external-system mutation was performed", self.skill_content)
         self.assertIn("Missing context and blocked checks are honest", self.skill_content)
+
+    def assert_git_case_contract(self, profile: str) -> None:
+        marker = "## Git-backed published state and concurrent agents (conditional)\n"
+        self.assertEqual(profile.count(marker), 1)
+        section = profile.split(marker, 1)[1].split("\n## ", 1)[0]
+        rows = [row for row in section.splitlines() if row.startswith("|")]
+        self.assertEqual(
+            rows[:2],
+            [
+                "| Case | Condition | Observable test-strategy decision |",
+                "| --- | --- | --- |",
+            ],
+        )
+        cases: dict[str, tuple[str, str]] = {}
+        for row in rows[2:]:
+            self.assertTrue(row.startswith("| ") and row.endswith(" |"), row)
+            cells = [" ".join(cell.split()) for cell in row.strip("|").split("|")]
+            self.assertEqual(len(cells), 3, row)
+            case, condition, decision = cells
+            self.assertRegex(case, r"^`GIT-CASE-\d{3}`$")
+            case_id = case.strip("`")
+            self.assertNotIn(case_id, cases)
+            cases[case_id] = (condition, decision)
+        self.assertEqual(cases, EXPECTED_GIT_CASES)
+
+    def test_git_ref_consistency_profile_is_conditional_and_traceable(self) -> None:
+        profile = (SKILL_ROOT / "references" / "repository-testing-profiles.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("## Git-backed published state and concurrent agents (conditional)", profile)
+        for boundary in (
+            "only** when the changed system actually publishes",
+            "Do not assume all Git servers provide Pando's consistency model",
+            "This applies to read-only consumers as well as publishers",
+            "a failed subprocess acknowledgment is not proof",
+        ):
+            with self.subTest(boundary=boundary):
+                self.assertIn(boundary.casefold(), profile.casefold())
+        self.assert_git_case_contract(profile)
+
+    def test_git_case_contract_rejects_missing_duplicate_and_modified_cases(self) -> None:
+        profile = (SKILL_ROOT / "references" / "repository-testing-profiles.md").read_text(
+            encoding="utf-8"
+        )
+        rows = [row for row in profile.splitlines() if row.startswith("| `GIT-CASE-")]
+        self.assertEqual(len(rows), len(EXPECTED_GIT_CASES))
+        for row in rows:
+            cells = [cell.strip() for cell in row.strip("|").split("|")]
+            for index in (1, 2):
+                changed = cells.copy()
+                changed[index] = "Different condition" if index == 1 else "Unsafe decision"
+                replacement = "| " + " | ".join(changed) + " |"
+                with self.subTest(case=cells[0], field=index), self.assertRaises(AssertionError):
+                    self.assert_git_case_contract(profile.replace(row, replacement, 1))
+
+            mutations = (
+                profile.replace(row, "", 1),
+                profile.replace(row, row + "\n" + row, 1),
+                profile.replace(row, row[:-2] + " | extra |", 1),
+                profile.replace(row, row.replace(cells[0], "`GIT-CASE-999`", 1), 1),
+            )
+            for index, mutated in enumerate(mutations):
+                with self.subTest(case=cells[0], mutation=index), self.assertRaises(
+                    AssertionError
+                ):
+                    self.assert_git_case_contract(mutated)
+
+        same_ref = rows[1]
+        contradictory = same_ref.replace(
+            "is rejected and earlier committed work survives",
+            "is allowed (not rejected) and earlier committed work survives",
+        )
+        self.assertNotEqual(contradictory, same_ref)
+        with self.assertRaises(AssertionError):
+            self.assert_git_case_contract(profile.replace(same_ref, contradictory, 1))
 
     def test_agent_metadata_keeps_discovery_contract(self) -> None:
         content = AGENT_FILE.read_text(encoding="utf-8")
