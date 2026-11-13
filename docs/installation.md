@@ -43,9 +43,21 @@ For example, install only `code-review` for Codex in the current project:
 npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.14.0 --skill code-review --agent codex
 ```
 
-Add `--global` for user scope. Use `--copy` if your environment cannot create
-the installer's symlinks. Other agents can be selected in the interactive
-installer or with their upstream agent identifier.
+For OpenCode, install the same portable skill folder with the upstream agent
+identifier `opencode`:
+
+```bash
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.14.0 --skill code-review --agent opencode
+```
+
+With Skills CLI 1.7.2, both Codex and OpenCode project installations use
+`.agents/skills/`; OpenCode also recognizes this standard directory. Use one
+installation route per skill to avoid name collisions between scopes.
+
+Add `--global` for user scope (OpenCode uses `~/.config/opencode/skills/`).
+Use `--copy` if your environment cannot create the installer's symlinks.
+Other agents can be selected in the interactive installer or with their
+upstream agent identifier.
 
 The `tree/v1.14.0` URL selects that Git tag. For a commit pin, replace `v1.14.0`
 with the full commit SHA. The shorthand `BlizzardBlast/frey-skills` follows the
@@ -64,6 +76,26 @@ Use the [README selector](../README.md#choose-a-skill) to choose a workflow.
 For example, explicitly invoke `$code-review` for a read-only review; invoke
 `iterative-self-review` only when you intend to authorize scoped remediation.
 Discovery and file checks do not certify model activation or behavior.
+
+### Optional OpenCode installation smoke
+
+The existing cross-platform installation CI exercises Codex and remains unchanged.
+To verify that the pinned Skills CLI also installs Frey Skills for OpenCode,
+run this **optional** check from the Frey Skills checkout after setting up the
+pinned CLI as described in [Contributing](../CONTRIBUTING.md#installation-smoke-checks):
+
+```bash
+python scripts/smoke_install.py --cli dist/smoke-tools/node_modules/skills/bin/cli.mjs --agent opencode --source checkout
+```
+
+This uses disposable project and home directories, validates selected/all
+skills in default/copy modes, and checks exact supporting-resource bytes.
+Use `--source pinned` as well when public GitHub access is available. It does
+not start OpenCode, touch your real agent settings, or prove native skill
+discovery. To verify the **OpenCode client**, record the client version and
+check in a separate non-sensitive project that its native `skill` tool lists
+and loads the installed skill; do not infer this from installer success.
+OpenCode client acceptance has **not been run** as part of this change.
 
 ### Upgrade or roll back skill folders
 

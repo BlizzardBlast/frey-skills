@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise the pinned Skills CLI in disposable Codex projects (network opt-in)."""
+"""Exercise the pinned Skills CLI in disposable agent projects (network opt-in)."""
 
 from __future__ import annotations
 
@@ -137,13 +137,15 @@ def verify_listing(output: str, expected: set[str]) -> None:
         raise SmokeError(f"discovery differs: expected {sorted(expected)}, got {sorted(names)}")
 
 
-def smoke_source(cli: list[str], source: str, expected: dict[str, bytes], workspace: Path) -> None:
+def smoke_source(
+    cli: list[str], source: str, expected: dict[str, bytes], workspace: Path, *, agent: str = "codex"
+) -> None:
     selected = {path: data for path, data in expected.items() if path.startswith("code-review/")}
     if not selected:
         raise SmokeError("the documented code-review selection is absent from the source")
     names = {path.split("/", 1)[0] for path in expected}
     for mode in ("default", "copy"):
-        options = ["--agent", "codex", "--yes"] + (["--copy"] if mode == "copy" else [])
+        options = ["--agent", agent, "--yes"] + (["--copy"] if mode == "copy" else [])
         for label, selection, wanted in (("selected", "code-review", selected), ("complete", "*", expected)):
             case = workspace / mode / label
             project = case / "project with spaces"
@@ -174,6 +176,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cli", type=Path, required=True, help=f"Installed skills@{CLI_VERSION}/bin/cli.mjs entry point.")
     parser.add_argument("--source", action="append", choices=("checkout", "pinned"), help="Repeat to select sources; default: both. Pinned needs public GitHub access.")
+    parser.add_argument("--agent", choices=("codex", "opencode"), default="codex", help="Target Skills CLI installer; checks installed files, not native agent discovery.")
     args = parser.parse_args(argv)
     try:
         node = shutil.which("node")
@@ -205,7 +208,7 @@ def main(argv: list[str] | None = None) -> int:
                 names = discover_skill_names(source_root)
                 if not names:
                     raise SmokeError(f"no canonical skills found in {source_kind}")
-                smoke_source(cli, source, skill_files(source_root, names), workspace / source_kind)
+                smoke_source(cli, source, skill_files(source_root, names), workspace / source_kind, agent=args.agent)
         print("Installation smoke checks passed. Behavioral model evals were not run.")
         return 0
     except (OSError, ValueError, BuildError, SourcePathError, subprocess.SubprocessError) as exc:

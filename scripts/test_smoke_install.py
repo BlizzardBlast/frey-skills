@@ -494,6 +494,27 @@ class InstallationSmokeTests(unittest.TestCase):
                 destination.write_bytes(data)
         return ""
 
+    def test_optional_opencode_smoke_uses_the_same_portable_skill_tree(self) -> None:
+        # Installation is checked without starting OpenCode or writing to the caller's home.
+        with mock.patch.object(smoke_install, "run", side_effect=self.install_files) as run:
+            smoke_install.smoke_source(
+                ["node", "cli.mjs"], "source", self.expected, self.root / "opencode-case", agent="opencode"
+            )
+        commands = [call.args[0] for call in run.call_args_list if "--skill" in call.args[0]]
+        self.assertEqual(len(commands), 4)  # selected/complete in link/copy modes
+        for command in commands:
+            self.assertEqual(command[command.index("--agent") + 1], "opencode")
+
+    def test_default_install_smoke_stays_on_codex(self) -> None:
+        with mock.patch.object(smoke_install, "run", side_effect=self.install_files) as run:
+            smoke_install.smoke_source(
+                ["node", "cli.mjs"], "source", self.expected, self.root / "codex-case"
+            )
+        commands = [call.args[0] for call in run.call_args_list if "--skill" in call.args[0]]
+        self.assertEqual(len(commands), 4)
+        for command in commands:
+            self.assertEqual(command[command.index("--agent") + 1], "codex")
+
     def test_wildcard_must_install_the_previously_selected_skill_from_scratch(self) -> None:
         def omit_code_review_from_wildcard(command: list[str], cwd: Path, environment: dict[str, str]) -> str:
             if "--skill" in command and command[command.index("--skill") + 1] == "*":
