@@ -6,6 +6,25 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+## [1.15.0] - 2026-11-13
+
+- Extend `debug` 1.5.0 with conditional coding-agent latency diagnostics:
+  distinguish observable timing stages, overlapping work, tool definitions and
+  results, and full-task outcomes. Preserve read-only authority and privacy;
+  synthetic cases and deterministic contracts do not measure model behavior or
+  establish a performance improvement.
+
+- Extend `code-review` 1.5.0 with an optional agentic architecture assessment,
+  a versioned criteria catalog, and a local structural validator. Load it only
+  for an explicit assessment or in-scope agent-specific risks; ordinary review
+  decisions and trust boundaries remain unchanged. Validation does not certify
+  cited evidence or system safety.
+
+- Extend `implementation-plan` 1.7.0 with conditional guidance comparing
+  selective point lookups and analytical scans, including workload-specific
+  measurement, existing data layouts, and reuse tradeoffs. It adds no storage
+  migration, benchmark requirement, or execution authority.
+
 - Keep Python 3.9 repository validation on Ubuntu 24.04, where its runtime is
   available, while Python 3.12 continues on the latest Ubuntu runner.
 
