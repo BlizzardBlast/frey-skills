@@ -6,6 +6,10 @@ output fields, and trust contracts are unchanged in 1.8.1 and 1.8.2.
 
 ## Unreleased
 
+- Pin installation and archive smoke checks to verified v1.15.0 and use
+  v1.14.0 as the Codex upgrade/rollback baseline. Record publication and
+  client compatibility separately from desktop acceptance.
+
 ## [1.15.0] - 2026-11-13
 
 - Extend `debug` 1.5.0 with conditional coding-agent latency diagnostics:

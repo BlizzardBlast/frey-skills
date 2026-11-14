@@ -1,7 +1,7 @@
 # Recorded plugin compatibility
 
-The current published release is v1.14.0; see the separate
-[v1.14.0 verification](#v1140-verification) for its public archive, CLI checks,
+The current published release is v1.15.0; see the separate
+[v1.15.0 verification](#v1150-verification) for its public archive, CLI checks,
 and desktop coverage limits. Historical Windows desktop observations remain
 version-specific; the later v1.14.0 maintainer report is recorded separately.
 
@@ -25,6 +25,7 @@ and restart persistence remain **NOT_TESTED**.
 | [v1.12.0](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.12.0) | `db98a6aa539c8b00d04faea1a191a0a5feb2be28` | `1563c76f516d558161d4b042ab0b602f3bd1104998f6f8497a20f78bf28d7394` |
 | [v1.13.0](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.13.0) | `b6570ef81cacfb8a4f3f1f3ea0da5764c1417a41` | `f63c78f0fbe4b231c3554bf6f2c3f7af4a9ccff027bb6c4de8ac573b1890a10c` |
 | [v1.14.0](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.14.0) | `45ac0b73ed2fe05f849e919beec78225d84e3266` | `5c614d04428b6a03dd7f608b0d5db935dedebcbf6a8177ae03faedf6c1acb6aa` |
+| [v1.15.0](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.15.0) | `3d0bcb4264b17ae91be755c46c04ef7ba65536bd` | `6af0bc5dc26ccb11e1bda4be3a64373e232087cffdc19bafb7e869e596f4cf63` |
 
 Each ZIP matches its published `SHA256SUMS` and the tagged manifest, license,
 skill set, and supporting-file bytes. The client checks use the downloaded
@@ -86,7 +87,7 @@ the client surface you use.
 ## Automated CLI compatibility
 
 The initial `scripts/smoke_codex.py` checks used the v1.8.1/v1.8.2 pair below
-and pinned Codex CLI 0.150.1. Current pins are recorded in the v1.14.0 section.
+and pinned Codex CLI 0.150.1. Current pins are recorded in the v1.15.0 section.
 Those checks verified each archive before installation and compared installed
 bytes, enabled skill ownership, unique names, versioned cache paths, and v1.8.2
 starter prompts. Every phase used a fresh metadata-only app-server in the same
@@ -320,6 +321,28 @@ rollback, starter-prompt display, and unrelated-installation preservation
 remain **NOT_TESTED** for v1.12.0 desktop UI. No additional desktop automation
 or behavioral model eval was run; this report does not certify model behavior.
 
+## v1.15.0 verification
+
+The [release workflow](https://github.com/BlizzardBlast/frey-skills/actions/runs/43423366888)
+passed for annotated tag `v1.15.0` at `3d0bcb4264b17ae91be755c46c04ef7ba65536bd`.
+The public archive and checksum were independently verified against that exact
+source; see the [release record](release-v1.15.0.md).
+
+Local Windows checks on 2026-11-13 used Python 3.12.14, Node.js 24.22.0,
+Skills CLI 1.7.2, and Codex CLI 0.150.1 with disposable projects and homes.
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Public archive | PASS | The downloaded checksum and all 150 archive entries matched the exact tagged source. |
+| Skills CLI installations | PASS | `scripts/smoke_install.py` checked checkout and pinned v1.15.0 sources, selected and complete sets, default and copy modes, and file-byte parity. |
+| Codex CLI transitions | PASS | `scripts/smoke_codex.py` checked v1.14.0 installation, v1.15.0 upgrade, and v1.14.0 rollback separately for the published archive and checkout candidate. Each phase had twelve enabled skills and installed-byte parity. |
+| v1.15.0 desktop UI | NOT_TESTED | No v1.15.0 desktop acceptance has been reported. |
+
+The shared source/archive pin is v1.15.0; the Codex baseline is v1.14.0 at
+`45ac0b73ed2fe05f849e919beec78225d84e3266`. Archive verification does not
+establish desktop acceptance or certify model behavior. Hosted CI for this pin
+update must be evaluated on its own revision.
+
 ## v1.14.0 verification
 
 The [release workflow](https://github.com/BlizzardBlast/frey-skills/actions/runs/40679022979)
@@ -337,7 +360,7 @@ Skills CLI 1.7.2, and Codex CLI 0.150.1 with disposable projects and homes.
 | Codex CLI transitions | PASS | `scripts/smoke_codex.py` checked v1.13.0 installation, v1.14.0 upgrade, and v1.13.0 rollback, separately for the published archive and checkout candidate. Each phase had twelve enabled skills and installed-byte parity. |
 | v1.14.0 desktop UI | PARTIAL (maintainer-reported) | On 2026-10-29 the maintainer reported completing the desktop check thoroughly and said repeated changes from v1.13.0 to v1.14.0 worked; individual checklist outcomes were not supplied. |
 
-The shared source/archive pin is v1.14.0; the Codex baseline is v1.13.0 at
+At that check, the shared source/archive pin was v1.14.0; the Codex baseline was v1.13.0 at
 `b6570ef81cacfb8a4f3f1f3ea0da5764c1417a41`. The automated checks above do not
 independently establish desktop acceptance or certify model behavior. Hosted CI
 for this pin update must be evaluated on its own revision.
