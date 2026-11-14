@@ -4,10 +4,10 @@ Choose skill folders through the Skills CLI or the complete Codex plugin ZIP.
 Use one route for a given skill in an agent to avoid duplicate names. Neither
 route requires model credentials or behavioral model evals.
 
-The versioned examples target the published twelve-skill v1.14.0 release,
+The versioned examples target the published twelve-skill v1.15.0 release,
 including optional PR delivery-handoff planning, migration/dependency-upgrade
 guidance, `release-execution`, and the existing workflows.
-The [release record](release-v1.14.0.md) identifies the verified public artifacts
+The [release record](release-v1.15.0.md) identifies the verified public artifacts
 and keeps CLI evidence separate from desktop UI observations.
 
 ## Install skill folders
@@ -19,35 +19,36 @@ documents its supported agents, installation scopes, and options.
 To pin the installer as well, replace `npx skills` with `npx skills@1.7.2`,
 the CLI version used to verify these examples.
 
-CI exercises this pinned CLI against the documented source tag and the current
-checkout on Windows, Linux, and macOS. It checks selected and complete skill
+The CI matrix runs this pinned CLI against the documented source tag and the
+current checkout on Windows, Linux, and macOS. It checks selected and complete skill
 installations in default and copy modes, including supporting-file byte parity.
-See [Contributing](../CONTRIBUTING.md#installation-smoke-checks) to run the checks.
+See [Contributing](../CONTRIBUTING.md#installation-smoke-checks) to run the checks
+and the [compatibility record](compatibility.md#v1150-verification) for observed results.
 This coverage does not test agent discovery, activation, or model behavior.
 
 List the twelve skills at the versioned source without installing them:
 
 ```bash
-npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.14.0 --list
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.15.0 --list
 ```
 
 Install interactively, choosing the skills, target agent, and scope:
 
 ```bash
-npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.14.0
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.15.0
 ```
 
 For example, install only `code-review` for Codex in the current project:
 
 ```bash
-npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.14.0 --skill code-review --agent codex
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.15.0 --skill code-review --agent codex
 ```
 
 Add `--global` for user scope. Use `--copy` if your environment cannot create
 the installer's symlinks. Other agents can be selected in the interactive
 installer or with their upstream agent identifier.
 
-The `tree/v1.14.0` URL selects that Git tag. For a commit pin, replace `v1.14.0`
+The `tree/v1.15.0` URL selects that Git tag. For a commit pin, replace `v1.15.0`
 with the full commit SHA. The shorthand `BlizzardBlast/frey-skills` follows the
 default branch. `owner/repo@name` selects a skill in the Skills CLI; it is not
 the version-pin syntax.
@@ -75,10 +76,10 @@ Discovery and file checks do not certify model activation or behavior.
 4. Verify the installed files and discovery again.
 
 Rollback uses the same process with the previously recorded tag or commit.
-For example, roll back from v1.14.0 to v1.13.0 with:
+For example, roll back from v1.15.0 to v1.14.0 with:
 
 ```bash
-npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.13.0 --skill code-review --agent codex
+npx skills add https://github.com/BlizzardBlast/frey-skills/tree/v1.14.0 --skill code-review --agent codex
 ```
 
 Choose a different target tag for an upgrade. If no previous release was
@@ -90,31 +91,31 @@ that was its installation scope.
 
 ## Install the Codex plugin ZIP
 
-CI checks the published ZIP on Windows, Linux, and macOS, including its checksum,
+The CI matrix checks the published ZIP on Windows, Linux, and macOS, including its checksum,
 manifest, license, complete skill set, and byte parity with the pinned release's
 sources. To repeat this file check in a repository checkout, run
 `python scripts/smoke_release.py` with Python 3.11+ and Git. It uses disposable
-directories and does not install the plugin. Agent discovery and rollback remain
-a separate manual compatibility check below.
+directories and does not install the plugin. Desktop discovery and rollback
+remain separate manual compatibility checks below.
 
-Download `frey-skills-1.14.0.zip` and `SHA256SUMS` from the
-[v1.14.0 release](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.14.0).
+Download `frey-skills-1.15.0.zip` and `SHA256SUMS` from the
+[v1.15.0 release](https://github.com/BlizzardBlast/frey-skills/releases/tag/v1.15.0).
 Compare the archive's SHA-256 digest with its filename's entry in `SHA256SUMS`:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 -LiteralPath ./frey-skills-1.14.0.zip
+Get-FileHash -Algorithm SHA256 -LiteralPath ./frey-skills-1.15.0.zip
 ```
 
 On macOS or Linux, use:
 
 ```bash
-shasum -a 256 frey-skills-1.14.0.zip
+shasum -a 256 frey-skills-1.15.0.zip
 ```
 
 Stop if the checksum differs. Extract the archive to a new version-specific
 directory. It contains `LICENSE` and a `frey-skills/` folder with
 `.codex-plugin/plugin.json` and `skills/`. Confirm the manifest version is
-`1.14.0` and `skills/` contains these twelve directories:
+`1.15.0` and `skills/` contains these twelve directories:
 
 ```text
 architecture-decision
@@ -133,7 +134,7 @@ threat-modeling
 
 Keep the extracted folder in a stable location. Local Codex plugins are
 installed through a marketplace source. For example, in your consuming
-project, extract under `plugins/frey-skills-1.14.0/`, then add this entry to
+project, extract under `plugins/frey-skills-1.15.0/`, then add this entry to
 that project's `.agents/plugins/marketplace.json`:
 
 ```json
@@ -145,7 +146,7 @@ that project's `.agents/plugins/marketplace.json`:
       "name": "frey-skills",
       "source": {
         "source": "local",
-        "path": "./plugins/frey-skills-1.14.0/frey-skills"
+        "path": "./plugins/frey-skills-1.15.0/frey-skills"
       },
       "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
       "category": "Productivity"
