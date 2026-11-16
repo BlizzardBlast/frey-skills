@@ -53,7 +53,7 @@ class WorkflowContractTests(unittest.TestCase):
         )
         self.assertEqual(
             ci["concurrency"]["group"],
-            "ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}",
+            "ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.event_name == 'push' && github.ref || github.run_id }}",
         )
         self.assertEqual(ci["on"]["push"]["branches"], ["main"])
         self.assertIn("workflow_dispatch", ci["on"])

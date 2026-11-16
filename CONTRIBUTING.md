@@ -478,6 +478,11 @@ full matrix has **actually passed on the latest commit** before merging.
 A conditionally skipped GitHub Actions job may satisfy a required status check,
 but that is not evidence that its tests ran.
 
+The `main` push workflow retains in-progress checks but coalesces superseded
+pending pushes, prioritizing the latest commit to save Actions minutes. PR
+runs cancel outdated validation, while intentional manual dispatches have
+unique concurrency identities.
+
 The `main` branch must enforce the appropriate required CI checks through
 GitHub repository rulesets or branch protection. The workflow alone cannot
 make its own checks mandatory. When configuring the ruleset, include every

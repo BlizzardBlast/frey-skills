@@ -11,8 +11,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
-  # Cancel outdated PR runs; preserve every main push and manual dispatch.
+  group: ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.event_name == 'push' && github.ref || github.run_id }}
+  # Cancel outdated PR runs, coalesce pending main pushes, preserve manual dispatches.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
