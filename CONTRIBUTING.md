@@ -483,6 +483,16 @@ pending pushes, prioritizing the latest commit to save Actions minutes. PR
 runs cancel outdated validation, while intentional manual dispatches have
 unique concurrency identities.
 
+The deterministic CI contract checks inventory every `.github/workflows/*.yml`
+and `*.yaml` file for `pull_request`, `pull_request_target`,
+`pull_request_review`, `pull_request_review_comment`, and `issue_comment`.
+A new PR-related workflow must receive an explicit security and Actions-cost
+policy review before the inventory can be updated. Privileged review/target
+events must not automatically inherit the ordinary draft-PR guard.
+All eight CI jobs must retain the workflow's read-only token scope with no
+job-level permission overrides; the separately reviewed tag-release publish
+job may retain its narrowly scoped write permission.
+
 The `main` branch must enforce the appropriate required CI checks through
 GitHub repository rulesets or branch protection. The workflow alone cannot
 make its own checks mandatory. When configuring the ruleset, include every
