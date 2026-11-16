@@ -45,6 +45,25 @@ class WorkflowContractTests(unittest.TestCase):
                     actual.add(line.split("==")[0])
             self.assertEqual(actual, names)
 
+    def test_draft_prs_are_skipped_until_ready_without_skipping_main_ci(self) -> None:
+        ci = self.read_workflow("ci.yml")
+        self.assertEqual(
+            ci["on"]["pull_request"]["types"],
+            ["opened", "reopened", "synchronize", "ready_for_review"],
+        )
+        self.assertEqual(
+            ci["concurrency"]["cancel-in-progress"],
+            "${{ github.event_name == 'pull_request' }}",
+        )
+        expected_gate = (
+            "github.event_name != 'pull_request' || "
+            "!github.event.pull_request.draft || "
+            "github.event.action == 'ready_for_review'"
+        )
+        for name, job in ci["jobs"].items():
+            with self.subTest(job=name):
+                self.assertEqual(" ".join(job["if"].split()), expected_gate)
+
     def test_python_39_uses_a_compatible_runner(self) -> None:
         job = self.read_workflow("ci.yml")["jobs"]["validate"]
         self.assertEqual(set(job["strategy"]["matrix"]["python-version"]), {"3.9", "3.12"})
