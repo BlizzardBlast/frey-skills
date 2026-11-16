@@ -469,6 +469,23 @@ repository inspection, Agent Skills specification validation, deterministic
 contract tests, plugin build/parity validation, whitespace checks, and scoped
 code review.
 
+## CI validation and merge protection
+
+Draft pull requests intentionally skip the hosted validation matrix to conserve
+GitHub Actions minutes. Run relevant deterministic checks locally while drafting.
+When the PR is ready, use GitHub's **Ready for review** action and confirm the
+full matrix has **actually passed on the latest commit** before merging.
+A conditionally skipped GitHub Actions job may satisfy a required status check,
+but that is not evidence that its tests ran.
+
+The `main` branch must enforce the appropriate required CI checks through
+GitHub repository rulesets or branch protection. The workflow alone cannot
+make its own checks mandatory. When configuring the ruleset, include every
+supported-platform and release-compatibility check that is essential for merging,
+not only the repository validator and plugin-bundle job. Verify the exact
+matrix-expanded check names from a completed ready-PR run. Any changes to
+job display names must be coordinated with the required-check configuration.
+
 ## Pull Request Checklist
 
 Before opening a PR, include:

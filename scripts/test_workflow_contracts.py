@@ -49,8 +49,14 @@ class WorkflowContractTests(unittest.TestCase):
         ci = self.read_workflow("ci.yml")
         self.assertEqual(
             ci["on"]["pull_request"]["types"],
-            ["opened", "reopened", "synchronize", "ready_for_review"],
+            ["opened", "reopened", "synchronize", "ready_for_review", "converted_to_draft"],
         )
+        self.assertEqual(
+            ci["concurrency"]["group"],
+            "ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}",
+        )
+        self.assertEqual(ci["on"]["push"]["branches"], ["main"])
+        self.assertIn("workflow_dispatch", ci["on"])
         self.assertEqual(
             ci["concurrency"]["cancel-in-progress"],
             "${{ github.event_name == 'pull_request' }}",
