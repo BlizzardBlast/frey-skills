@@ -27,12 +27,26 @@ PR_RELATED_EVENTS = frozenset({
 })
 
 
+class StrictWorkflowLoader(yaml.BaseLoader):
+    """Preserve string values while rejecting duplicate YAML mapping keys."""
+
+    def construct_mapping(self, node, deep=False):
+        mapping = super().construct_mapping(node, deep=deep)
+        if len(mapping) != len(node.value):
+            raise ValueError(f"Duplicate YAML mapping key at {node.start_mark}")
+        return mapping
+
+
+def load_workflow(text: str) -> dict:
+    return yaml.load(text, Loader=StrictWorkflowLoader)
+
+
 def pr_related_workflows(directory: Path) -> dict[str, set[str]]:
     """Inventory PR-related workflow triggers; exempt release-only workflows."""
     discovered: dict[str, set[str]] = {}
     paths = sorted((*directory.glob("*.yml"), *directory.glob("*.yaml")))
     for path in paths:
-        workflow = yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+        workflow = load_workflow(path.read_text(encoding="utf-8"))
         if not isinstance(workflow, dict):
             raise ValueError(f"Invalid workflow document: {path.name}")
         triggers = workflow.get("on")
@@ -52,7 +66,7 @@ def pr_related_workflows(directory: Path) -> dict[str, set[str]]:
 
 class WorkflowContractTests(unittest.TestCase):
     def read_workflow(self, name: str) -> dict:
-        return yaml.load((ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+        return load_workflow((ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8"))
 
     def assert_ci_is_read_only(self, ci: dict) -> None:
         self.assertEqual(ci["permissions"], {"contents": "read"})
@@ -91,6 +105,29 @@ class WorkflowContractTests(unittest.TestCase):
                         {"inline.yml": {"pull_request"}},
                     )
                     candidate.unlink()
+
+    def test_workflow_inventory_rejects_duplicate_yaml_keys(self) -> None:
+        invalid = {
+            "duplicate on blocks": (
+                "on:\n  pull_request:\non:\n  push:\n    branches: [main]\n"
+            ),
+            "duplicate PR events": "on:\n  pull_request:\n  pull_request:\n",
+            "duplicate nested event options": (
+                "on:\n  pull_request:\n    types: [opened]\n"
+                "    types: [ready_for_review]\n"
+            ),
+            "duplicate token permissions": (
+                "on:\n  pull_request:\npermissions:\n"
+                "  contents: read\n  contents: write\n"
+            ),
+        }
+        with TemporaryDirectory() as temporary:
+            candidate = Path(temporary) / "invalid.yaml"
+            for label, content in invalid.items():
+                with self.subTest(case=label):
+                    candidate.write_text(content, encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, "Duplicate YAML mapping key"):
+                        pr_related_workflows(candidate.parent)
 
     def test_ci_rejects_permission_escalation_in_every_job(self) -> None:
         ci = self.read_workflow("ci.yml")
