@@ -21,3 +21,7 @@ The separately prepared local candidate has the same ZIP digest. See the
 [compatibility record](compatibility.md#v1150-verification) for client evidence
 and its limits. Archive verification does not establish desktop compatibility,
 marketplace acceptance, or model behavior.
+
+Desktop acceptance was reported by the maintainer only on 2026-11-20, after
+publication; see the [bounded desktop report](compatibility.md#maintainer-reported-v1150-desktop-check)
+for its general scope and the individual criteria that remain **NOT_TESTED**.

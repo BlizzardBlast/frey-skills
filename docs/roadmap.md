@@ -26,8 +26,9 @@ installation and smoke-check pins are updated, and all thirteen
 [post-merge CI jobs](https://github.com/BlizzardBlast/frey-skills/actions/runs/43539530889)
 passed on this baseline. The public open issue and PR lists were empty when
 inspected. This is a bounded delivery checkpoint, not a usage or demand
-assessment. The v1.15.0 desktop UI remains untested; deterministic checks do
-not certify model behavior.
+assessment. The v1.15.0 desktop UI was later reported as passing a general
+maintainer desktop check on 2026-11-20; individual outcomes remain unverified,
+and deterministic checks do not certify model behavior.
 
 Historical post-release checkpoint: **v1.14.0 VERIFIED / NO IMPLEMENTATION QUEUED** on
 2026-10-29 at `6509fd0fbd9c4666043f49c74a24907be81c5fc7`. The
@@ -454,3 +455,4 @@ they should constrain future implementation scope.
 | 2026-10-26 | v1.13.0 delivery cycle complete; RETAIN PORTFOLIO | [Release record](release-v1.13.0.md) and [paired desktop report](compatibility.md#maintainer-reported-v1120-and-v1130-desktop-trials), baseline `2f56b54f893fd3d125ee6877a4d7d6e49ea546fc`, and thirteen passing baseline CI checks. Empty public open items and ten closed-PR metadata records establish no new unmet workflow in this bounded sample; no broader demand or model effectiveness is inferred. | No implementation is queued. Revisit an existing owner or deferred candidate when a concrete requested problem or qualifying authorized task evidence supplies its scope. |
 | 2026-10-29 | v1.14.0 verified; NO IMPLEMENTATION QUEUED | [Release record](release-v1.14.0.md), updated installation pins, merged timeout-test fix, and thirteen passing [baseline CI jobs](https://github.com/BlizzardBlast/frey-skills/actions/runs/40871804460) at `6509fd0fbd9c4666043f49c74a24907be81c5fc7`. Public open issue and PR lists were empty; usage and desktop acceptance were not assessed. | Retain existing revisit conditions; scope future work from a concrete requested problem or qualifying authorized task evidence. |
 | 2026-11-14 | v1.15.0 verified; pins updated | [Release record](release-v1.15.0.md), local CLI compatibility evidence, and thirteen passing [post-merge CI jobs](https://github.com/BlizzardBlast/frey-skills/actions/runs/43539530889) at `21f9a5fedc7af94aed5bedc3da59a1ab1085248f`. Public open issues and PRs were empty when inspected; usage and v1.15.0 desktop acceptance remain unassessed. | Revisit an existing workflow when a concrete requested problem or qualifying authorized task evidence supplies its scope. |
+| 2026-11-20 | v1.15.0 desktop check reported; NO IMPLEMENTATION QUEUED | [Maintainer report](compatibility.md#maintainer-reported-v1150-desktop-check): a general manual plugin compatibility check passed for v1.15.0 at published commit `3d0bcb4264b17ae91be755c46c04ef7ba65536bd`. Individual checklist outcomes, the confirmed client build, and installation route were not supplied; usage demand remains unmeasured and no model behavior is certified. | Retain existing revisit conditions; the next input is a concrete requested problem or qualifying authorized task evidence, not another evidence-gathering pass. |

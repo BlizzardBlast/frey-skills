@@ -2,8 +2,9 @@
 
 The current published release is v1.15.0; see the separate
 [v1.15.0 verification](#v1150-verification) for its public archive, CLI checks,
-and desktop coverage limits. Historical Windows desktop observations remain
-version-specific; the later v1.14.0 maintainer report is recorded separately.
+and maintainer-reported desktop result with its coverage limits. Historical
+Windows desktop observations remain version-specific; the earlier v1.14.0
+maintainer report is recorded separately.
 
 Historical v1.8.1/v1.8.2 checks were recorded on 2026-10-17 with Windows 11
 build 26300 and Codex CLI 0.150.1.
@@ -336,12 +337,31 @@ Skills CLI 1.7.2, and Codex CLI 0.150.1 with disposable projects and homes.
 | Public archive | PASS | The downloaded checksum and all 150 archive entries matched the exact tagged source. |
 | Skills CLI installations | PASS | `scripts/smoke_install.py` checked checkout and pinned v1.15.0 sources, selected and complete sets, default and copy modes, and file-byte parity. |
 | Codex CLI transitions | PASS | `scripts/smoke_codex.py` checked v1.14.0 installation, v1.15.0 upgrade, and v1.14.0 rollback separately for the published archive and checkout candidate. Each phase had twelve enabled skills and installed-byte parity. |
-| v1.15.0 desktop UI | NOT_TESTED | No v1.15.0 desktop acceptance has been reported. |
+| v1.15.0 desktop UI | PARTIAL (maintainer-reported) | On 2026-11-20 the maintainer reported the [manual plugin compatibility check](installation.md#manual-plugin-compatibility-check) as passing; individual checklist outcomes were not supplied. See the bounded report below. |
 
 The shared source/archive pin is v1.15.0; the Codex baseline is v1.14.0 at
 `45ac0b73ed2fe05f849e919beec78225d84e3266`. Archive verification does not
-establish desktop acceptance or certify model behavior. Hosted CI for this pin
-update must be evaluated on its own revision.
+establish desktop acceptance or certify model behavior; the maintainer report
+below is separate evidence. Hosted CI for this pin update must be evaluated on
+its own revision.
+
+### Maintainer-reported v1.15.0 desktop check
+
+On 2026-11-20 the maintainer reported: "The manual plugin compatibility check
+passes for the 1.15.0." Record this as a successful general desktop check
+reported by the maintainer, not as automated observation or a per-criterion
+result.
+
+The report did not provide separate results for the desktop app build, exact
+skill counts or uniqueness, selector and starter-prompt display, restart
+persistence, v1.14.0 rollback, unrelated-installation preservation, or
+installed-cache byte parity. Those individual outcomes remain **NOT_TESTED** as
+separately evidenced criteria; this does not assert that the maintainer omitted
+them from the check. The local environment inspected after the report was
+Windows 11 build 26300 with packaged `OpenAI.Codex 26.1111.9664.0` and primary
+runtimes through `26.1119.907.0`; the report did not independently confirm the
+client version or the installation route. No desktop automation or behavioral
+model evaluation was run by the assistant.
 
 ## v1.14.0 verification
 
