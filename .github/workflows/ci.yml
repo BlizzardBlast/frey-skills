@@ -2,6 +2,7 @@ name: CI
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, converted_to_draft]
   push:
     branches: [main]
   workflow_dispatch:
@@ -10,11 +11,17 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.event_name == 'push' && github.ref || github.run_id }}
+  # Cancel outdated PR runs, coalesce pending main pushes, preserve manual dispatches.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   validate:
+    # Draft PRs are validated locally; ready_for_review starts the full matrix.
+    if: >-
+      github.event_name != 'pull_request' ||
+      !github.event.pull_request.draft ||
+      github.event.action == 'ready_for_review'
     name: Validate repository (Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.python-version == '3.9' && 'ubuntu-24.04' || 'ubuntu-latest' }}
     strategy:
@@ -38,6 +45,11 @@ jobs:
         run: python scripts/check.py --group repository
 
   agent-skills-spec:
+    # Draft PRs are validated locally; ready_for_review starts the full matrix.
+    if: >-
+      github.event_name != 'pull_request' ||
+      !github.event.pull_request.draft ||
+      github.event.action == 'ready_for_review'
     name: Validate Agent Skills specification
     runs-on: ubuntu-latest
 
@@ -57,6 +69,11 @@ jobs:
         run: python scripts/check.py --group spec
 
   plugin-bundle:
+    # Draft PRs are validated locally; ready_for_review starts the full matrix.
+    if: >-
+      github.event_name != 'pull_request' ||
+      !github.event.pull_request.draft ||
+      github.event.action == 'ready_for_review'
     name: Build and validate plugin bundle
     runs-on: ubuntu-latest
 
@@ -73,6 +90,11 @@ jobs:
         run: python scripts/check.py --group plugin
 
   windows:
+    # Draft PRs are validated locally; ready_for_review starts the full matrix.
+    if: >-
+      github.event_name != 'pull_request' ||
+      !github.event.pull_request.draft ||
+      github.event.action == 'ready_for_review'
     name: Validate Windows (Python 3.12)
     runs-on: windows-latest
 
@@ -94,6 +116,11 @@ jobs:
         run: python scripts/check.py --base origin/main
 
   macos:
+    # Draft PRs are validated locally; ready_for_review starts the full matrix.
+    if: >-
+      github.event_name != 'pull_request' ||
+      !github.event.pull_request.draft ||
+      github.event.action == 'ready_for_review'
     name: Validate macOS (Python 3.12)
     runs-on: macos-latest
 
@@ -115,6 +142,11 @@ jobs:
         run: python scripts/check.py --base origin/main
 
   installation:
+    # Draft PRs are validated locally; ready_for_review starts the full matrix.
+    if: >-
+      github.event_name != 'pull_request' ||
+      !github.event.pull_request.draft ||
+      github.event.action == 'ready_for_review'
     name: Smoke installation (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
@@ -149,6 +181,11 @@ jobs:
         run: python scripts/smoke_release.py
 
   codex-client:
+    # Draft PRs are validated locally; ready_for_review starts the full matrix.
+    if: >-
+      github.event_name != 'pull_request' ||
+      !github.event.pull_request.draft ||
+      github.event.action == 'ready_for_review'
     name: Codex client compatibility (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
@@ -180,6 +217,11 @@ jobs:
         run: python scripts/smoke_codex.py --cli "${{ runner.temp }}/frey-codex-cli/node_modules/@openai/codex/bin/codex.js"
 
   whitespace:
+    # Draft PRs are validated locally; ready_for_review starts the full matrix.
+    if: >-
+      github.event_name != 'pull_request' ||
+      !github.event.pull_request.draft ||
+      github.event.action == 'ready_for_review'
     name: Check whitespace
     runs-on: ubuntu-latest
 

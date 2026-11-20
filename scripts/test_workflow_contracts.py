@@ -3,9 +3,11 @@
 
 from __future__ import annotations
 
-import unittest
 import re
+import unittest
+from copy import deepcopy
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import yaml
 
@@ -14,10 +16,141 @@ from scripts import smoke_codex, smoke_install, smoke_release
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# PR-related events have different permissions and lifecycle semantics.
+# Their introduction requires an explicit security and CI-cost policy review.
+PR_RELATED_EVENTS = frozenset({
+    "pull_request",
+    "pull_request_target",
+    "pull_request_review",
+    "pull_request_review_comment",
+    "issue_comment",
+})
+
+
+class StrictWorkflowLoader(yaml.BaseLoader):
+    """Preserve string values while rejecting duplicate YAML mapping keys."""
+
+    def construct_mapping(self, node, deep=False):
+        mapping = super().construct_mapping(node, deep=deep)
+        if len(mapping) != len(node.value):
+            raise ValueError(f"Duplicate YAML mapping key at {node.start_mark}")
+        return mapping
+
+
+def load_workflow(text: str) -> dict:
+    return yaml.load(text, Loader=StrictWorkflowLoader)
+
+
+def pr_related_workflows(directory: Path) -> dict[str, set[str]]:
+    """Inventory PR-related workflow triggers; exempt release-only workflows."""
+    discovered: dict[str, set[str]] = {}
+    paths = sorted((*directory.glob("*.yml"), *directory.glob("*.yaml")))
+    for path in paths:
+        workflow = load_workflow(path.read_text(encoding="utf-8"))
+        if not isinstance(workflow, dict):
+            raise ValueError(f"Invalid workflow document: {path.name}")
+        triggers = workflow.get("on")
+        if isinstance(triggers, dict):
+            event_names = set(triggers)
+        elif isinstance(triggers, list):
+            event_names = set(triggers)
+        elif isinstance(triggers, str):
+            event_names = {triggers}
+        else:
+            raise ValueError(f"Unsupported event declaration: {path.name}")
+        relevant = event_names & PR_RELATED_EVENTS
+        if relevant:
+            discovered[path.name] = relevant
+    return discovered
+
 
 class WorkflowContractTests(unittest.TestCase):
     def read_workflow(self, name: str) -> dict:
-        return yaml.load((ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+        return load_workflow((ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8"))
+
+    def assert_ci_is_read_only(self, ci: dict) -> None:
+        self.assertEqual(ci["permissions"], {"contents": "read"})
+        for name, job in ci["jobs"].items():
+            self.assertNotIn("permissions", job, f"Unexpected job override: {name}")
+
+    def test_pr_related_workflow_inventory_requires_reviewed_policy(self) -> None:
+        self.assertEqual(
+            pr_related_workflows(ROOT / ".github" / "workflows"),
+            {"ci.yml": {"pull_request"}},
+        )
+
+    def test_pr_related_workflow_inventory_catches_new_events_and_yaml_forms(self) -> None:
+        with TemporaryDirectory() as temporary:
+            workflows = Path(temporary)
+            (workflows / "release.yml").write_text(
+                "on:\n  push:\n    tags: [v*]\n", encoding="utf-8"
+            )
+            for event in sorted(PR_RELATED_EVENTS):
+                with self.subTest(event=event):
+                    candidate = workflows / "unreviewed.yaml"
+                    candidate.write_text(
+                        f"on:\n  {event}:\n    types: [opened]\n", encoding="utf-8"
+                    )
+                    self.assertEqual(
+                        pr_related_workflows(workflows),
+                        {"unreviewed.yaml": {event}},
+                    )
+                    candidate.unlink()
+            for syntax in ("on: [pull_request]\n", "on: pull_request\n"):
+                with self.subTest(syntax=syntax):
+                    candidate = workflows / "inline.yml"
+                    candidate.write_text(syntax, encoding="utf-8")
+                    self.assertEqual(
+                        pr_related_workflows(workflows),
+                        {"inline.yml": {"pull_request"}},
+                    )
+                    candidate.unlink()
+
+    def test_workflow_inventory_rejects_duplicate_yaml_keys(self) -> None:
+        invalid = {
+            "duplicate on blocks": (
+                "on:\n  pull_request:\non:\n  push:\n    branches: [main]\n"
+            ),
+            "duplicate PR events": "on:\n  pull_request:\n  pull_request:\n",
+            "duplicate nested event options": (
+                "on:\n  pull_request:\n    types: [opened]\n"
+                "    types: [ready_for_review]\n"
+            ),
+            "duplicate token permissions": (
+                "on:\n  pull_request:\npermissions:\n"
+                "  contents: read\n  contents: write\n"
+            ),
+        }
+        with TemporaryDirectory() as temporary:
+            candidate = Path(temporary) / "invalid.yaml"
+            for label, content in invalid.items():
+                with self.subTest(case=label):
+                    candidate.write_text(content, encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, "Duplicate YAML mapping key"):
+                        pr_related_workflows(candidate.parent)
+
+    def test_ci_rejects_permission_escalation_in_every_job(self) -> None:
+        ci = self.read_workflow("ci.yml")
+        self.assertEqual(
+            set(ci["jobs"]),
+            {
+                "validate", "agent-skills-spec", "plugin-bundle", "windows",
+                "macos", "installation", "codex-client", "whitespace",
+            },
+        )
+        self.assert_ci_is_read_only(ci)
+        for grant in ({"contents": "write"}, {"contents": "read", "actions": "write"}):
+            with self.subTest(grant=grant):
+                unsafe = deepcopy(ci)
+                unsafe["permissions"] = grant
+                with self.assertRaises(AssertionError):
+                    self.assert_ci_is_read_only(unsafe)
+        for name in ci["jobs"]:
+            with self.subTest(job=name):
+                unsafe = deepcopy(ci)
+                unsafe["jobs"][name]["permissions"] = {"contents": "write"}
+                with self.assertRaises(AssertionError):
+                    self.assert_ci_is_read_only(unsafe)
 
     def test_every_executable_action_is_pinned_to_a_full_commit(self) -> None:
         for filename in ("ci.yml", "release.yml"):
@@ -44,6 +177,31 @@ class WorkflowContractTests(unittest.TestCase):
                     self.assertRegex(line, r"^[A-Za-z0-9_.-]+==[0-9][A-Za-z0-9_.+-]*$")
                     actual.add(line.split("==")[0])
             self.assertEqual(actual, names)
+
+    def test_draft_prs_are_skipped_until_ready_without_skipping_main_ci(self) -> None:
+        ci = self.read_workflow("ci.yml")
+        self.assertEqual(
+            ci["on"]["pull_request"]["types"],
+            ["opened", "reopened", "synchronize", "ready_for_review", "converted_to_draft"],
+        )
+        self.assertEqual(
+            ci["concurrency"]["group"],
+            "ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.event_name == 'push' && github.ref || github.run_id }}",
+        )
+        self.assertEqual(ci["on"]["push"]["branches"], ["main"])
+        self.assertIn("workflow_dispatch", ci["on"])
+        self.assertEqual(
+            ci["concurrency"]["cancel-in-progress"],
+            "${{ github.event_name == 'pull_request' }}",
+        )
+        expected_gate = (
+            "github.event_name != 'pull_request' || "
+            "!github.event.pull_request.draft || "
+            "github.event.action == 'ready_for_review'"
+        )
+        for name, job in ci["jobs"].items():
+            with self.subTest(job=name):
+                self.assertEqual(" ".join(job["if"].split()), expected_gate)
 
     def test_python_39_uses_a_compatible_runner(self) -> None:
         job = self.read_workflow("ci.yml")["jobs"]["validate"]
