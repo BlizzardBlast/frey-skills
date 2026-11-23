@@ -77,6 +77,26 @@ Use this profile **only** when the changed system actually publishes, reads, or 
 
 This is a **conditional test-design reference**, not a requirement to run Git commands, build a Git server, install OpenAI's Git fork, adopt Pando, add formal verification, or enable hosted CI. Model designs and production claims in [OpenAI's Pando article](https://openai.com/index/scaling-git-at-openai/) (2026-11-02) motivate failure modes, but are not evidence of this repository's performance or guarantees. Respect the parent skill's read-only and evidence/readiness boundaries.
 
+## AI model-mediated application behavior (conditional)
+
+Apply this profile **only when the system under test** makes behavior-affecting model calls, delegates actions to an AI agent, or relies on model-selected tools. Using a coding assistant to *write ordinary application code* does not activate this profile. Inspect the real entry points, provider settings, tool permissions, and tests before choosing relevant scenarios; do not assume live model access or a particular agent framework.
+
+- **Independent outcome and grader integrity:** Freeze expected behavior outside the model's control; where applicable, verify the resulting artifact, observable state, and authorized side effects through trusted deterministic checks or qualified independent human review. An agent's success claim, generated test, or green self-reported log is not an independent oracle. Test plausible grader/fixture tampering or shortcut paths only in isolated, synthetic or authorized environments; if the agent can influence the only scorer, mark correctness unverified.
+- **Untrusted inputs and authority:** If the workflow consumes repository content, retrieved pages, tool responses, or model-produced text, test relevant prompt injection, false tool output, scope escalation, unauthorized writes, and cross-user disclosure at the actual enforcement boundaries. Verify denied actions remain denied regardless of what the model says.
+- **Failure and abstention:** For applicable integrations, cover malformed/empty responses, timeouts, provider errors, refusals, partial tool failures, and bounded retries. Verify conservative fallback or explicit uncertainty, accurate provenance, and observability without leaking prompts, credentials, or sensitive user material.
+- **Matched efficiency comparisons:** Only when model, adapter, prompt, or harness configuration is the behavior being changed, define permitted representative and held-out tasks, pin snapshots, model/harness/tool configuration and budgets across arms, and independently judge pass/fail and critical failures. Measure complete-run retries, tool calls, token usage, elapsed time, and monetary cost **only where observable**. A provider's benchmark or fewer tokens alone cannot prove better outcomes, and unmatched harness/task results are not a fair comparison.
+
+| Case | Condition | Observable test-strategy decision |
+| --- | --- | --- |
+| `AI-CASE-001` | Change has no runtime model or agent dependency | Use ordinary risk selection; do not add AI-agent-specific scenarios |
+| `AI-CASE-002` | Agent claims success or passing tests | Independently inspect required artifacts, permitted effects and a trusted outcome oracle |
+| `AI-CASE-003` | Agent can view or alter the grader, expected output or benchmark fixture | Isolate held-out scoring or mark independent correctness unverified |
+| `AI-CASE-004` | Model, tool or retrieved content is untrusted input | Exercise applicable injection and unauthorized action boundaries |
+| `AI-CASE-005` | Provider or model returns an error or invalid response | Verify conservative and observable failure handling without fabricated success |
+| `AI-CASE-006` | Comparing a model, adapter or agent harness | Hold tasks and grants fixed; report independently verified quality and measured total work |
+
+These are **conditional test-design decisions**, not permission to run model evaluations, modify graders, collect transcripts, contact providers, buy tokens, or create CI jobs. Preserve the parent skill's read-only scope and the repository's policy against requiring behavioral model evaluations as a merge gate. Use synthetic/public or specifically authorized data. If material outcome verification is unavailable, record the blocked or unverified scenario under existing readiness rules rather than asserting a pass. The [METR capability update](https://metr.org/blog/2026-11-20-q4-2026-capability-update/) motivates checking reward hacking; [Hugging Face harness-adapter research](https://huggingface.co/blog/harness-adapters-at-scale) motivates matched model/harness comparisons. Neither source establishes a result for the repository being assessed.
+
 ## Performance and resilience
 
 Inspect latency-sensitive paths, resource limits, query plans, memory use, connection pools, backpressure, caching, and dependency failure.

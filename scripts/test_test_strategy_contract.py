@@ -48,6 +48,34 @@ EXPECTED_GIT_CASES = {
 }
 
 
+EXPECTED_AI_CASES = {
+    "AI-CASE-001": (
+        "Change has no runtime model or agent dependency",
+        "Use ordinary risk selection; do not add AI-agent-specific scenarios",
+    ),
+    "AI-CASE-002": (
+        "Agent claims success or passing tests",
+        "Independently inspect required artifacts, permitted effects and a trusted outcome oracle",
+    ),
+    "AI-CASE-003": (
+        "Agent can view or alter the grader, expected output or benchmark fixture",
+        "Isolate held-out scoring or mark independent correctness unverified",
+    ),
+    "AI-CASE-004": (
+        "Model, tool or retrieved content is untrusted input",
+        "Exercise applicable injection and unauthorized action boundaries",
+    ),
+    "AI-CASE-005": (
+        "Provider or model returns an error or invalid response",
+        "Verify conservative and observable failure handling without fabricated success",
+    ),
+    "AI-CASE-006": (
+        "Comparing a model, adapter or agent harness",
+        "Hold tasks and grants fixed; report independently verified quality and measured total work",
+    ),
+}
+
+
 def load_module(path: Path, name: str) -> Any:
     spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
@@ -239,6 +267,70 @@ class TestStrategyContractTests(unittest.TestCase):
         self.assertNotEqual(contradictory, same_ref)
         with self.assertRaises(AssertionError):
             self.assert_git_case_contract(profile.replace(same_ref, contradictory, 1))
+
+    def assert_ai_case_contract(self, profile: str) -> None:
+        marker = "## AI model-mediated application behavior (conditional)\n"
+        self.assertEqual(profile.count(marker), 1)
+        section = profile.split(marker, 1)[1].split("\n## ", 1)[0]
+        rows = [row for row in section.splitlines() if row.startswith("|")]
+        self.assertEqual(
+            rows[:2],
+            [
+                "| Case | Condition | Observable test-strategy decision |",
+                "| --- | --- | --- |",
+            ],
+        )
+        cases: dict[str, tuple[str, str]] = {}
+        for row in rows[2:]:
+            cells = [cell.strip() for cell in row.strip("|").split("|")]
+            self.assertEqual(len(cells), 3, row)
+            case, condition, decision = cells
+            self.assertRegex(case, r"^`AI-CASE-\d{3}`$")
+            case_id = case.strip("`")
+            self.assertNotIn(case_id, cases)
+            cases[case_id] = (condition, decision)
+        self.assertEqual(cases, EXPECTED_AI_CASES)
+
+    def test_ai_model_mediated_profile_is_conditional_and_evidence_based(self) -> None:
+        profile = (SKILL_ROOT / "references" / "repository-testing-profiles.md").read_text(
+            encoding="utf-8"
+        )
+        self.assert_ai_case_contract(profile)
+        for boundary in (
+            "only when the system under test",
+            "Using a coding assistant",
+            "An agent's success claim",
+            "if the agent can influence the only scorer",
+            "not a fair comparison",
+            "not permission to run model evaluations",
+            "against requiring behavioral model evaluations as a merge gate",
+        ):
+            with self.subTest(boundary=boundary):
+                self.assertIn(boundary.casefold(), profile.casefold())
+
+    def test_ai_case_contract_rejects_missing_duplicate_and_changed_cases(self) -> None:
+        profile = (SKILL_ROOT / "references" / "repository-testing-profiles.md").read_text(
+            encoding="utf-8"
+        )
+        rows = [row for row in profile.splitlines() if row.startswith("| `AI-CASE-")]
+        self.assertEqual(len(rows), len(EXPECTED_AI_CASES))
+        for row in rows:
+            cells = [cell.strip() for cell in row.strip("|").split("|")]
+            mutations = [
+                profile.replace(row, "", 1),
+                profile.replace(row, row + "\n" + row, 1),
+            ]
+            for index in (1, 2):
+                changed = cells.copy()
+                changed[index] = "Changed condition" if index == 1 else "Unsafe decision"
+                mutations.append(
+                    profile.replace(row, "| " + " | ".join(changed) + " |", 1)
+                )
+            for index, mutated in enumerate(mutations):
+                with self.subTest(case=cells[0], mutation=index), self.assertRaises(
+                    AssertionError
+                ):
+                    self.assert_ai_case_contract(mutated)
 
     def test_agent_metadata_keeps_discovery_contract(self) -> None:
         content = AGENT_FILE.read_text(encoding="utf-8")
