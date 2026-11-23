@@ -36,6 +36,26 @@ EXPECTED_CASES = {
     "TM-CASE-021": ("A documented control remains REPORTED with implementation and effectiveness unverified when its implementation is outside the inspected scope", "threat-modeling", "COMPLETE", "HYPOTHESIS"),
 }
 
+AI_INFERENCE_CONTRACTS = (
+    "## AI inference supply-chain boundaries (when in scope)",
+    "**categories** of outbound content",
+    "never retrieve or reproduce real",
+    "inference host, model developer",
+    "inference host and model developer as separate actors",
+    "Record whether each can see",
+    "use `unknown` rather than",
+    "zero-data-retention (ZDR)",
+    "each downstream processor",
+    "including fallback/retry routes",
+    "mismatches or unknown propagation",
+    "router's ZDR flag",
+    "Do not assert a confirmed leak",
+    "canary experiment, live provider",
+    "**not** authorized by this read-only",
+    "mark the affected coverage `PARTIAL`",
+)
+
+
 
 class ThreatModelingContractTests(unittest.TestCase):
     @classmethod
@@ -97,6 +117,27 @@ class ThreatModelingContractTests(unittest.TestCase):
         normalized = " ".join(reported.split())
         self.assertIn("implementation and effectiveness remain unverified", normalized)
         self.assertIn("Do not infer absence", normalized)
+
+    def assert_ai_inference_contract(self, content: str) -> None:
+        marker = AI_INFERENCE_CONTRACTS[0]
+        self.assertEqual(content.count(marker), 1)
+        section = content.split(marker, 1)[1].split("\n## ", 1)[0]
+        normalized = " ".join(section.split())
+        for required in AI_INFERENCE_CONTRACTS[1:]:
+            self.assertIn(required, normalized)
+        self.assertNotIn("host/developer", normalized)
+
+    def test_ai_inference_contract_has_distinct_hops_and_safe_boundaries(self) -> None:
+        # Tests published wording, not model behavior or provider privacy.
+        self.assert_ai_inference_contract(self.ledger)
+
+    def test_ai_inference_contract_rejects_removed_requirements(self) -> None:
+        for required in AI_INFERENCE_CONTRACTS:
+            with self.subTest(removed=required):
+                self.assertIn(required, self.ledger)
+                altered = self.ledger.replace(required, "", 1)
+                with self.assertRaises(AssertionError):
+                    self.assert_ai_inference_contract(altered)
 
     def test_acceptance_provenance_does_not_lift_holds_or_authorize_effects(self) -> None:
         for contract in (

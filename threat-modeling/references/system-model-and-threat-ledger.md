@@ -46,15 +46,21 @@ proof that every model provider leaks prompts.
   runtime diagnostics, and any secrets potentially included). Inspect relevant
   request construction and sanitization; never retrieve or reproduce real
   credentials or confidential prompts to fill the model.
-- Trace known parties and transfers from agent/client to gateway/router,
-  reseller, model host/developer, tools, telemetry, and logging. Record who can
-  see plaintext and any fallback or retry routes. A trusted HTTPS entry point
-  does not establish the identity or controls of downstream processors.
-- Separate **observed configuration**, **vendor-reported claims**, and
-  **unknowns** for provider/subprocessor identity, data location, retention,
-  zero-data-retention flags, prompt logging, caches, access controls, and
-  deletion. TLS protects transport, not plaintext exposed to a processing
-  intermediary. Do not infer a privacy guarantee from a flag alone.
+- Trace known parties and transfers from agent/client through gateway/router,
+  reseller, inference host, model developer, tools, telemetry, and logging.
+  Treat the **inference host and model developer as separate actors** even
+  when the developer provides the hosted model. Record whether each can see
+  plaintext prompts, responses, or metadata; use `unknown` rather than
+  assuming access or non-access. Include fallback and retry routes. A trusted
+  HTTPS entry point does not establish downstream identity or controls.
+- For each hop, separate **observed configuration**, **vendor-reported
+  claims**, and **unknowns** about processor identity, data location, retention,
+  zero-data-retention (ZDR) settings, prompt logging, caches, access controls,
+  and deletion. Trace whether upstream ZDR and retention commitments apply to
+  **each downstream processor**, including fallback/retry routes. Record
+  mismatches or unknown propagation instead of treating a router's ZDR flag
+  as evidence of downstream enforcement. TLS protects transport, not plaintext
+  exposed to a processor; settings alone do not prove privacy guarantees.
 - Link credible disclosure paths to the specific asset, actor, and trust
   boundary. Consider compromised intermediaries, authorized reseller logging,
   prompt-injection-driven inclusion of sensitive context, error reporting, and
@@ -66,6 +72,12 @@ proof that every model provider leaks prompts.
   unverified until separately evidenced. A canary experiment, live provider
   probe, or inspection of real secrets is **not** authorized by this read-only
   modeling workflow.
+
+Synthetic contrasts: a third-party model run on a private inference host does
+not by itself imply the model developer receives prompts; a router advertising
+ZDR does not establish that a downstream host has the same retention policy.
+Record each party and the evidence for its actual access and controls, rather
+than assuming either scenario is universal.
 
 If a material downstream processor or data path cannot be established, record
 the missing evidence and mark the affected coverage `PARTIAL`; do not silently
