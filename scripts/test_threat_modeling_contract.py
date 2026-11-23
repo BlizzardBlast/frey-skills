@@ -40,10 +40,19 @@ AI_INFERENCE_CONTRACTS = (
     "## AI inference supply-chain boundaries (when in scope)",
     "**categories** of outbound content",
     "never retrieve or reproduce real",
-    "inference host, model developer",
-    "inference host and model developer as separate actors",
-    "Record whether each can see",
-    "use `unknown` rather than",
+    "inference hosts, model developers",
+    "inference-hosting and model-development",
+    "without assuming separate entities or trust boundaries",
+    "A single entity may perform both roles",
+    "identify separate actors or boundaries",
+    "only when inspected evidence or the stated design",
+    "Record which entities can see",
+    "use `unknown` for material access relationships",
+    "developer hosting its own model",
+    "without an invented inter-entity boundary",
+    "private inference host",
+    "separate host forwards prompts to the model developer",
+    "trace that evidenced transfer and boundary",
     "zero-data-retention (ZDR)",
     "each downstream processor",
     "including fallback/retry routes",
@@ -54,7 +63,6 @@ AI_INFERENCE_CONTRACTS = (
     "**not** authorized by this read-only",
     "mark the affected coverage `PARTIAL`",
 )
-
 
 
 class ThreatModelingContractTests(unittest.TestCase):
@@ -126,6 +134,7 @@ class ThreatModelingContractTests(unittest.TestCase):
         for required in AI_INFERENCE_CONTRACTS[1:]:
             self.assertIn(required, normalized)
         self.assertNotIn("host/developer", normalized)
+        self.assertNotIn("inference host and model developer as separate actors", normalized)
 
     def test_ai_inference_contract_has_distinct_hops_and_safe_boundaries(self) -> None:
         # Tests published wording, not model behavior or provider privacy.

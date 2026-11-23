@@ -46,12 +46,15 @@ proof that every model provider leaks prompts.
   runtime diagnostics, and any secrets potentially included). Inspect relevant
   request construction and sanitization; never retrieve or reproduce real
   credentials or confidential prompts to fill the model.
-- Trace known parties and transfers from agent/client through gateway/router,
-  reseller, inference host, model developer, tools, telemetry, and logging.
-  Treat the **inference host and model developer as separate actors** even
-  when the developer provides the hosted model. Record whether each can see
-  plaintext prompts, responses, or metadata; use `unknown` rather than
-  assuming access or non-access. Include fallback and retry routes. A trusted
+- Trace known parties and transfers from agent/client through applicable
+  gateways/routers, resellers, inference hosts, model developers, tools,
+  telemetry, and logging. Distinguish **inference-hosting and model-development
+  roles** without assuming separate entities or trust boundaries.
+  A single entity may perform both roles; identify separate actors or boundaries
+  only when inspected evidence or the stated design supports distinct
+  identities, privileges, or data flows. Record which entities can see plaintext
+  prompts, responses, or metadata; use `unknown` for material access relationships
+  not established by evidence. Include fallback and retry routes. A trusted
   HTTPS entry point does not establish downstream identity or controls.
 - For each hop, separate **observed configuration**, **vendor-reported
   claims**, and **unknowns** about processor identity, data location, retention,
@@ -73,11 +76,13 @@ proof that every model provider leaks prompts.
   probe, or inspection of real secrets is **not** authorized by this read-only
   modeling workflow.
 
-Synthetic contrasts: a third-party model run on a private inference host does
-not by itself imply the model developer receives prompts; a router advertising
-ZDR does not establish that a downstream host has the same retention policy.
-Record each party and the evidence for its actual access and controls, rather
-than assuming either scenario is universal.
+Synthetic contrasts: a developer hosting its own model may be one entity
+performing both roles without an invented inter-entity boundary. A third-party
+model run on a private inference host does not by itself imply its developer
+receives prompts. When a separate host forwards prompts to the model developer,
+trace that evidenced transfer and boundary. A router advertising ZDR does not
+establish that a downstream host has the same retention policy. Record each
+party and the evidence for its actual access and controls.
 
 If a material downstream processor or data path cannot be established, record
 the missing evidence and mark the affected coverage `PARTIAL`; do not silently
