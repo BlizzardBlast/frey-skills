@@ -32,6 +32,45 @@ do not disappear from a high-level diagram. Mark inapplicable elements with a
 reason. Compare diagrams to inspected source or the stated design; report
 conflicts rather than assuming the picture is current or authoritative.
 
+## AI inference supply-chain boundaries (when in scope)
+
+If a scoped system sends prompts or agent context to external AI services,
+model the **entire known inference path**, not just the configured API hostname.
+The [Dragos canary study](https://www.dragos.com/blog/ai-supply-chain-security-canary-tokens)
+(November 2026) illustrates possible disclosure at downstream providers and
+marketplace resellers. It is evidence of specific observed exposures, **not**
+proof that every model provider leaks prompts.
+
+- Inventory the **categories** of outbound content (system/user/tool messages,
+  source code and diffs, retrieved documents, titles, URLs, attachments,
+  runtime diagnostics, and any secrets potentially included). Inspect relevant
+  request construction and sanitization; never retrieve or reproduce real
+  credentials or confidential prompts to fill the model.
+- Trace known parties and transfers from agent/client to gateway/router,
+  reseller, model host/developer, tools, telemetry, and logging. Record who can
+  see plaintext and any fallback or retry routes. A trusted HTTPS entry point
+  does not establish the identity or controls of downstream processors.
+- Separate **observed configuration**, **vendor-reported claims**, and
+  **unknowns** for provider/subprocessor identity, data location, retention,
+  zero-data-retention flags, prompt logging, caches, access controls, and
+  deletion. TLS protects transport, not plaintext exposed to a processing
+  intermediary. Do not infer a privacy guarantee from a flag alone.
+- Link credible disclosure paths to the specific asset, actor, and trust
+  boundary. Consider compromised intermediaries, authorized reseller logging,
+  prompt-injection-driven inclusion of sensitive context, error reporting, and
+  unexpected provider switching. Do not assert a confirmed leak without a
+  validated finding.
+- Suggest proportionate mitigations such as sending less context, redaction,
+  explicit destination/provider selection, trusted processing agreements,
+  credential isolation, and restricted diagnostics. Keep their effectiveness
+  unverified until separately evidenced. A canary experiment, live provider
+  probe, or inspection of real secrets is **not** authorized by this read-only
+  modeling workflow.
+
+If a material downstream processor or data path cannot be established, record
+the missing evidence and mark the affected coverage `PARTIAL`; do not silently
+collapse several organizations into one trusted API endpoint.
+
 ## Threat ledger contract
 
 Use stable IDs such as `TM-001`. Preserve IDs when refreshing the same threat;
