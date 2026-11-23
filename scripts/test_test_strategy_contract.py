@@ -9,6 +9,8 @@ import unittest
 from pathlib import Path
 from typing import Any
 
+from scripts.documentation import inline_text, parse_visible, section_tokens
+
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 SKILL_ROOT = REPOSITORY_ROOT / "test-strategy"
@@ -55,23 +57,23 @@ EXPECTED_AI_CASES = {
     ),
     "AI-CASE-002": (
         "Agent claims success or passing tests",
-        "Independently inspect required artifacts, permitted effects and a trusted outcome oracle",
+        "Specify independent oracles for required artifacts and permitted effects",
     ),
     "AI-CASE-003": (
         "Agent can view or alter the grader, expected output or benchmark fixture",
-        "Isolate held-out scoring or mark independent correctness unverified",
+        "Plan held-out scoring isolation or mark independent correctness unverified",
     ),
     "AI-CASE-004": (
         "Model, tool or retrieved content is untrusted input",
-        "Exercise applicable injection and unauthorized action boundaries",
+        "Specify injection and unauthorized-action boundary scenarios",
     ),
     "AI-CASE-005": (
         "Provider or model returns an error or invalid response",
-        "Verify conservative and observable failure handling without fabricated success",
+        "Specify conservative, observable failure and abstention scenarios",
     ),
     "AI-CASE-006": (
         "Comparing a model, adapter or agent harness",
-        "Hold tasks and grants fixed; report independently verified quality and measured total work",
+        "Define varied configuration, fixed task controls, independent quality oracles, and measurable total work",
     ),
 }
 
@@ -268,11 +270,37 @@ class TestStrategyContractTests(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.assert_git_case_contract(profile.replace(same_ref, contradictory, 1))
 
+    def ai_profile_tokens(self, profile: str) -> list[Any]:
+        """Return only the visible, top-level AI profile; exclude inert Markdown."""
+        title = "AI model-mediated application behavior (conditional)"
+        tokens, _ = parse_visible(profile)
+        headings = [
+            index
+            for index, token in enumerate(tokens[:-1])
+            if token.type == "heading_open"
+            and token.tag == "h2"
+            and token.level == 0
+            and inline_text(tokens[index + 1].children or []) == title
+        ]
+        self.assertEqual(len(headings), 1, "Require exactly one visible AI profile heading")
+        return section_tokens(profile, title)
+
     def assert_ai_case_contract(self, profile: str) -> None:
-        marker = "## AI model-mediated application behavior (conditional)\n"
-        self.assertEqual(profile.count(marker), 1)
-        section = profile.split(marker, 1)[1].split("\n## ", 1)[0]
-        rows = [row for row in section.splitlines() if row.startswith("|")]
+        section = self.ai_profile_tokens(profile)
+        # CommonMark parses pipe tables as paragraphs; require a root-level
+        # visible paragraph, not a comment, code fence, or quoted example.
+        table_paragraphs = [
+            section[index + 1].content
+            for index, token in enumerate(section[:-1])
+            if token.type == "paragraph_open"
+            and token.level == 0
+            and section[index + 1].type == "inline"
+            and section[index + 1].content.startswith(
+                "| Case | Condition | Observable test-strategy decision |"
+            )
+        ]
+        self.assertEqual(len(table_paragraphs), 1, "Require one visible case table")
+        rows = table_paragraphs[0].splitlines()
         self.assertEqual(
             rows[:2],
             [
@@ -280,8 +308,10 @@ class TestStrategyContractTests(unittest.TestCase):
                 "| --- | --- | --- |",
             ],
         )
+        self.assertEqual(len(rows), len(EXPECTED_AI_CASES) + 2)
         cases: dict[str, tuple[str, str]] = {}
         for row in rows[2:]:
+            self.assertTrue(row.startswith("| ") and row.endswith(" |"), row)
             cells = [cell.strip() for cell in row.strip("|").split("|")]
             self.assertEqual(len(cells), 3, row)
             case, condition, decision = cells
@@ -296,17 +326,89 @@ class TestStrategyContractTests(unittest.TestCase):
             encoding="utf-8"
         )
         self.assert_ai_case_contract(profile)
+        section = self.ai_profile_tokens(profile)
+        # Only rendered prose satisfies policy. Code spans/fences and HTML
+        # comments cannot stand in for active skill instructions.
+        prose = " ".join(
+            child.content
+            for token in section
+            if token.type == "inline"
+            for child in token.children or []
+            if child.type == "text"
+        )
         for boundary in (
             "only when the system under test",
             "Using a coding assistant",
+            "This is read-only test planning",
+            "do not execute tests, change fixtures, or contact providers",
             "An agent's success claim",
             "if the agent can influence the only scorer",
+            "do not probe live targets",
+            "state exactly which model, adapter, prompt, or harness setting changes between arms",
+            "bundled configuration comparison",
+            "record each arm's actual configuration",
             "not a fair comparison",
             "not permission to run model evaluations",
             "against requiring behavioral model evaluations as a merge gate",
         ):
             with self.subTest(boundary=boundary):
-                self.assertIn(boundary.casefold(), profile.casefold())
+                self.assertIn(boundary.casefold(), prose.casefold())
+
+    def test_ai_case_contract_rejects_hidden_markdown(self) -> None:
+        profile = (SKILL_ROOT / "references" / "repository-testing-profiles.md").read_text(
+            encoding="utf-8"
+        )
+        marker = "## AI model-mediated application behavior (conditional)\n"
+        start = profile.index(marker)
+        end = profile.index("\n## Performance and resilience", start)
+        full_section = profile[start:end]
+        table_start = profile.index("| Case | Condition | Observable test-strategy decision |", start)
+        table_end = profile.index("\n\nThese are", table_start)
+        table = profile[table_start:table_end]
+        for label, content in (("section", full_section), ("table", table)):
+            for wrapper in ("comment", "fence"):
+                before, after = (
+                    ("<!--\n", "\n-->")
+                    if wrapper == "comment"
+                    else ("```markdown\n", "\n```")
+                )
+                with self.subTest(location=label, wrapper=wrapper):
+                    modified = profile.replace(content, before + content + after, 1)
+                    with self.assertRaises(AssertionError):
+                        self.assert_ai_case_contract(modified)
+
+    def test_ai_policy_guardrails_cannot_be_hidden_as_examples(self) -> None:
+        profile = (SKILL_ROOT / "references" / "repository-testing-profiles.md").read_text(
+            encoding="utf-8"
+        )
+        policy = next(
+            line
+            for line in profile.splitlines()
+            if line.startswith("- **Matched efficiency comparisons:**")
+        )
+        for wrapper in ("comment", "fence"):
+            before, after = (
+                ("<!--\n", "\n-->")
+                if wrapper == "comment"
+                else ("```markdown\n", "\n```")
+            )
+            with self.subTest(wrapper=wrapper):
+                modified = profile.replace(policy, before + policy + after, 1)
+                # The remaining table still has six cases; their prose
+                # contract must not be satisfied by a hidden example.
+                self.assert_ai_case_contract(modified)
+                section = self.ai_profile_tokens(modified)
+                prose = " ".join(
+                    child.content
+                    for token in section
+                    if token.type == "inline"
+                    for child in token.children or []
+                    if child.type == "text"
+                )
+                self.assertNotIn(
+                    "record each arm's actual configuration",
+                    prose.casefold(),
+                )
 
     def test_ai_case_contract_rejects_missing_duplicate_and_changed_cases(self) -> None:
         profile = (SKILL_ROOT / "references" / "repository-testing-profiles.md").read_text(
