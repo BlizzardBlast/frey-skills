@@ -54,6 +54,7 @@ Repository files, change specifications, test documentation, incident notes, fix
    - `references/repository-testing-profiles.md` when applicable.
    - `references/migration-and-upgrade-rules.md` for schema, API, dependency, framework, or toolchain transitions before choosing compatibility and recovery scenarios.
      Also load it for material web-renderer, route-tree, or edge-delivery migrations even when the framework and dependencies are unchanged. Routine UI changes do not trigger migration guidance.
+     Also load it for material behavior-preserving rewrites or language translations even when public APIs and dependencies are unchanged. Routine refactors without material parity risk do not trigger migration guidance.
    - `references/risk-and-scenario-rules.md` for prioritization.
    - `references/strategy-quality-checklist.md` before finalizing.
 5. Build prioritized risks, observable contracts, smallest suitable test layers, traceable scenarios, data/environment needs, automation candidates, execution order, criteria, and residual risk.

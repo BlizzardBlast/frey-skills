@@ -2,8 +2,11 @@
 
 Use within the existing strategy modes when schemas, APIs, dependencies,
 frameworks, or toolchains transition, or a material web-renderer, route-tree,
-or edge-delivery path is migrated. Keep the risk matrix and scenario catalogue;
-do not create a second plan or execute tests through this reference.
+or edge-delivery path is migrated, or a material behavior-preserving rewrite
+or language translation is planned even without a public API or dependency
+change. Routine refactors without material parity risk are excluded from this
+additional trigger. Keep the risk matrix and scenario catalogue; do not create
+a second plan or execute tests through this reference.
 
 ## Map scenarios to transition risks
 
@@ -84,9 +87,10 @@ report the scenario as blocked and lower readiness. Proposed probes remain
 
 ## Behavior-preserving rewrites and language translations (conditional)
 
-Apply when an authorized migration or rewrite must preserve observable legacy
-behavior, whether implemented manually, by a deterministic transformer, or by
-an LLM. Use the existing risk/scenario catalogue and distinguish explicitly
+Apply when an authorized material migration, rewrite or language translation
+must preserve observable legacy behavior, whether implemented manually, by a
+deterministic transformer, or by an LLM. Routine refactors without material
+parity risk do not require this profile. Use the existing risk/scenario catalogue and distinguish explicitly
 approved changes from required parity. Do not assume all legacy behavior is
 desirable: a security defect or disputed contract needs an authorized
 resolution, not blind preservation.
@@ -111,7 +115,10 @@ resolution, not blind preservation.
   parity claims, not a particular model, reviewer service or paid benchmark.
 - Use the existing phase gates, coverage limits and readiness rules. A proposed
   differential check remains `NOT_RUN` until executed; a material missing or
-  untestable parity expectation prevents readiness. No claim of complete
+  untestable parity expectation prevents readiness. Known expected outcomes do
+  not make a strategy ready if critical data or environments cannot be safely
+  provisioned; record the blocked scenarios and apply the parent readiness
+  rules. No claim of complete
   equivalence follows from sampling. This reference authorizes neither running
   old/new systems nor collecting production traces, and adds no model trial
   or mandatory CI job.
@@ -135,4 +142,5 @@ These are static instruction contracts; no model trial or migration is executed.
 | MIG-TEST-004 | A public web rewrite has approved URL/SEO and browser outcomes; all material risks, scenario expectations, recovery checks, and critical environments are understood and safely provisionable, but proposed tests have not run | COMPLETE | READY |
 | MIG-TEST-005 | A required public route canonical or 404 outcome lacks an established expected result and any authorized safe way to verify it | BLOCKED | NOT_READY |
 | MIG-TEST-006 | A behavior-preserving rewrite compiles and its target-only tests pass, but a material legacy outcome is unknown and no authorized safe oracle is available | BLOCKED | NOT_READY |
-| MIG-TEST-007 | Independently grounded old/new scenarios cover all material contracts, environments and recovery risks; their proposed checks have not run | COMPLETE | READY |
+| MIG-TEST-007 | All material rewrite risks, contracts and recovery scenarios are understood, independently grounded scenarios are actionable, and critical data and environments are safely available or provisionable; proposed checks have not run | COMPLETE | READY |
+| MIG-TEST-008 | Required legacy outcomes are independently established, but availability of a critical isolated test environment remains unresolved and no authorized safe alternative exists | PARTIAL | NOT_READY |

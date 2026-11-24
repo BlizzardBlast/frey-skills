@@ -23,6 +23,9 @@ EXPECTED_CASES = {
         "MIG-TEST-003": ("New-version unit tests pass but a required mixed-version writer scenario cannot be tested", "PARTIAL", "NOT_READY"),
         "MIG-TEST-004": ("A public web rewrite has approved URL/SEO and browser outcomes; all material risks, scenario expectations, recovery checks, and critical environments are understood and safely provisionable, but proposed tests have not run", "COMPLETE", "READY"),
         "MIG-TEST-005": ("A required public route canonical or 404 outcome lacks an established expected result and any authorized safe way to verify it", "BLOCKED", "NOT_READY"),
+        "MIG-TEST-006": ("A behavior-preserving rewrite compiles and its target-only tests pass, but a material legacy outcome is unknown and no authorized safe oracle is available", "BLOCKED", "NOT_READY"),
+        "MIG-TEST-007": ("All material rewrite risks, contracts and recovery scenarios are understood, independently grounded scenarios are actionable, and critical data and environments are safely available or provisionable; proposed checks have not run", "COMPLETE", "READY"),
+        "MIG-TEST-008": ("Required legacy outcomes are independently established, but availability of a critical isolated test environment remains unresolved and no authorized safe alternative exists", "PARTIAL", "NOT_READY"),
     },
     "implementation-execution": {
         "MIG-EXEC-001": ("All approved transition objectives and required compatibility and recovery checks are verified within the approved bounds for the current target and state", "completed", "IMPLEMENTED"),
@@ -127,6 +130,48 @@ class MigrationUpgradeContractTests(unittest.TestCase):
         for boundary in ("all material risks", "scenario expectations", "recovery checks", "critical environments"):
             self.assertIn(boundary, positive[0])
         self.assertIn("lacks an established expected result", negative[0])
+
+    def test_material_rewrite_routing_and_reference_scope(self) -> None:
+        skill = (ROOT / "test-strategy" / "SKILL.md").read_text(encoding="utf-8")
+        lines = skill.splitlines()
+        index = next(
+            i for i, line in enumerate(lines)
+            if "`references/migration-and-upgrade-rules.md`" in line
+        )
+        route = " ".join(lines[index:index + 3])
+        self.assertIn("material behavior-preserving rewrites or language translations", route)
+        self.assertIn("even when public APIs and dependencies are unchanged", route)
+        self.assertIn("Routine refactors without material parity risk do not trigger migration guidance", route)
+        rules = self.rules["test-strategy"]
+        intro = " ".join(rules.split("## Map scenarios")[0].split())
+        self.assertIn("material behavior-preserving rewrite or language translation", intro)
+        self.assertIn("even without a public API or dependency change", intro)
+        self.assertIn("Routine refactors without material parity risk are excluded", intro)
+        marker = "## Behavior-preserving rewrites and language translations (conditional)"
+        self.assertEqual(rules.count(marker), 1)
+        section = " ".join(rules.split(marker, 1)[1].split("## Published decision cases")[0].split())
+        for invariant in (
+            "Establish expected outcomes independently of the replacement implementation",
+            "Routine refactors without material parity risk do not require this profile",
+            "Known expected outcomes do not make a strategy ready if critical data or environments cannot be safely provisioned",
+            "differential check remains `NOT_RUN` until executed",
+            "This reference authorizes neither running old/new systems nor collecting production traces",
+        ):
+            with self.subTest(invariant=invariant):
+                self.assertIn(invariant, section)
+
+    def test_rewrite_cases_require_expected_outcomes_and_safe_testability(self) -> None:
+        cases = EXPECTED_CASES["test-strategy"]
+        unknown, positive, unavailable = (cases[f"MIG-TEST-00{i}"] for i in (6, 7, 8))
+        self.assertEqual(unknown[1:], ("BLOCKED", "NOT_READY"))
+        self.assertEqual(positive[1:], ("COMPLETE", "READY"))
+        self.assertEqual(unavailable[1:], ("PARTIAL", "NOT_READY"))
+        self.assertIn("no authorized safe oracle", unknown[0])
+        self.assertIn("scenarios are actionable", positive[0])
+        self.assertIn("critical data and environments are safely available or provisionable", positive[0])
+        self.assertIn("proposed checks have not run", positive[0])
+        self.assertIn("outcomes are independently established", unavailable[0])
+        self.assertIn("no authorized safe alternative", unavailable[0])
 
     def test_execution_keeps_reconciliation_bounds_and_recovery_holds(self) -> None:
         normalized = " ".join(self.rules["implementation-execution"].split())
