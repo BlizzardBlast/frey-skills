@@ -27,14 +27,17 @@ AI_INFERENCE_CONTRACTS = (
     "use `unknown` for material access relationships",
     "developer hosting its own model",
     "without an invented inter-entity boundary",
-    "private inference host",
+    "A third-party model run on a private inference host "
+    "does not by itself imply its developer receives prompts.",
     "separate host forwards prompts to the model developer",
     "trace that evidenced transfer and boundary",
     "zero-data-retention (ZDR)",
     "each downstream processor",
     "including fallback/retry routes",
-    "mismatches or unknown propagation",
-    "router's ZDR flag",
+    "Record mismatches or unknown propagation instead of treating "
+    "a router's ZDR flag as evidence of downstream enforcement.",
+    "A router advertising ZDR does not establish that a downstream "
+    "host has the same retention policy.",
     "Do not assert a confirmed leak without a validated finding.",
     "A canary experiment, live provider probe, or inspection of real secrets is "
     "**not** authorized by this read-only modeling workflow.",
@@ -189,7 +192,7 @@ class ThreatModelingProseTests(unittest.TestCase):
                         with self.assertRaises(AssertionError):
                             self.assert_contract(prefix + altered + replacement + suffix, title, required, forbidden)
 
-    def test_scope_and_safety_qualifications_cannot_be_weakened(self) -> None:
+    def test_scope_safety_and_privacy_qualifications_cannot_be_weakened(self) -> None:
         # These changes retain the previously checked fragments but weaken their meaning.
         cases = (
             (
@@ -213,6 +216,23 @@ class ThreatModelingProseTests(unittest.TestCase):
                 0,
                 "Do not assert a confirmed leak without a validated finding.",
                 "Do not assert a confirmed leak unless the model considers it likely.",
+            ),
+            (
+                0,
+                "does not by itself imply its developer",
+                "does by itself imply its developer",
+            ),
+            (
+                0,
+                "A router advertising ZDR does not establish that a downstream "
+                "host has the same retention policy.",
+                "A router advertising ZDR does establish that a downstream "
+                "host has the same retention policy.",
+            ),
+            (
+                0,
+                "instead of treating a router's ZDR flag as evidence of downstream enforcement.",
+                "and treat a router's ZDR flag as evidence of downstream enforcement.",
             ),
         )
         for contract_index, before, after in cases:
