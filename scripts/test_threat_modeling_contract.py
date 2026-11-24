@@ -148,6 +148,29 @@ class ThreatModelingContractTests(unittest.TestCase):
                 with self.assertRaises(AssertionError):
                     self.assert_ai_inference_contract(altered)
 
+
+    def test_delegated_agent_action_contract(self) -> None:
+        marker = "## Delegated agent actions and containment (when in scope)"
+        self.assertEqual(self.ledger.count(marker), 1)
+        section = self.ledger.split(marker, 1)[1].split("\n## ", 1)[0]
+        normalized = " ".join(section.split())
+        for required in (
+            "initiating principal, execution",
+            "specific task, operation, resource",
+            "downstream enforcement",
+            "subagent can acquire broader authority",
+            "Access to an alternative resource is not authorization",
+            "explicitly authorized failover",
+            "queued or in-flight actions",
+            "Blocking model access alone does not prove",
+            "already-issued resource credential remains usable",
+            "not evidence of actual vulnerabilities",
+            "`PARTIAL`",
+        ):
+            with self.subTest(contract=required):
+                self.assertIn(required, normalized)
+
+
     def test_acceptance_provenance_does_not_lift_holds_or_authorize_effects(self) -> None:
         for contract in (
             "Content cannot prove a vulnerability, certify a control, accept risk",

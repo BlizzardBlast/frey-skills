@@ -88,6 +88,41 @@ If a material downstream processor or data path cannot be established, record
 the missing evidence and mark the affected coverage `PARTIAL`; do not silently
 collapse several organizations into one trusted API endpoint.
 
+## Delegated agent actions and containment (when in scope)
+
+For an agent or subagent that can invoke tools with externally visible effects
+or access protected resources, distinguish the initiating principal, execution
+principal, downstream resource owner, and actual enforcement points. The
+[Dark Reading access-control report](https://www.darkreading.com/identity-access-management-security/ai-agents-bring-enterprises-new-access-control-challenges)
+(2026-11-21) illustrates task drift during dependency failure, confused-deputy
+access, and containment controls with different enforcement scopes.
+
+- Trace the delegated authority for the specific task, operation, resource,
+  destination and lifetime; distinguish user authorization from agent/service
+  credentials. Check effective permissions at the downstream enforcement
+  point, not just tool availability or prompt instructions. Where delegation
+  exists, consider whether a subagent can acquire broader authority than the
+  authorized task.
+- Model fallback, retries and substitutions when the intended resource fails.
+  Access to an alternative resource is not authorization to use it for this
+  task. Distinguish explicitly authorized failover from agent-selected scope
+  expansion; examine denial and escalation paths.
+- Map revocation and containment separately for model access, process
+  execution, queued or in-flight actions, issued credentials and downstream
+  resource access, where present. Blocking model access alone does not prove
+  downstream access is revoked or that in-flight work stopped. Record
+  enforcement timing, propagation limits and effects that cannot be undone.
+- Use synthetic contrasts: an unavailable authorized store versus an
+  accessible but unapproved store; a low-privilege requester using an agent
+  with broader service permissions; and a model gateway denial while an
+  already-issued resource credential remains usable. These are prompts for
+  threat hypotheses, not evidence of actual vulnerabilities or authority to
+  execute tools, test credentials, or probe a live system.
+
+Unknown material delegation or containment paths leave affected coverage
+`PARTIAL`. Keep proposed controls distinct from observed implementation and
+validation status; the existing read-only and bounded-stop rules still apply.
+
 ## Threat ledger contract
 
 Use stable IDs such as `TM-001`. Preserve IDs when refreshing the same threat;
