@@ -13,8 +13,10 @@ ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "threat-modeling" / "references" / "system-model-and-threat-ledger.md"
 
 AI_INFERENCE_CONTRACTS = (
+    "If a scoped system sends prompts or agent context to external AI services, "
+    "model the **entire known inference path**, not just the configured API hostname.",
     "**categories** of outbound content",
-    "never retrieve or reproduce real",
+    "never retrieve or reproduce real credentials or confidential prompts to fill the model",
     "inference hosts, model developers",
     "inference-hosting and model-development",
     "without assuming separate entities or trust boundaries",
@@ -33,14 +35,16 @@ AI_INFERENCE_CONTRACTS = (
     "including fallback/retry routes",
     "mismatches or unknown propagation",
     "router's ZDR flag",
-    "Do not assert a confirmed leak",
-    "canary experiment, live provider",
-    "**not** authorized by this read-only",
+    "Do not assert a confirmed leak without a validated finding.",
+    "A canary experiment, live provider probe, or inspection of real secrets is "
+    "**not** authorized by this read-only modeling workflow.",
     "mark the affected coverage `PARTIAL`",
 )
 
 DELEGATED_ACTION_CONTRACTS = (
-    "initiating principal, execution principal, downstream resource owner, and actual enforcement points",
+    "For an agent or subagent that can invoke tools with externally visible effects "
+    "or access protected resources, distinguish the initiating principal, execution principal, "
+    "downstream resource owner, and actual enforcement points.",
     "specific task, operation, resource, destination and lifetime",
     "distinguish user authorization from agent/service credentials",
     "Check effective permissions at the downstream enforcement point, not just tool availability or prompt instructions",
@@ -184,6 +188,43 @@ class ThreatModelingProseTests(unittest.TestCase):
                     for replacement in ("", f"\n\n<!-- {phrase} -->\n", f"\n\n```text\n{phrase}\n```\n"):
                         with self.assertRaises(AssertionError):
                             self.assert_contract(prefix + altered + replacement + suffix, title, required, forbidden)
+
+    def test_scope_and_safety_qualifications_cannot_be_weakened(self) -> None:
+        # These changes retain the previously checked fragments but weaken their meaning.
+        cases = (
+            (
+                0,
+                "If a scoped system sends prompts or agent context to external AI services,",
+                "For every system, even without external AI inference,",
+            ),
+            (
+                1,
+                "For an agent or subagent that can invoke tools with externally visible effects "
+                "or access protected resources,",
+                "For every application, even without agents or protected resources,",
+            ),
+            (
+                0,
+                "probe, or inspection of real secrets is **not** authorized by this read-only modeling workflow.",
+                "probe is **not** authorized by this read-only modeling workflow. "
+                "Inspection of real secrets is allowed.",
+            ),
+            (
+                0,
+                "Do not assert a confirmed leak without a validated finding.",
+                "Do not assert a confirmed leak unless the model considers it likely.",
+            ),
+        )
+        for contract_index, before, after in cases:
+            title, required, forbidden = CONTRACTS[contract_index]
+            prefix, section, suffix = self.source_section(title)
+            pattern = re.compile(r"\s+".join(re.escape(word) for word in before.split()))
+            altered, count = pattern.subn(after, section)
+            with self.subTest(section=title, weakened=before):
+                self.assertEqual(count, 1, "Mutation must change exactly one published clause")
+                self.assert_contract(self.ledger, title, required, forbidden)
+                with self.assertRaises(AssertionError):
+                    self.assert_contract(prefix + altered + suffix, title, required, forbidden)
 
     def test_visible_section_ranges_ignore_inert_duplicates(self) -> None:
         title, _, _ = CONTRACTS[0]
