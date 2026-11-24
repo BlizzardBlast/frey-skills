@@ -36,6 +36,7 @@ EXPECTED_CASES = {
     "TM-CASE-021": ("A documented control remains REPORTED with implementation and effectiveness unverified when its implementation is outside the inspected scope", "threat-modeling", "COMPLETE", "HYPOTHESIS"),
 }
 
+
 class ThreatModelingContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -96,7 +97,6 @@ class ThreatModelingContractTests(unittest.TestCase):
         normalized = " ".join(reported.split())
         self.assertIn("implementation and effectiveness remain unverified", normalized)
         self.assertIn("Do not infer absence", normalized)
-
 
     def test_acceptance_provenance_does_not_lift_holds_or_authorize_effects(self) -> None:
         for contract in (

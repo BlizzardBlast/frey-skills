@@ -75,21 +75,24 @@ CONTRACTS = (
 )
 
 
-def section_prose(content: str, title: str) -> tuple[int, list[str]]:
-    """Return active paragraph text and the number of matching root sections."""
+def section_prose(content: str, title: str) -> tuple[list[tuple[int, int]], list[str]]:
+    """Return active paragraph text and matching root section source ranges."""
     tokens, _ = parse_visible(content)
     literal = LiteralHTML()
     quoted = 0
     active = False
-    sections = 0
+    start = None
+    ranges = []
     paragraphs = []
     for index, token in enumerate(tokens):
         if (
             token.type == "heading_open" and token.level == 0
             and token.tag in {"h1", "h2"} and not literal.tags
         ):
+            if start is not None:
+                ranges.append((start, token.map[0]))
             active = token.tag == "h2" and inline_text(tokens[index + 1].children or []) == title
-            sections += int(active)
+            start = token.map[0] if active else None
         elif token.type == "blockquote_open":
             quoted += 1
         elif token.type == "blockquote_close":
@@ -114,7 +117,9 @@ def section_prose(content: str, title: str) -> tuple[int, list[str]]:
                     parts.append("\0")
             if active and index > 0 and tokens[index - 1].type == "paragraph_open":
                 paragraphs.append(" ".join("".join(parts).split()))
-    return sections, paragraphs
+    if start is not None:
+        ranges.append((start, len(content.splitlines())))
+    return ranges, paragraphs
 
 
 class ThreatModelingProseTests(unittest.TestCase):
@@ -125,8 +130,8 @@ class ThreatModelingProseTests(unittest.TestCase):
     def assert_contract(
         self, content: str, title: str, required: tuple[str, ...], forbidden: tuple[str, ...]
     ) -> None:
-        sections, paragraphs = section_prose(content, title)
-        self.assertEqual(sections, 1, f"Require one active root section: {title}")
+        ranges, paragraphs = section_prose(content, title)
+        self.assertEqual(len(ranges), 1, f"Require one active root section: {title}")
         for phrase in required:
             # Constants preserve the source spelling for mutation tests.
             visible = phrase.replace("**", "").replace("`", "")
@@ -135,11 +140,11 @@ class ThreatModelingProseTests(unittest.TestCase):
             self.assertFalse(any(phrase in paragraph for paragraph in paragraphs), phrase)
 
     def source_section(self, title: str) -> tuple[str, str, str]:
-        # Source slicing is only for mutations of the known published fixture.
-        prefix, marker, tail = self.ledger.partition(f"## {title}\n")
-        self.assertTrue(marker, title)
-        body, boundary, suffix = tail.partition("\n## ")
-        return prefix, marker + body, boundary + suffix
+        ranges, _ = section_prose(self.ledger, title)
+        self.assertEqual(len(ranges), 1, title)
+        start, end = ranges[0]
+        lines = self.ledger.splitlines(keepends=True)
+        return "".join(lines[:start]), "".join(lines[start:end]), "".join(lines[end:])
 
     def test_published_contracts(self) -> None:
         for title, required, forbidden in CONTRACTS:
@@ -179,6 +184,23 @@ class ThreatModelingProseTests(unittest.TestCase):
                     for replacement in ("", f"\n\n<!-- {phrase} -->\n", f"\n\n```text\n{phrase}\n```\n"):
                         with self.assertRaises(AssertionError):
                             self.assert_contract(prefix + altered + replacement + suffix, title, required, forbidden)
+
+    def test_visible_section_ranges_ignore_inert_duplicates(self) -> None:
+        title, _, _ = CONTRACTS[0]
+        visible = f"## {title}\n\nReal instruction.\n\n"
+        hidden = f"<!--\n{visible}-->\n\n"
+        content = hidden + visible + "## Next section\n"
+        ranges, paragraphs = section_prose(content, title)
+        self.assertEqual(ranges, [(len(hidden.splitlines()), len((hidden + visible).splitlines()))])
+        self.assertEqual(paragraphs, ["Real instruction."])
+
+    def test_literal_or_separate_paragraphs_cannot_supply_an_instruction(self) -> None:
+        title = "Example"
+        required = ("task-scoped authority",)
+        for body in ("`task-scoped authority`", "task-scoped\n\nauthority", "> task-scoped authority"):
+            with self.subTest(body=body), self.assertRaises(AssertionError):
+                self.assert_contract(f"## {title}\n\n{body}\n", title, required, ())
+        self.assert_contract(f"## {title}\n\n- **task-scoped**\n  authority\n", title, required, ())
 
     def test_forbidden_inference_role_conflation_is_rejected(self) -> None:
         title, required, forbidden = CONTRACTS[0]
