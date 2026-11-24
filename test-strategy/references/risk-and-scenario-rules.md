@@ -64,19 +64,29 @@ internal APIs, and deterministic behavior alone do not require participant
 research.
 
 - Ground the goal and observable success condition in authorized requirements.
-  For a prototype, record its version, linked states, simulated behavior and
-  limitations; do not infer production behavior from it.
+  Independently verify actual task outcomes where applicable, using the
+  smallest suitable observable evidence (for example, the correct saved
+  record or calculated result); a participant's belief that they succeeded
+  is not sufficient. Do not invent requirements or require privileged
+  inspection when ordinary user-visible evidence establishes the outcome.
+- For a prototype, record its version, linked states, simulated behavior and
+  limitations; do not infer production behavior from it. Distinguish a
+  verified prototype outcome from an actual production side effect.
 - Propose outcome-oriented tasks, representative users and a defined starting
   state. Avoid naming the controls or prescribing the navigation sequence.
-  Define timing start/end and how unaided, assisted and abandoned attempts
-  will be recorded when effort is relevant.
+  Define timing start/end, assistance and termination rules when effort is
+  relevant. Separate verified unaided and assisted successes, incorrect
+  completions, incomplete/abandoned attempts and unverified outcomes.
 - Use synthetic/minimized data, a safe environment and consented,
   non-identifying observations. Do not prescribe external uploads, recordings,
   recruitment, production mutations or telemetry without explicit authority.
 - Plan evidence for task completion, observable confusion/errors and
   moderator assistance; include time on task only where meaningful. For
-  comparisons, keep task, starting state and success criteria comparable and
-  report learning/order effects and sample limits.
+  comparisons, keep task, starting state, success criteria and measurement
+  rules comparable. Record material differences in device, input method,
+  accessibility settings, interaction fidelity and response latency;
+  report learning/order effects and sample limits. Avoid attributing
+  differences to the UI alone when confounders cannot be accounted for.
 - Keep required functional, accessibility and security checks independent.
   An automated E2E script, screenshot review, or simulated agent participant
   can supplement review but cannot prove human discoverability, comprehension
@@ -93,6 +103,9 @@ research.
 | A scripted E2E test completes an onboarding journey | Count it as functional evidence, not a human usability result |
 | No participants are available for optional formative research | Record the gap without inventing results or automatically blocking release |
 | A required human usability acceptance measure cannot be assessed | Record blocked evidence and apply the existing readiness rules |
+| Participant reports success but the wrong record was saved | Record incorrect completion, not verified success |
+| Prototype completes a simulated save | Record the prototype outcome only; production persistence remains unverified |
+| Routine visual fix with no material usability risk | Use ordinary risk-based verification; participant research is not required |
 
 Research basis: [Loop11 — Figma prototype usability testing](https://www.loop11.com/figma-prototype-usability-testing/).
 This is test-strategy guidance, not permission to execute research or change

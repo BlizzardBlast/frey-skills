@@ -9,6 +9,8 @@ import unittest
 from pathlib import Path
 from typing import Any
 
+from scripts.documentation import inline_text, parse_visible, section_tokens
+
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 SKILL_ROOT = REPOSITORY_ROOT / "test-strategy"
@@ -268,6 +270,136 @@ class TestStrategyContractTests(unittest.TestCase):
                     any(keyword in error and "missing discovery keywords" in error for error in errors),
                     errors,
                 )
+
+
+
+
+class HumanUsabilityContractTests(unittest.TestCase):
+    """Protect the visible guidance and key decisions, not model behavior."""
+
+    TITLE = "Human usability evidence (conditional)"
+    REFERENCE = SKILL_ROOT / "references" / "risk-and-scenario-rules.md"
+    HEADER = "| Example condition | Observable strategy decision |"
+    CASES = {
+        "A changed onboarding journey must be understood unaided": (
+            "Propose a goal-based participant task and separate functional/accessibility checks"
+        ),
+        "A scripted E2E test completes an onboarding journey": (
+            "Count it as functional evidence, not a human usability result"
+        ),
+        "No participants are available for optional formative research": (
+            "Record the gap without inventing results or automatically blocking release"
+        ),
+        "A required human usability acceptance measure cannot be assessed": (
+            "Record blocked evidence and apply the existing readiness rules"
+        ),
+        "Participant reports success but the wrong record was saved": (
+            "Record incorrect completion, not verified success"
+        ),
+        "Prototype completes a simulated save": (
+            "Record the prototype outcome only; production persistence remains unverified"
+        ),
+        "Routine visual fix with no material usability risk": (
+            "Use ordinary risk-based verification; participant research is not required"
+        ),
+    }
+    GUARDRAILS = (
+        "deterministic behavior alone do not require participant research",
+        "Independently verify actual task outcomes",
+        "a participant's belief that they succeeded is not sufficient",
+        "do not infer production behavior from it",
+        "Do not prescribe external uploads, recordings, recruitment, "
+        "production mutations or telemetry without explicit authority",
+        "cannot prove human discoverability, comprehension or measured human task time",
+        "Optional formative evidence is not a universal merge/release gate",
+        "apply the parent skill's completeness/readiness rules and record the blocked coverage",
+    )
+
+    def assert_usability_contract(self, document: str) -> None:
+        tokens, _ = parse_visible(document)
+        headings = [
+            index
+            for index, token in enumerate(tokens[:-1])
+            if token.type == "heading_open"
+            and token.tag == "h2"
+            and token.level == 0
+            and inline_text(tokens[index + 1].children or []) == self.TITLE
+        ]
+        self.assertEqual(len(headings), 1, "Require one visible usability section")
+        section = section_tokens(document, self.TITLE)
+        tables = [
+            section[index + 1].content
+            for index, token in enumerate(section[:-1])
+            if token.type == "paragraph_open"
+            and token.level == 0
+            and section[index + 1].type == "inline"
+            and section[index + 1].content.startswith(self.HEADER)
+        ]
+        self.assertEqual(len(tables), 1, "Require one visible case table")
+        rows = tables[0].splitlines()
+        self.assertEqual(rows[:2], [self.HEADER, "| --- | --- |"])
+        self.assertEqual(len(rows), len(self.CASES) + 2)
+        cases = {}
+        for row in rows[2:]:
+            self.assertTrue(row.startswith("| ") and row.endswith(" |"), row)
+            cells = [cell.strip() for cell in row.strip("|").split("|")]
+            self.assertEqual(len(cells), 2, row)
+            condition, decision = cells
+            self.assertNotIn(condition, cases)
+            cases[condition] = decision
+        self.assertEqual(cases, self.CASES)
+
+        # Only active prose satisfies the boundary; exclude tables, code and
+        # quoted examples. Normalize wrapping to avoid layout-sensitive checks.
+        quote_depth = 0
+        paragraphs = []
+        for token in section:
+            if token.type == "blockquote_open":
+                quote_depth += 1
+            elif token.type == "blockquote_close":
+                quote_depth -= 1
+            elif (
+                token.type == "inline"
+                and not quote_depth
+                and not token.content.startswith("|")
+            ):
+                prose = "".join(
+                    child.content if child.type == "text" else " "
+                    for child in token.children or []
+                )
+                paragraphs.append(" ".join(prose.split()).casefold())
+        for boundary in self.GUARDRAILS:
+            self.assertTrue(
+                any(boundary.casefold() in paragraph for paragraph in paragraphs),
+                boundary,
+            )
+
+    def test_human_usability_contract(self) -> None:
+        self.assert_usability_contract(self.REFERENCE.read_text(encoding="utf-8"))
+
+    def test_rejects_missing_duplicate_and_reversed_decisions(self) -> None:
+        document = self.REFERENCE.read_text(encoding="utf-8")
+        for condition, decision in self.CASES.items():
+            row = f"| {condition} | {decision} |"
+            for replacement in ("", row + "\n" + row, f"| {condition} | Unverified |"):
+                with self.subTest(condition=condition, replacement=replacement):
+                    with self.assertRaises(AssertionError):
+                        self.assert_usability_contract(document.replace(row, replacement, 1))
+
+    def test_rejects_hidden_case_table_and_removed_authority_boundary(self) -> None:
+        document = self.REFERENCE.read_text(encoding="utf-8")
+        start = document.index(self.HEADER)
+        end = document.index("\n\n", start)
+        table = document[start:end]
+        for wrapper in (("<!--\n", "\n-->"), ("```markdown\n", "\n```")):
+            with self.subTest(wrapper=wrapper):
+                hidden = document.replace(table, wrapper[0] + table + wrapper[1], 1)
+                with self.assertRaises(AssertionError):
+                    self.assert_usability_contract(hidden)
+        weakened = document.replace("without explicit authority", "without approval", 1)
+        self.assertNotEqual(weakened, document)
+        with self.assertRaises(AssertionError):
+            self.assert_usability_contract(weakened)
 
 
 if __name__ == "__main__":
