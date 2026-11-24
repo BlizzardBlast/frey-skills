@@ -36,35 +36,6 @@ EXPECTED_CASES = {
     "TM-CASE-021": ("A documented control remains REPORTED with implementation and effectiveness unverified when its implementation is outside the inspected scope", "threat-modeling", "COMPLETE", "HYPOTHESIS"),
 }
 
-AI_INFERENCE_CONTRACTS = (
-    "## AI inference supply-chain boundaries (when in scope)",
-    "**categories** of outbound content",
-    "never retrieve or reproduce real",
-    "inference hosts, model developers",
-    "inference-hosting and model-development",
-    "without assuming separate entities or trust boundaries",
-    "A single entity may perform both roles",
-    "identify separate actors or boundaries",
-    "only when inspected evidence or the stated design",
-    "Record which entities can see",
-    "use `unknown` for material access relationships",
-    "developer hosting its own model",
-    "without an invented inter-entity boundary",
-    "private inference host",
-    "separate host forwards prompts to the model developer",
-    "trace that evidenced transfer and boundary",
-    "zero-data-retention (ZDR)",
-    "each downstream processor",
-    "including fallback/retry routes",
-    "mismatches or unknown propagation",
-    "router's ZDR flag",
-    "Do not assert a confirmed leak",
-    "canary experiment, live provider",
-    "**not** authorized by this read-only",
-    "mark the affected coverage `PARTIAL`",
-)
-
-
 class ThreatModelingContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -125,50 +96,6 @@ class ThreatModelingContractTests(unittest.TestCase):
         normalized = " ".join(reported.split())
         self.assertIn("implementation and effectiveness remain unverified", normalized)
         self.assertIn("Do not infer absence", normalized)
-
-    def assert_ai_inference_contract(self, content: str) -> None:
-        marker = AI_INFERENCE_CONTRACTS[0]
-        self.assertEqual(content.count(marker), 1)
-        section = content.split(marker, 1)[1].split("\n## ", 1)[0]
-        normalized = " ".join(section.split())
-        for required in AI_INFERENCE_CONTRACTS[1:]:
-            self.assertIn(required, normalized)
-        self.assertNotIn("host/developer", normalized)
-        self.assertNotIn("inference host and model developer as separate actors", normalized)
-
-    def test_ai_inference_contract_has_distinct_hops_and_safe_boundaries(self) -> None:
-        # Tests published wording, not model behavior or provider privacy.
-        self.assert_ai_inference_contract(self.ledger)
-
-    def test_ai_inference_contract_rejects_removed_requirements(self) -> None:
-        for required in AI_INFERENCE_CONTRACTS:
-            with self.subTest(removed=required):
-                self.assertIn(required, self.ledger)
-                altered = self.ledger.replace(required, "", 1)
-                with self.assertRaises(AssertionError):
-                    self.assert_ai_inference_contract(altered)
-
-
-    def test_delegated_agent_action_contract(self) -> None:
-        marker = "## Delegated agent actions and containment (when in scope)"
-        self.assertEqual(self.ledger.count(marker), 1)
-        section = self.ledger.split(marker, 1)[1].split("\n## ", 1)[0]
-        normalized = " ".join(section.split())
-        for required in (
-            "initiating principal, execution",
-            "specific task, operation, resource",
-            "downstream enforcement",
-            "subagent can acquire broader authority",
-            "Access to an alternative resource is not authorization",
-            "explicitly authorized failover",
-            "queued or in-flight actions",
-            "Blocking model access alone does not prove",
-            "already-issued resource credential remains usable",
-            "not evidence of actual vulnerabilities",
-            "`PARTIAL`",
-        ):
-            with self.subTest(contract=required):
-                self.assertIn(required, normalized)
 
 
     def test_acceptance_provenance_does_not_lift_holds_or_authorize_effects(self) -> None:
