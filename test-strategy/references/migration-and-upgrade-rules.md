@@ -82,6 +82,47 @@ established expected result and no authorized, safe verification alternative,
 report the scenario as blocked and lower readiness. Proposed probes remain
 `NOT_RUN` until executed.
 
+## Behavior-preserving rewrites and language translations (conditional)
+
+Apply when an authorized migration or rewrite must preserve observable legacy
+behavior, whether implemented manually, by a deterministic transformer, or by
+an LLM. Use the existing risk/scenario catalogue and distinguish explicitly
+approved changes from required parity. Do not assume all legacy behavior is
+desirable: a security defect or disputed contract needs an authorized
+resolution, not blind preservation.
+
+- Establish expected outcomes independently of the replacement implementation:
+  existing accepted tests, authorized isolated source-runtime observations, or
+  owner-reviewed requirements and source/platform semantics. Record provenance,
+  source revision, environment, initial state, inputs and known limitations.
+  If the old runtime cannot be run, label source-derived expectations as such;
+  do not invent missing program behavior or claim observed runtime parity.
+- Propose matched old/new scenarios with synthetic or authorized minimized
+  fixtures and equivalent initial state. Compare applicable outputs, errors,
+  ordering, rounding/precision, encoding, side effects, persisted state and
+  retry behavior, including edge and failure cases. Document allowed differences
+  and normalization before comparing; exclude neither unexpected differences
+  nor generated code paths merely because they are hard to test.
+- Map coverage to externally meaningful capabilities and contracts rather than
+  translation sessions or raw test counts. A passing target-only test suite,
+  successful compilation or agreement among multiple translations cannot rule
+  out a shared misunderstanding. Tests drafted by the implementation agent
+  may be useful; require independently grounded expected outcomes for material
+  parity claims, not a particular model, reviewer service or paid benchmark.
+- Use the existing phase gates, coverage limits and readiness rules. A proposed
+  differential check remains `NOT_RUN` until executed; a material missing or
+  untestable parity expectation prevents readiness. No claim of complete
+  equivalence follows from sampling. This reference authorizes neither running
+  old/new systems nor collecting production traces, and adds no model trial
+  or mandatory CI job.
+
+Motivation: Federico Tomassetti's
+[legacy translation correctness study](https://tomassetti.me/legacy-modernization-llms-correctness/)
+(November 2026) reports semantic differences missed by passing agent-authored
+tests. The original runtime was unavailable and only a subset was reviewed;
+the study is not a universal error-rate estimate. The guidance above is a
+general test-design adaptation, not a claim that this repository has such defects.
+
 ## Published decision cases
 
 These are static instruction contracts; no model trial or migration is executed.
@@ -93,3 +134,5 @@ These are static instruction contracts; no model trial or migration is executed.
 | MIG-TEST-003 | New-version unit tests pass but a required mixed-version writer scenario cannot be tested | PARTIAL | NOT_READY |
 | MIG-TEST-004 | A public web rewrite has approved URL/SEO and browser outcomes; all material risks, scenario expectations, recovery checks, and critical environments are understood and safely provisionable, but proposed tests have not run | COMPLETE | READY |
 | MIG-TEST-005 | A required public route canonical or 404 outcome lacks an established expected result and any authorized safe way to verify it | BLOCKED | NOT_READY |
+| MIG-TEST-006 | A behavior-preserving rewrite compiles and its target-only tests pass, but a material legacy outcome is unknown and no authorized safe oracle is available | BLOCKED | NOT_READY |
+| MIG-TEST-007 | Independently grounded old/new scenarios cover all material contracts, environments and recovery risks; their proposed checks have not run | COMPLETE | READY |
