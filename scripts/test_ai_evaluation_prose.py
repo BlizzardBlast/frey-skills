@@ -179,6 +179,15 @@ class AIEvaluationProseTests(unittest.TestCase):
             "not proof of a single factor.",
             "record each arm's actual configuration",
             "not a fair comparison",
+            "only when comparing agent topology or context strategy",
+            "a single agent with a prespecified fresh-context restart and bounded handoff",
+            "aggregate resource limits comparable for topology-only claims",
+            "keep protected oracle data out of handoffs.",
+            "Count aggregate work across all agents, including planning, coordination, "
+            "context reconstruction, reconciliation, review, retries and failed branches",
+            "distinguish elapsed wall-clock time from total work.",
+            "Compare independently verified task success and final deliverable quality separately from rubric scores",
+            "do not infer a topology advantage from faster completion alone or from comparison only against a stale-context baseline.",
             "not permission to run model evaluations",
             "against requiring behavioral model evaluations as a merge gate",
         ):
@@ -226,6 +235,7 @@ class AIEvaluationProseTests(unittest.TestCase):
             "Repeated observations for variable behavior",
             "Point-in-time evaluation (only for historical replay or forecasting)",
             "Matched efficiency comparisons",
+            "Orchestration comparisons (only when comparing agent topology or context strategy)",
         ):
             policy = next(
                 line for line in profile.splitlines() if line.startswith(f"- **{label}:**")
@@ -292,6 +302,16 @@ class AIEvaluationProseTests(unittest.TestCase):
                 "temporal isolation",
                 "knowledge do not establish temporal isolation:",
                 "knowledge establish temporal isolation:",
+            ),
+            (
+                "orchestration attribution",
+                "do not infer a topology advantage from faster completion alone",
+                "infer a topology advantage from faster completion alone",
+            ),
+            (
+                "orchestration oracle isolation",
+                "keep protected oracle data out of handoffs.",
+                "include protected oracle data in handoffs.",
             ),
             (
                 "comparison attribution",
