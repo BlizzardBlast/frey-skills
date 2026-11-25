@@ -87,6 +87,11 @@ EXPECTED_AI_CASES = {
         "Allow intended visibility; verify outcome independence without requiring "
         "unnecessary secrecy",
     ),
+    "AI-CASE-009": (
+        "Material outcome varies across model attempts or response times",
+        "Plan independent repeated observations, report failures and uncertainty, "
+        "and do not infer reliability from a single success",
+    ),
 }
 
 
@@ -374,6 +379,15 @@ class TestStrategyContractTests(unittest.TestCase):
             "public task information alone does not compromise independence",
             "do not probe live targets",
             "without logging prompts, credentials, or sensitive user material.",
+            "multiple independent attempts per representative case",
+            "justified sample size and budget",
+            "first-attempt outcomes from retry-assisted outcomes",
+            "record attempted, failed, timed-out and excluded runs with reasons",
+            "observed outcome counts and latency distributions where measurable",
+            "A single successful attempt does not establish repeatable reliability.",
+            "plausible but unsupported claims and user-visible uncertainty",
+            "critical-failure rule separately from aggregate scores",
+            "record the residual uncertainty rather than claiming reliability",
             "only for historical replay or forecasting",
             "decision cutoff, including timezone and boundary semantics",
             "publication versus availability timestamps",
@@ -434,6 +448,7 @@ class TestStrategyContractTests(unittest.TestCase):
         )
         for label in (
             "Independent outcome and grader integrity",
+            "Repeated observations for variable behavior",
             "Point-in-time evaluation (only for historical replay or forecasting)",
             "Matched efficiency comparisons",
         ):
@@ -477,6 +492,11 @@ class TestStrategyContractTests(unittest.TestCase):
                 "sensitive logging",
                 "without logging prompts, credentials, or sensitive user material.",
                 "while logging prompts, credentials, or sensitive user material.",
+            ),
+            (
+                "single-run reliability",
+                "A single successful attempt does not establish repeatable reliability.",
+                "A single successful attempt establishes repeatable reliability.",
             ),
             (
                 "temporal isolation",
