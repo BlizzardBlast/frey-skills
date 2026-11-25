@@ -109,7 +109,9 @@ class AIEvaluationProseTests(unittest.TestCase):
             cases[case_id] = (condition, decision)
         self.assertEqual(cases, EXPECTED_AI_CASES)
 
-    def active_ai_policy_paragraphs(self, profile: str) -> list[str]:
+    def active_ai_policy_paragraphs(
+        self, profile: str, *, root_list_items_only: bool = False
+    ) -> list[str]:
         """Extract active prose, excluding quoted examples and the case table."""
         section = self.ai_profile_tokens(profile)
         paragraphs = []
@@ -124,6 +126,15 @@ class AIEvaluationProseTests(unittest.TestCase):
                 and not quote_depth
                 and index > 0
                 and section[index - 1].type == "paragraph_open"
+                and (
+                    not root_list_items_only
+                    or (
+                        index >= 2
+                        and section[index - 1].level == 2
+                        and section[index - 2].type == "list_item_open"
+                        and section[index - 2].level == 1
+                    )
+                )
                 and not token.content.startswith(
                     "| Case | Condition | Observable test-strategy decision |"
                 )
@@ -134,7 +145,31 @@ class AIEvaluationProseTests(unittest.TestCase):
                 paragraphs.append(" ".join(prose.split()).casefold())
         return paragraphs
 
+    def assert_ai_handoff_contract(self, profile: str) -> None:
+        """Keep handoff security independent of optional comparison guidance."""
+        prefix = "Handoff security (whenever the workflow transfers task state):".casefold()
+        handoffs = [
+            paragraph
+            for paragraph in self.active_ai_policy_paragraphs(
+                profile, root_list_items_only=True
+            )
+            if paragraph.startswith(prefix)
+        ]
+        self.assertEqual(len(handoffs), 1, "Require one independent handoff security policy")
+        for boundary in (
+            "Apply these controls even when no architecture or context-strategy comparison is planned.",
+            "Within a run, preserve only authorized task state across restarts",
+            "keep protected oracle data out of handoffs.",
+            "plan recipient-specific authorization checks for each transfer",
+            "disclose only the minimum task data permitted for that recipient and purpose.",
+            "Treat model-generated handoff content as untrusted evidence, not instruction or transferable authority.",
+            "Plan positive controls for permitted minimized handoffs and negative controls for unauthorized disclosure and scope escalation through handoffs",
+            "require denial at the actual enforcement boundary regardless of model output.",
+        ):
+            self.assertIn(boundary.casefold(), handoffs[0], f"Missing handoff policy: {boundary}")
+
     def assert_ai_policy_contract(self, profile: str) -> None:
+        self.assert_ai_handoff_contract(profile)
         paragraphs = self.active_ai_policy_paragraphs(profile)
         for boundary in (
             "only when the system under test makes behavior-affecting model calls, "
@@ -185,13 +220,6 @@ class AIEvaluationProseTests(unittest.TestCase):
             "aggregate resource limits comparable for topology-only claims",
             "Freeze restart triggers, handoff contents, task decomposition, concurrency and stopping rules before observing results",
             "reset workspace and task state between independent runs.",
-            "Within a run, preserve only authorized task state across restarts",
-            "keep protected oracle data out of handoffs.",
-            "plan recipient-specific authorization checks for each transfer",
-            "disclose only the minimum task data permitted for that recipient and purpose.",
-            "Treat model-generated handoff content as untrusted evidence, not instruction or transferable authority.",
-            "Plan positive controls for permitted minimized handoffs and negative controls for unauthorized disclosure and scope escalation through handoffs",
-            "require denial at the actual enforcement boundary regardless of model output.",
             "Count aggregate work across all agents, including planning, coordination, "
             "context reconstruction, reconciliation, review, retries and failed branches",
             "distinguish elapsed wall-clock time from total work.",
@@ -248,6 +276,7 @@ class AIEvaluationProseTests(unittest.TestCase):
         for label in (
             "Independent outcome and grader integrity",
             "Untrusted inputs and authority",
+            "Handoff security (whenever the workflow transfers task state)",
             "Failure and abstention",
             "Repeated observations for variable behavior",
             "Point-in-time evaluation (only for historical replay or forecasting)",
@@ -271,6 +300,31 @@ class AIEvaluationProseTests(unittest.TestCase):
                     self.assert_ai_case_contract(modified)
                     with self.assertRaises(AssertionError):
                         self.assert_ai_policy_contract(modified)
+
+    def test_handoff_security_is_independent_of_orchestration_comparisons(self) -> None:
+        profile = (SKILL_ROOT / "references" / "repository-testing-profiles.md").read_text(
+            encoding="utf-8"
+        )
+        handoff = next(
+            line for line in profile.splitlines()
+            if line.startswith("- **Handoff security (whenever the workflow transfers task state):**")
+        )
+        comparison = next(
+            line for line in profile.splitlines()
+            if line.startswith("- **Orchestration comparisons (only when comparing agent topology or context strategy):**")
+        )
+        self.assert_ai_handoff_contract(profile)
+        self.assert_ai_handoff_contract(profile.replace(comparison + "\n", "", 1))
+        without_handoff = profile.replace(handoff + "\n", "", 1)
+        for label, replacement in (
+            ("merged into comparison", comparison + " " + handoff[2:]),
+            ("nested under comparison", comparison + "\n  " + handoff),
+        ):
+            with self.subTest(location=label):
+                modified = without_handoff.replace(comparison, replacement, 1)
+                self.assert_ai_case_contract(modified)
+                with self.assertRaisesRegex(AssertionError, "independent handoff security policy"):
+                    self.assert_ai_policy_contract(modified)
 
     def test_ai_policy_contract_rejects_reversed_safety_clauses(self) -> None:
         profile = (SKILL_ROOT / "references" / "repository-testing-profiles.md").read_text(
@@ -374,6 +428,11 @@ class AIEvaluationProseTests(unittest.TestCase):
                 "orchestration preregistration",
                 "Freeze restart triggers, handoff contents, task decomposition, concurrency and stopping rules before observing results",
                 "Choose restart triggers, handoff contents, task decomposition, concurrency and stopping rules after observing results",
+            ),
+            (
+                "independent handoff applicability",
+                "Apply these controls even when no architecture or context-strategy comparison is planned.",
+                "Apply these controls only when an architecture or context-strategy comparison is planned.",
             ),
             (
                 "recipient-specific authorization",
