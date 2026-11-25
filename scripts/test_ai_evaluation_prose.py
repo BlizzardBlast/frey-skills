@@ -182,11 +182,17 @@ class AIEvaluationProseTests(unittest.TestCase):
             "only when comparing agent topology or context strategy",
             "a single agent with a prespecified fresh-context restart and bounded handoff",
             "aggregate resource limits comparable for topology-only claims",
+            "reset workspace and task state between independent runs.",
+            "Within a run, preserve only authorized task state across restarts",
             "keep protected oracle data out of handoffs.",
             "Count aggregate work across all agents, including planning, coordination, "
             "context reconstruction, reconciliation, review, retries and failed branches",
             "distinguish elapsed wall-clock time from total work.",
             "Compare independently verified task success and final deliverable quality separately from rubric scores",
+            "report cost per verified success only if the monetary cost numerator is observable "
+            "and the verified-success denominator is observable and positive.",
+            "Report zero observed monetary charges as zero, distinguish them from unknown or unmeasured costs, "
+            "and do not infer zero resource consumption from zero monetary charges.",
             "do not infer a topology advantage from faster completion alone or from comparison only against a stale-context baseline.",
             "not permission to run model evaluations",
             "against requiring behavioral model evaluations as a merge gate",
@@ -302,6 +308,36 @@ class AIEvaluationProseTests(unittest.TestCase):
                 "temporal isolation",
                 "knowledge do not establish temporal isolation:",
                 "knowledge establish temporal isolation:",
+            ),
+            (
+                "independent orchestration run isolation",
+                "reset workspace and task state between independent runs.",
+                "reuse workspace and task state between independent runs.",
+            ),
+            (
+                "authorized within-run state",
+                "Within a run, preserve only authorized task state across restarts",
+                "Within a run, preserve unauthorized task state across restarts",
+            ),
+            (
+                "positive verified-success denominator",
+                "the verified-success denominator is observable and positive.",
+                "the verified-success denominator may be zero.",
+            ),
+            (
+                "zero monetary cost",
+                "Report zero observed monetary charges as zero",
+                "Do not report zero observed monetary charges",
+            ),
+            (
+                "unknown monetary cost",
+                "distinguish them from unknown or unmeasured costs",
+                "treat unknown or unmeasured costs as zero",
+            ),
+            (
+                "resource consumption",
+                "do not infer zero resource consumption from zero monetary charges.",
+                "infer zero resource consumption from zero monetary charges.",
             ),
             (
                 "orchestration attribution",
