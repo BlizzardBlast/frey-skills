@@ -60,8 +60,10 @@ EXPECTED_AI_CASES = {
         "Specify independent oracles for required artifacts and permitted effects",
     ),
     "AI-CASE-003": (
-        "Agent can view or alter the grader, expected output or benchmark fixture",
-        "Plan held-out scoring isolation or mark independent correctness unverified",
+        "Agent can access protected evaluation answers prematurely or alter "
+        "authoritative scoring without authorization",
+        "Plan protection against premature disclosure and unauthorized scoring changes; "
+        "mark affected correctness unverified if independence cannot be established",
     ),
     "AI-CASE-004": (
         "Model, tool or retrieved content is untrusted input",
@@ -74,6 +76,16 @@ EXPECTED_AI_CASES = {
     "AI-CASE-006": (
         "Comparing a model, adapter or agent harness",
         "Define varied configuration, fixed task controls, independent quality oracles, and measurable total work",
+    ),
+    "AI-CASE-007": (
+        "Historical replay or forecasting depends on information available at a cutoff",
+        "Specify temporal isolation, later-revision rejection and withheld outcomes; "
+        "qualify results when leakage cannot be excluded",
+    ),
+    "AI-CASE-008": (
+        "Agent reads authorized task inputs or an immutable public rubric",
+        "Allow intended visibility; verify outcome independence without requiring "
+        "unnecessary secrecy",
     ),
 }
 
@@ -321,21 +333,33 @@ class TestStrategyContractTests(unittest.TestCase):
             cases[case_id] = (condition, decision)
         self.assertEqual(cases, EXPECTED_AI_CASES)
 
-    def test_ai_model_mediated_profile_is_conditional_and_evidence_based(self) -> None:
-        profile = (SKILL_ROOT / "references" / "repository-testing-profiles.md").read_text(
-            encoding="utf-8"
-        )
-        self.assert_ai_case_contract(profile)
+    def active_ai_policy_paragraphs(self, profile: str) -> list[str]:
+        """Extract active prose, excluding quoted examples and the case table."""
         section = self.ai_profile_tokens(profile)
-        # Only rendered prose satisfies policy. Code spans/fences and HTML
-        # comments cannot stand in for active skill instructions.
-        prose = " ".join(
-            child.content
-            for token in section
-            if token.type == "inline"
-            for child in token.children or []
-            if child.type == "text"
-        )
+        paragraphs = []
+        quote_depth = 0
+        for index, token in enumerate(section):
+            if token.type == "blockquote_open":
+                quote_depth += 1
+            elif token.type == "blockquote_close":
+                quote_depth -= 1
+            elif (
+                token.type == "inline"
+                and not quote_depth
+                and index > 0
+                and section[index - 1].type == "paragraph_open"
+                and not token.content.startswith(
+                    "| Case | Condition | Observable test-strategy decision |"
+                )
+            ):
+                prose = " ".join(
+                    child.content for child in token.children or [] if child.type == "text"
+                )
+                paragraphs.append(" ".join(prose.split()).casefold())
+        return paragraphs
+
+    def assert_ai_policy_contract(self, profile: str) -> None:
+        paragraphs = self.active_ai_policy_paragraphs(profile)
         for boundary in (
             "only when the system under test",
             "Using a coding assistant",
@@ -343,7 +367,20 @@ class TestStrategyContractTests(unittest.TestCase):
             "do not execute tests, change fixtures, or contact providers",
             "An agent's success claim",
             "if the agent can influence the only scorer",
+            "authorized task inputs and immutable public scoring rubrics",
+            "protected evaluation answers whose premature disclosure would invalidate the result",
+            "unauthorized changes to authoritative graders, expected outputs, or scoring state",
+            "public task information alone does not compromise independence",
             "do not probe live targets",
+            "only for historical replay or forecasting",
+            "decision cutoff, including timezone and boundary semantics",
+            "publication versus availability timestamps",
+            "reveals outcomes only after a prediction is recorded",
+            "an apparently old document contains a later revision",
+            "model training, fine-tuning, retrieval, or task selection may still expose outcomes",
+            "potentially contaminated, not as verified forecasting skill",
+            "prefer prospective, sealed predictions",
+            "not authorization to fetch archives, run models, or add forecasting infrastructure",
             "state exactly which model, adapter, prompt, or harness setting changes between arms",
             "bundled configuration comparison",
             "record each arm's actual configuration",
@@ -351,8 +388,17 @@ class TestStrategyContractTests(unittest.TestCase):
             "not permission to run model evaluations",
             "against requiring behavioral model evaluations as a merge gate",
         ):
-            with self.subTest(boundary=boundary):
-                self.assertIn(boundary.casefold(), prose.casefold())
+            self.assertTrue(
+                any(boundary.casefold() in paragraph for paragraph in paragraphs),
+                f"Missing active AI policy: {boundary}",
+            )
+
+    def test_ai_model_mediated_profile_is_conditional_and_evidence_based(self) -> None:
+        profile = (SKILL_ROOT / "references" / "repository-testing-profiles.md").read_text(
+            encoding="utf-8"
+        )
+        self.assert_ai_case_contract(profile)
+        self.assert_ai_policy_contract(profile)
 
     def test_ai_case_contract_rejects_hidden_markdown(self) -> None:
         profile = (SKILL_ROOT / "references" / "repository-testing-profiles.md").read_text(
@@ -381,34 +427,28 @@ class TestStrategyContractTests(unittest.TestCase):
         profile = (SKILL_ROOT / "references" / "repository-testing-profiles.md").read_text(
             encoding="utf-8"
         )
-        policy = next(
-            line
-            for line in profile.splitlines()
-            if line.startswith("- **Matched efficiency comparisons:**")
-        )
-        for wrapper in ("comment", "fence"):
-            before, after = (
-                ("<!--\n", "\n-->")
-                if wrapper == "comment"
-                else ("```markdown\n", "\n```")
+        for label in (
+            "Independent outcome and grader integrity",
+            "Point-in-time evaluation (only for historical replay or forecasting)",
+            "Matched efficiency comparisons",
+        ):
+            policy = next(
+                line for line in profile.splitlines() if line.startswith(f"- **{label}:**")
             )
-            with self.subTest(wrapper=wrapper):
-                modified = profile.replace(policy, before + policy + after, 1)
-                # The remaining table still has six cases; their prose
-                # contract must not be satisfied by a hidden example.
-                self.assert_ai_case_contract(modified)
-                section = self.ai_profile_tokens(modified)
-                prose = " ".join(
-                    child.content
-                    for token in section
-                    if token.type == "inline"
-                    for child in token.children or []
-                    if child.type == "text"
-                )
-                self.assertNotIn(
-                    "record each arm's actual configuration",
-                    prose.casefold(),
-                )
+            mutations = {
+                "removed": "",
+                "comment": f"\n<!--\n{policy}\n-->\n",
+                "fence": f"\n```markdown\n{policy}\n```\n",
+                "blockquote": f"\n> {policy}\n",
+                "nested blockquote": f"\n- Example:\n\n  > {policy}\n",
+            }
+            for wrapper, replacement in mutations.items():
+                with self.subTest(policy=label, wrapper=wrapper):
+                    modified = profile.replace(policy, replacement, 1)
+                    # The case table remains valid, but cannot substitute for prose.
+                    self.assert_ai_case_contract(modified)
+                    with self.assertRaises(AssertionError):
+                        self.assert_ai_policy_contract(modified)
 
     def test_ai_case_contract_rejects_missing_duplicate_and_changed_cases(self) -> None:
         profile = (SKILL_ROOT / "references" / "repository-testing-profiles.md").read_text(
