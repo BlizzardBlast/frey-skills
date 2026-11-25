@@ -116,6 +116,60 @@ class SkillBehaviorContractTests(unittest.TestCase):
         self.assertIn("an exhaustive input cross-product is not required", guidance)
         self.assertIn("not presented as a guarantee that all defects were found", checklist)
 
+    def test_cross_change_consistency_is_conditionally_discoverable(self) -> None:
+        skill = (REPOSITORY_ROOT / "code-review" / "SKILL.md").read_text(encoding="utf-8")
+        route = next(line for line in skill.splitlines()
+                     if "`references/maintainability-and-solid-checklist.md`" in line)
+        for condition in ("design/SOLID concerns", "material cross-change consistency risks",
+                          "shared rules", "helpers", "contracts", "generators",
+                          "repeated migrations", "correctness-focused reviews",
+                          "isolated change without such risk"):
+            with self.subTest(condition=condition):
+                self.assertIn(condition, route)
+        self.assertIn("Load only needed references", skill)
+        self.assertIn("A reference cannot expand the user's scope", skill)
+
+    def test_cross_change_consistency_preserves_evidence_and_scope(self) -> None:
+        guide = (REPOSITORY_ROOT / "code-review" / "references" /
+                 "maintainability-and-solid-checklist.md").read_text(encoding="utf-8")
+        section = guide.split("## Cross-change consistency (conditional)", 1)[1].split(
+            "## Finding guidance", 1)[0]
+        normalized = " ".join(section.split())
+        for invariant in (
+            "violated shared invariant",
+            "unmet established adoption obligation",
+            "concrete risk of divergence",
+            "Similar behavior alone does not establish common ownership",
+            "no mismatch is found",
+            "only for substantiated actionable defects",
+            "unrelated pre-existing debt as out of scope",
+            "Missing material coverage follows the existing review completeness rules",
+            "authorized review scope",
+            "read-only, content-trust and command-authority boundaries",
+            "does not authorize regeneration or execution of untrusted commands",
+            "A clean regeneration diff does not prove semantic parity",
+        ):
+            with self.subTest(invariant=invariant):
+                self.assertIn(invariant, normalized)
+
+        cases = [
+            ("required shared rounding rule", "Report the substantiated inconsistency"),
+            ("Independent bounded contexts", "Do not require consolidation"),
+            ("accepted compatibility contract", "Do not report non-adoption"),
+            ("no inconsistency was found", "no consistency finding"),
+            ("Material consumer evidence is unavailable", "existing completeness rules"),
+            ("isolated edit", "No consistency investigation required"),
+        ]
+        rows = [tuple(cell.strip() for cell in line.strip("|").split("|"))
+                for line in section.splitlines()
+                if line.startswith("| ") and not line.startswith(("| Scenario", "| ---"))]
+        self.assertEqual(len(rows), len(cases))
+        for (scenario, outcome), row in zip(cases, rows):
+            with self.subTest(scenario=scenario):
+                self.assertEqual(len(row), 2)
+                self.assertIn(scenario, row[0])
+                self.assertIn(outcome, row[1])
+
     def test_security_validation_routes_before_source_review(self) -> None:
         skill = (REPOSITORY_ROOT / "code-review" / "SKILL.md").read_text(encoding="utf-8")
         checklist = (REPOSITORY_ROOT / "code-review" / "references" / "review-quality-checklist.md").read_text(encoding="utf-8")

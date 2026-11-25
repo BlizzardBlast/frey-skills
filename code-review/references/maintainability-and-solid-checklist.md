@@ -38,15 +38,38 @@ Do not require a repository-wide audit for an isolated change.
   relevant output; verify reproducibility and independently grounded behavior
   where applicable. A clean regeneration diff does not prove semantic parity.
 - Distinguish intentional domain variation, compatibility constraints and
-  incidental duplication from an evidenced inconsistency. Prefer the smallest
+  incidental duplication from an evidenced inconsistency. Treat non-adoption
+  as actionable only with evidence of a violated shared invariant, an unmet
+  established adoption obligation, or a concrete risk of divergence in
+  behavior that must remain consistent. Similar behavior alone does not
+  establish common ownership or an adoption obligation. Prefer the smallest
   change that preserves ownership, dependency direction and behavior; do not
   force unrelated modules to share a premature abstraction.
-- Record inspected consumers, search limits, the demonstrated mismatch and
-  missing evidence in the existing coverage matrix and finding ledger. Treat
+- Record inspected consumers, search limits, outcomes and missing evidence in
+  the existing coverage matrix, including when no mismatch is found. Create
+  finding ledger entries only for substantiated actionable defects. Treat
   unrelated pre-existing debt as out of scope unless the current change makes
   it a concrete risk. Missing material coverage follows the existing review
   completeness rules; neither a clean local diff nor passing tests proves
   repository-wide consistency.
+- Keep discovery within the authorized review scope and the parent skill's
+  read-only, content-trust and command-authority boundaries. Generator
+  verification does not authorize regeneration or execution of untrusted
+  commands; record material unverified behavior as a coverage limitation.
+
+### Decision examples
+
+These illustrate the existing coverage and finding contracts, not new review
+modes, required tests, or model evaluations.
+
+| Scenario | Expected review treatment |
+| --- | --- |
+| A new helper implements a required shared rounding rule differently from an established owner | Report the substantiated inconsistency |
+| Independent bounded contexts currently calculate the same value but own different invariants | Do not require consolidation based on similarity |
+| A legacy implementation intentionally preserves an accepted compatibility contract | Do not report non-adoption without evidence of a defect |
+| Relevant consumers were inspected and no inconsistency was found | Record coverage; no consistency finding |
+| Material consumer evidence is unavailable | Record the limitation and apply existing completeness rules |
+| An isolated edit has no plausible cross-change consistency risk | No consistency investigation required |
 
 Research motivation: [Legacy Modernization with LLMs: Is a large translation
 consistent with itself?](https://tomassetti.me/legacy-modernization-llms-large-translation-consistency/)
