@@ -361,28 +361,33 @@ class TestStrategyContractTests(unittest.TestCase):
     def assert_ai_policy_contract(self, profile: str) -> None:
         paragraphs = self.active_ai_policy_paragraphs(profile)
         for boundary in (
-            "only when the system under test",
+            "only when the system under test makes behavior-affecting model calls, "
+            "delegates actions to an AI agent, or relies on model-selected tools.",
             "Using a coding assistant",
             "This is read-only test planning",
             "do not execute tests, change fixtures, or contact providers",
             "An agent's success claim",
-            "if the agent can influence the only scorer",
+            "if the agent can influence the only scorer, mark correctness unverified.",
             "authorized task inputs and immutable public scoring rubrics",
             "protected evaluation answers whose premature disclosure would invalidate the result",
             "unauthorized changes to authoritative graders, expected outputs, or scoring state",
             "public task information alone does not compromise independence",
             "do not probe live targets",
+            "without logging prompts, credentials, or sensitive user material.",
             "only for historical replay or forecasting",
             "decision cutoff, including timezone and boundary semantics",
             "publication versus availability timestamps",
             "reveals outcomes only after a prediction is recorded",
             "an apparently old document contains a later revision",
+            "Date-filtered search and a prompt telling a model to ignore future "
+            "knowledge do not establish temporal isolation:",
             "model training, fine-tuning, retrieval, or task selection may still expose outcomes",
             "potentially contaminated, not as verified forecasting skill",
             "prefer prospective, sealed predictions",
             "not authorization to fetch archives, run models, or add forecasting infrastructure",
             "state exactly which model, adapter, prompt, or harness setting changes between arms",
             "bundled configuration comparison",
+            "not proof of a single factor.",
             "record each arm's actual configuration",
             "not a fair comparison",
             "not permission to run model evaluations",
@@ -449,6 +454,48 @@ class TestStrategyContractTests(unittest.TestCase):
                     self.assert_ai_case_contract(modified)
                     with self.assertRaises(AssertionError):
                         self.assert_ai_policy_contract(modified)
+
+    def test_ai_policy_contract_rejects_reversed_safety_clauses(self) -> None:
+        profile = (SKILL_ROOT / "references" / "repository-testing-profiles.md").read_text(
+            encoding="utf-8"
+        )
+        self.assert_ai_policy_contract(profile)
+        for label, original, contradictory in (
+            (
+                "applicability",
+                "makes behavior-affecting model calls, delegates actions to an AI agent, "
+                "or relies on model-selected tools.",
+                "does not make behavior-affecting model calls, delegate actions to an AI agent, "
+                "or rely on model-selected tools.",
+            ),
+            (
+                "oracle independence",
+                "if the agent can influence the only scorer, mark correctness unverified.",
+                "if the agent can influence the only scorer, mark correctness verified.",
+            ),
+            (
+                "sensitive logging",
+                "without logging prompts, credentials, or sensitive user material.",
+                "while logging prompts, credentials, or sensitive user material.",
+            ),
+            (
+                "temporal isolation",
+                "knowledge do not establish temporal isolation:",
+                "knowledge establish temporal isolation:",
+            ),
+            (
+                "comparison attribution",
+                "not proof of a single factor.",
+                "proof of a single factor.",
+            ),
+        ):
+            with self.subTest(policy=label):
+                self.assertEqual(profile.count(original), 1)
+                modified = profile.replace(original, contradictory, 1)
+                self.assertNotEqual(modified, profile)
+                self.assert_ai_case_contract(modified)
+                with self.assertRaises(AssertionError):
+                    self.assert_ai_policy_contract(modified)
 
     def test_ai_case_contract_rejects_missing_duplicate_and_changed_cases(self) -> None:
         profile = (SKILL_ROOT / "references" / "repository-testing-profiles.md").read_text(
