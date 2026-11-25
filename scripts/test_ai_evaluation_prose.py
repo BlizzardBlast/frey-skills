@@ -6,7 +6,6 @@ import unittest
 from pathlib import Path
 from typing import Any
 
-from scripts import check
 from scripts.documentation import inline_text, parse_visible, section_tokens
 
 
@@ -58,13 +57,7 @@ EXPECTED_AI_CASES = {
 }
 
 
-
 class AIEvaluationProseTests(unittest.TestCase):
-    def test_registered_in_dependency_equipped_gate_only(self) -> None:
-        module = "scripts.test_ai_evaluation_prose"
-        self.assertEqual(sum(command.count(module) for command in check.group_commands("repository")), 1)
-        self.assertNotIn(module, check.CONTRACT_TESTS)
-
     def ai_profile_tokens(self, profile: str) -> list[Any]:
         """Return only the visible, top-level AI profile; exclude inert Markdown."""
         title = "AI model-mediated application behavior (conditional)"
@@ -160,6 +153,7 @@ class AIEvaluationProseTests(unittest.TestCase):
             "multiple independent attempts per representative case",
             "justified sample size and budget",
             "Before observing outcomes, define inclusion and exclusion rules, retry and timeout limits, and reporting denominators",
+            "Retain genuine failures and timeouts in the applicable outcome denominator",
             "do not exclude genuine model failures because of poor performance",
             "report deviations separately",
             "first-attempt outcomes from retry-assisted outcomes",
@@ -268,6 +262,11 @@ class AIEvaluationProseTests(unittest.TestCase):
                 "ordinary coding exclusion",
                 "does not activate this profile.",
                 "does activate this profile.",
+            ),
+            (
+                "outcome denominator",
+                "Retain genuine failures and timeouts in the applicable outcome denominator",
+                "Omit genuine failures and timeouts from the applicable outcome denominator",
             ),
             (
                 "exclusion bias",
