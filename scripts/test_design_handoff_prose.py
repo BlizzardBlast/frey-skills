@@ -5,7 +5,6 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from scripts import check
 from scripts.documentation import inline_text, parse_visible, section_tokens
 
 
@@ -48,11 +47,6 @@ POLICIES = (
 
 
 class DesignHandoffProseTests(unittest.TestCase):
-    def test_registered_in_dependency_equipped_gate_only(self) -> None:
-        module = "scripts.test_design_handoff_prose"
-        self.assertEqual(sum(command.count(module) for command in check.group_commands("repository")), 1)
-        self.assertNotIn(module, check.CONTRACT_TESTS)
-
     def handoff_tokens(self, text: str):
         tokens, _ = parse_visible(text)
         headings = [
@@ -100,6 +94,7 @@ class DesignHandoffProseTests(unittest.TestCase):
     def assert_policy_contract(self, text: str) -> None:
         section = self.handoff_tokens(text)
         paragraphs = []
+        readiness_paragraphs = []
         quote_depth = 0
         for index, token in enumerate(section):
             if token.type == "blockquote_open":
@@ -111,28 +106,29 @@ class DesignHandoffProseTests(unittest.TestCase):
                 and section[index - 1].type == "paragraph_open"
                 and not token.content.startswith(TABLE_HEADER)
             ):
-                # Exclude code spans and HTML; retain words across soft wrapping.
-                prose = " ".join(
-                    child.content for child in token.children or [] if child.type == "text"
+                children = token.children or []
+                # Both checks use the same active paragraphs. Only readiness
+                # checks retain inline code containing a literal status enum.
+                prose = " ".join(child.content for child in children if child.type == "text")
+                readiness = " ".join(
+                    child.content for child in children
+                    if child.type == "text" or (
+                        child.type == "code_inline" and child.content == "NOT_READY"
+                    )
                 )
                 paragraphs.append(" ".join(prose.split()))
+                readiness_paragraphs.append(" ".join(readiness.split()))
         for policy in POLICIES:
             self.assertTrue(any(policy in paragraph for paragraph in paragraphs), policy)
-        # Assert readiness as a visible complete clause, including its inline enum.
-        normalized = [
-            " ".join(inline_text(token.children or []).split())
-            for index, token in enumerate(section)
-            if token.type == "inline" and index > 0
-            and section[index - 1].type == "paragraph_open"
-        ]
-        self.assertTrue(any(
-            "preserve NOT_READY under existing readiness rules" in line
-            for line in normalized
-        ))
-        self.assertTrue(any(
-            "An inaccessible reference containing material expected behavior also leaves the plan NOT_READY until resolved." in line
-            for line in normalized
-        ))
+        for clause in (
+            "preserve NOT_READY under existing readiness rules",
+            "An inaccessible reference containing material expected behavior also "
+            "leaves the plan NOT_READY until resolved.",
+        ):
+            self.assertTrue(
+                any(clause in paragraph for paragraph in readiness_paragraphs),
+                f"Missing active readiness clause: {clause}",
+            )
 
     def test_visible_policy_and_cases(self) -> None:
         text = PROFILE.read_text(encoding="utf-8")
@@ -164,6 +160,38 @@ class DesignHandoffProseTests(unittest.TestCase):
         ):
             with self.subTest(replacement=replacement), self.assertRaises(AssertionError):
                 self.assert_policy_contract(text.replace(original, replacement, 1))
+
+    def test_readiness_contract_rejects_inactive_original_clauses(self) -> None:
+        text = PROFILE.read_text(encoding="utf-8")
+        originals = (
+            "preserve `NOT_READY` under\n  existing readiness rules",
+            "An inaccessible reference containing material\n"
+            "  expected behavior also leaves the plan `NOT_READY` until resolved.",
+        )
+        anchor = "Illustrative planning decisions (not executed evaluations):"
+        self.assertEqual(text.count(anchor), 1)
+        self.assert_policy_contract(text)
+        for original in originals:
+            self.assertEqual(text.count(original), 1)
+            reversed_text = text.replace(
+                original, original.replace("NOT_READY", "READY_TO_IMPLEMENT"), 1
+            )
+            self.assertNotEqual(reversed_text, text)
+            normalized = " ".join(original.split())
+            inactive_examples = (
+                "",
+                f"> {normalized}\n\n",
+                f"- Example:\n\n  > {normalized}\n\n",
+                f"<!-- {normalized} -->\n\n",
+                f"```markdown\n{normalized}\n```\n\n",
+                f"``{normalized}``\n\n",
+            )
+            for example in inactive_examples:
+                with self.subTest(original=original, example=example):
+                    modified = reversed_text.replace(anchor, example + anchor, 1)
+                    self.assert_case_contract(modified)
+                    with self.assertRaisesRegex(AssertionError, "Missing active readiness clause"):
+                        self.assert_policy_contract(modified)
 
     def test_case_table_rejects_changed_missing_and_duplicate_rows(self) -> None:
         text = PROFILE.read_text(encoding="utf-8")

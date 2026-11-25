@@ -159,6 +159,12 @@ class CheckTests(unittest.TestCase):
         for command in commands:
             self.assertEqual(command[:6], [sys.executable, "-X", "utf8", "-m", "skills_ref.cli", "validate"])
 
+    def test_design_handoff_prose_stays_in_repository_gate(self) -> None:
+        module = "scripts.test_design_handoff_prose"
+        self.assertEqual(sum(command.count(module) for command in check.group_commands("repository")), 1)
+        self.assertNotIn(module, check.CONTRACT_TESTS)
+        self.assertFalse(any(module in command for command in check.group_commands("plugin")))
+
     def test_empty_skill_discovery_is_a_failure(self) -> None:
         with mock.patch.object(check, "preflight", return_value=[]), mock.patch.object(
             check, "discover_skill_names", return_value=()
