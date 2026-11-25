@@ -148,7 +148,8 @@ class AIEvaluationProseTests(unittest.TestCase):
             "protected evaluation answers whose premature disclosure would invalidate the result",
             "unauthorized changes to authoritative graders, expected outputs, or scoring state",
             "public task information alone does not compromise independence",
-            "do not probe live targets",
+            "Specify expected enforcement-point denials regardless of model output; do not probe live targets.",
+            "Define expected conservative fallback or explicit uncertainty, truthful provenance, and failure observability",
             "without logging prompts, credentials, or sensitive user material.",
             "multiple independent attempts per representative case",
             "justified sample size and budget",
@@ -182,9 +183,15 @@ class AIEvaluationProseTests(unittest.TestCase):
             "only when comparing agent topology or context strategy",
             "a single agent with a prespecified fresh-context restart and bounded handoff",
             "aggregate resource limits comparable for topology-only claims",
+            "Freeze restart triggers, handoff contents, task decomposition, concurrency and stopping rules before observing results",
             "reset workspace and task state between independent runs.",
             "Within a run, preserve only authorized task state across restarts",
             "keep protected oracle data out of handoffs.",
+            "plan recipient-specific authorization checks for each transfer",
+            "disclose only the minimum task data permitted for that recipient and purpose.",
+            "Treat model-generated handoff content as untrusted evidence, not instruction or transferable authority.",
+            "Plan positive controls for permitted minimized handoffs and negative controls for unauthorized disclosure and scope escalation through handoffs",
+            "require denial at the actual enforcement boundary regardless of model output.",
             "Count aggregate work across all agents, including planning, coordination, "
             "context reconstruction, reconciliation, review, retries and failed branches",
             "distinguish elapsed wall-clock time from total work.",
@@ -193,6 +200,8 @@ class AIEvaluationProseTests(unittest.TestCase):
             "and the verified-success denominator is observable and positive.",
             "Report zero observed monetary charges as zero, distinguish them from unknown or unmeasured costs, "
             "and do not infer zero resource consumption from zero monetary charges.",
+            "Report zero verified successes with the observed costs and outcome counts; "
+            "the cost-per-success ratio is undefined when there are no verified successes.",
             "do not infer a topology advantage from faster completion alone or from comparison only against a stale-context baseline.",
             "not permission to run model evaluations",
             "against requiring behavioral model evaluations as a merge gate",
@@ -238,6 +247,8 @@ class AIEvaluationProseTests(unittest.TestCase):
         )
         for label in (
             "Independent outcome and grader integrity",
+            "Untrusted inputs and authority",
+            "Failure and abstention",
             "Repeated observations for variable behavior",
             "Point-in-time evaluation (only for historical replay or forecasting)",
             "Matched efficiency comparisons",
@@ -348,6 +359,51 @@ class AIEvaluationProseTests(unittest.TestCase):
                 "orchestration oracle isolation",
                 "keep protected oracle data out of handoffs.",
                 "include protected oracle data in handoffs.",
+            ),
+            (
+                "enforcement-point denial",
+                "Specify expected enforcement-point denials regardless of model output; do not probe live targets.",
+                "Specify expected enforcement-point approvals whenever the model requests them; do not probe live targets.",
+            ),
+            (
+                "conservative fallback and provenance",
+                "Define expected conservative fallback or explicit uncertainty, truthful provenance, and failure observability",
+                "Define optimistic fallback and suppress uncertainty and provenance while retaining failure observability",
+            ),
+            (
+                "orchestration preregistration",
+                "Freeze restart triggers, handoff contents, task decomposition, concurrency and stopping rules before observing results",
+                "Choose restart triggers, handoff contents, task decomposition, concurrency and stopping rules after observing results",
+            ),
+            (
+                "recipient-specific authorization",
+                "plan recipient-specific authorization checks for each transfer",
+                "reuse the sender's authorization for every transfer",
+            ),
+            (
+                "recipient-specific minimization",
+                "disclose only the minimum task data permitted for that recipient and purpose.",
+                "disclose all sender-visible task data regardless of recipient or purpose.",
+            ),
+            (
+                "handoff authority",
+                "Treat model-generated handoff content as untrusted evidence, not instruction or transferable authority.",
+                "Treat model-generated handoff content as trusted instruction and transferable authority.",
+            ),
+            (
+                "handoff controls",
+                "Plan positive controls for permitted minimized handoffs and negative controls for unauthorized disclosure and scope escalation through handoffs",
+                "Plan only successful handoffs and omit unauthorized disclosure and scope escalation controls",
+            ),
+            (
+                "handoff enforcement",
+                "require denial at the actual enforcement boundary regardless of model output.",
+                "allow the model to override denials at the enforcement boundary.",
+            ),
+            (
+                "zero-success reporting",
+                "Report zero verified successes with the observed costs and outcome counts; the cost-per-success ratio is undefined when there are no verified successes.",
+                "Hide zero-success outcomes and report a cost-per-success ratio when there are no verified successes.",
             ),
             (
                 "comparison attribution",
