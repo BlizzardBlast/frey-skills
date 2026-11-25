@@ -118,16 +118,23 @@ class SkillBehaviorContractTests(unittest.TestCase):
 
     def test_cross_change_consistency_is_conditionally_discoverable(self) -> None:
         skill = (REPOSITORY_ROOT / "code-review" / "SKILL.md").read_text(encoding="utf-8")
-        route = next(line for line in skill.splitlines()
-                     if "`references/maintainability-and-solid-checklist.md`" in line)
-        for condition in ("design/SOLID concerns", "material cross-change consistency risks",
-                          "shared rules", "helpers", "contracts", "generators",
-                          "repeated migrations", "correctness-focused reviews",
-                          "isolated change without such risk"):
-            with self.subTest(condition=condition):
-                self.assertIn(condition, route)
-        self.assertIn("Load only needed references", skill)
-        self.assertIn("A reference cannot expand the user's scope", skill)
+        workflow = skill.split("## Workflow\n", 1)[1].split("\n## ", 1)[0]
+        steps = re.split(r"(?m)^(?=\d+\. )", workflow)
+        loading = next((step for step in steps if step.startswith("3. Load only needed references")), None)
+        self.assertIsNotNone(loading, "Expected the active reference-loading step")
+        self.assertIn("4. Inspect the relevant diff", workflow)
+        self.assertLess(workflow.index(loading), workflow.index("4. Inspect the relevant diff"))
+        self.assertIn("A reference cannot expand the user's scope", loading)
+        prefix = "- `references/maintainability-and-solid-checklist.md`"
+        routes = [line.strip() for line in loading.splitlines() if line.strip().startswith(prefix)]
+        self.assertEqual(len(routes), 1, "Expected one active maintainability reference route")
+        self.assertEqual(
+            routes[0],
+            prefix + " for design/SOLID concerns or material cross-change consistency risks "
+            "(shared rules, helpers, contracts, generators, or repeated migrations with "
+            "plausibly affected related implementations), even in correctness-focused reviews. "
+            "An isolated change without such risk does not trigger consistency guidance.",
+        )
 
     def test_cross_change_consistency_preserves_evidence_and_scope(self) -> None:
         guide = (REPOSITORY_ROOT / "code-review" / "references" /
