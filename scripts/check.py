@@ -64,6 +64,7 @@ def group_commands(group: str) -> list[list[str]]:
     if group == "repository":
         return [
             [python, "scripts/validate_repository.py"],
+            [python, "-m", "unittest", "scripts.test_ai_evaluation_prose"],
             [python, "-m", "unittest", "discover", "-s", "code-review/scripts", "-p", "test_*.py"],
             [python, "-m", "unittest", "scripts.test_validate_repository", "scripts.test_documentation", "scripts.test_content_trust_prose", "scripts.test_threat_modeling_prose", "scripts.test_human_usability_prose", "scripts.test_prepare_release", "scripts.test_check", "scripts.test_workflow_contracts", "scripts.test_smoke_install", "scripts.test_smoke_release", "scripts.test_smoke_codex"],
             [python, "-m", "unittest", "scripts.test_design_handoff_prose"],

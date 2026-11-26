@@ -104,6 +104,12 @@ class CheckTests(unittest.TestCase):
         self.assertIn("ps must be available on PATH", errors.getvalue())
         self.assertNotIn("checks passed", output.getvalue())
 
+    def test_ai_evaluation_prose_stays_in_repository_gate(self) -> None:
+        module = "scripts.test_ai_evaluation_prose"
+        self.assertEqual(sum(command.count(module) for command in check.group_commands("repository")), 1)
+        self.assertNotIn(module, check.CONTRACT_TESTS)
+        self.assertFalse(any(module in command for command in check.group_commands("plugin")))
+
     def test_missing_markdown_parser_stops_only_repository_checks(self) -> None:
         with mock.patch.object(check.importlib.util, "find_spec", side_effect=lambda name: None if name == "markdown_it" else object()), mock.patch.object(
             check.shutil, "which", return_value="fixture-command"
