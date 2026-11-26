@@ -24,6 +24,11 @@ class CheckTests(unittest.TestCase):
         self.assertEqual(sum(command.count(module) for command in check.group_commands("repository")), 1)
         self.assertNotIn(module, check.CONTRACT_TESTS)
 
+    def test_threat_modeling_prose_stays_in_the_dependency_equipped_repository_gate(self) -> None:
+        module = "scripts.test_threat_modeling_prose"
+        self.assertEqual(sum(command.count(module) for command in check.group_commands("repository")), 1)
+        self.assertNotIn(module, check.CONTRACT_TESTS)
+
     def test_human_usability_prose_stays_in_repository_gate(self) -> None:
         module = "scripts.test_human_usability_prose"
         self.assertEqual(sum(command.count(module) for command in check.group_commands("repository")), 1)
