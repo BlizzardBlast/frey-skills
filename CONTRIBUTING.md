@@ -228,6 +228,9 @@ PyYAML is an established dependency. `scripts.test_check` verifies that all plug
 contract modules load and contracts for orientation, architecture decisions,
 threat modeling, and release execution run without site packages, so the
 standalone plugin group remains standard-library-only.
+The active AI inference and delegated-action prose contracts run separately in
+`scripts.test_threat_modeling_prose` in the dependency-equipped repository gate;
+they reuse the existing Markdown parser and test published wording, not model behavior.
 
 `scripts.test_release_execution_contract` binds twenty-two published conditions
 to acceptance criteria, result states, and permitted effects. It guards approval,

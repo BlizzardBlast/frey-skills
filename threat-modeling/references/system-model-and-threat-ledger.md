@@ -32,6 +32,97 @@ do not disappear from a high-level diagram. Mark inapplicable elements with a
 reason. Compare diagrams to inspected source or the stated design; report
 conflicts rather than assuming the picture is current or authoritative.
 
+## AI inference supply-chain boundaries (when in scope)
+
+If a scoped system sends prompts or agent context to external AI services,
+model the **entire known inference path**, not just the configured API hostname.
+The [Dragos canary study](https://www.dragos.com/blog/ai-supply-chain-security-canary-tokens)
+(November 2026) illustrates possible disclosure at downstream providers and
+marketplace resellers. It is evidence of specific observed exposures, **not**
+proof that every model provider leaks prompts.
+
+- Inventory the **categories** of outbound content (system/user/tool messages,
+  source code and diffs, retrieved documents, titles, URLs, attachments,
+  runtime diagnostics, and any secrets potentially included). Inspect relevant
+  request construction and sanitization; never retrieve or reproduce real
+  credentials or confidential prompts to fill the model.
+- Trace known parties and transfers from agent/client through applicable
+  gateways/routers, resellers, inference hosts, model developers, tools,
+  telemetry, and logging. Distinguish **inference-hosting and model-development
+  roles** without assuming separate entities or trust boundaries.
+  A single entity may perform both roles; identify separate actors or boundaries
+  only when inspected evidence or the stated design supports distinct
+  identities, privileges, or data flows. Record which entities can see plaintext
+  prompts, responses, or metadata; use `unknown` for material access relationships
+  not established by evidence. Include fallback and retry routes. A trusted
+  HTTPS entry point does not establish downstream identity or controls.
+- For each hop, separate **observed configuration**, **vendor-reported
+  claims**, and **unknowns** about processor identity, data location, retention,
+  zero-data-retention (ZDR) settings, prompt logging, caches, access controls,
+  and deletion. Trace whether upstream ZDR and retention commitments apply to
+  **each downstream processor**, including fallback/retry routes. Record
+  mismatches or unknown propagation instead of treating a router's ZDR flag
+  as evidence of downstream enforcement. TLS protects transport, not plaintext
+  exposed to a processor; settings alone do not prove privacy guarantees.
+- Link credible disclosure paths to the specific asset, actor, and trust
+  boundary. Consider compromised intermediaries, authorized reseller logging,
+  prompt-injection-driven inclusion of sensitive context, error reporting, and
+  unexpected provider switching. Do not assert a confirmed leak without a
+  validated finding.
+- Suggest proportionate mitigations such as sending less context, redaction,
+  explicit destination/provider selection, trusted processing agreements,
+  credential isolation, and restricted diagnostics. Keep their effectiveness
+  unverified until separately evidenced. A canary experiment, live provider
+  probe, or inspection of real secrets is **not** authorized by this read-only
+  modeling workflow.
+
+Synthetic contrasts: a developer hosting its own model may be one entity
+performing both roles without an invented inter-entity boundary. A third-party
+model run on a private inference host does not by itself imply its developer
+receives prompts. When a separate host forwards prompts to the model developer,
+trace that evidenced transfer and boundary. A router advertising ZDR does not
+establish that a downstream host has the same retention policy. Record each
+party and the evidence for its actual access and controls.
+
+If a material downstream processor or data path cannot be established, record
+the missing evidence and mark the affected coverage `PARTIAL`; do not silently
+collapse several organizations into one trusted API endpoint.
+
+## Delegated agent actions and containment (when in scope)
+
+For an agent or subagent that can invoke tools with externally visible effects
+or access protected resources, distinguish the initiating principal, execution
+principal, downstream resource owner, and actual enforcement points. The
+[Dark Reading access-control report](https://www.darkreading.com/identity-access-management-security/ai-agents-bring-enterprises-new-access-control-challenges)
+(2026-11-21) illustrates task drift during dependency failure, confused-deputy
+access, and containment controls with different enforcement scopes.
+
+- Trace the delegated authority for the specific task, operation, resource,
+  destination and lifetime; distinguish user authorization from agent/service
+  credentials. Check effective permissions at the downstream enforcement
+  point, not just tool availability or prompt instructions. Where delegation
+  exists, consider whether a subagent can acquire broader authority than the
+  authorized task.
+- Model fallback, retries and substitutions when the intended resource fails.
+  Access to an alternative resource is not authorization to use it for this
+  task. Distinguish explicitly authorized failover from agent-selected scope
+  expansion; examine denial and escalation paths.
+- Map revocation and containment separately for model access, process
+  execution, queued or in-flight actions, issued credentials and downstream
+  resource access, where present. Blocking model access alone does not prove
+  downstream access is revoked or that in-flight work stopped. Record
+  enforcement timing, propagation limits and effects that cannot be undone.
+- Use synthetic contrasts: an unavailable authorized store versus an
+  accessible but unapproved store; a low-privilege requester using an agent
+  with broader service permissions; and a model gateway denial while an
+  already-issued resource credential remains usable. These are prompts for
+  threat hypotheses, not evidence of actual vulnerabilities or authority to
+  execute tools, test credentials, or probe a live system.
+
+Unknown material delegation or containment paths leave affected coverage
+`PARTIAL`. Keep proposed controls distinct from observed implementation and
+validation status; the existing read-only and bounded-stop rules still apply.
+
 ## Threat ledger contract
 
 Use stable IDs such as `TM-001`. Preserve IDs when refreshing the same threat;
