@@ -133,15 +133,17 @@ class MigrationUpgradeContractTests(unittest.TestCase):
 
     def test_material_rewrite_routing_and_reference_scope(self) -> None:
         skill = (ROOT / "test-strategy" / "SKILL.md").read_text(encoding="utf-8")
-        lines = skill.splitlines()
-        index = next(
-            i for i, line in enumerate(lines)
-            if "`references/migration-and-upgrade-rules.md`" in line
+        workflow = skill.split("## Workflow\n", 1)[1].split("\n## ", 1)[0]
+        loading = workflow.partition("\n4. Load only:\n")[2].partition("\n5. ")[0]
+        entries = ("\n" + loading).split("\n   - ")
+        routes = [entry for entry in entries if entry.startswith(f"`{REFERENCE}` ")]
+        self.assertEqual(len(routes), 1, "Require one migration reference in the loading step")
+        self.assertIn(
+            "Also load it for material behavior-preserving rewrites or language translations "
+            "even when public APIs and dependencies are unchanged. Routine refactors "
+            "without material parity risk do not trigger migration guidance.",
+            [line.strip() for line in routes[0].splitlines()[1:]],
         )
-        route = " ".join(lines[index:index + 3])
-        self.assertIn("material behavior-preserving rewrites or language translations", route)
-        self.assertIn("even when public APIs and dependencies are unchanged", route)
-        self.assertIn("Routine refactors without material parity risk do not trigger migration guidance", route)
         rules = self.rules["test-strategy"]
         intro = " ".join(rules.split("## Map scenarios")[0].split())
         self.assertIn("material behavior-preserving rewrite or language translation", intro)
