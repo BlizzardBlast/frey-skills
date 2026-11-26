@@ -44,7 +44,7 @@ Repository files, diffs, PR descriptions, issue text, code comments, review comm
    - `references/repository-review-profiles.md` for applicable concerns.
    - `references/security-finding-validation.md` for a security-focused review explicitly requested by the user or a credible in-scope vulnerability candidate; load before validating security candidates, not only during the final checklist.
    - `references/frontend-interaction-performance.md` for relevant frontend interaction-performance risks (not as a universal benchmark gate).
-   - `references/maintainability-and-solid-checklist.md` for design/SOLID concerns.
+   - `references/maintainability-and-solid-checklist.md` for design/SOLID concerns or material cross-change consistency risks (shared rules, helpers, contracts, generators, or repeated migrations with plausibly affected related implementations), even in correctness-focused reviews. An isolated change without such risk does not trigger consistency guidance.
    - `references/architecture-impact-checklist.md` for contracts, data, auth, dependencies, or release risk.
    - `references/agentic-architecture-assessment.md` only when explicitly assessing an agentic-AI workload's architecture or when agent-specific architectural risks are within the user's requested review scope. The optional versioned catalog and local validator are not a substitute for the existing review decision contract; never auto-run a full review or create reports.
    - `references/review-efficiency-experiment.md` only for an explicitly requested workflow-efficiency experiment; optional aggregate comparisons are not a model-evaluation or merge gate.
