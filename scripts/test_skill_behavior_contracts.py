@@ -116,6 +116,67 @@ class SkillBehaviorContractTests(unittest.TestCase):
         self.assertIn("an exhaustive input cross-product is not required", guidance)
         self.assertIn("not presented as a guarantee that all defects were found", checklist)
 
+    def test_cross_change_consistency_is_conditionally_discoverable(self) -> None:
+        skill = (REPOSITORY_ROOT / "code-review" / "SKILL.md").read_text(encoding="utf-8")
+        workflow = skill.split("## Workflow\n", 1)[1].split("\n## ", 1)[0]
+        steps = re.split(r"(?m)^(?=\d+\. )", workflow)
+        loading = next((step for step in steps if step.startswith("3. Load only needed references")), None)
+        self.assertIsNotNone(loading, "Expected the active reference-loading step")
+        self.assertIn("4. Inspect the relevant diff", workflow)
+        self.assertLess(workflow.index(loading), workflow.index("4. Inspect the relevant diff"))
+        self.assertIn("A reference cannot expand the user's scope", loading)
+        prefix = "- `references/maintainability-and-solid-checklist.md`"
+        routes = [line.strip() for line in loading.splitlines() if line.strip().startswith(prefix)]
+        self.assertEqual(len(routes), 1, "Expected one active maintainability reference route")
+        self.assertEqual(
+            routes[0],
+            prefix + " for design/SOLID concerns or material cross-change consistency risks "
+            "(shared rules, helpers, contracts, generators, or repeated migrations with "
+            "plausibly affected related implementations), even in correctness-focused reviews. "
+            "An isolated change without such risk does not trigger consistency guidance.",
+        )
+
+    def test_cross_change_consistency_preserves_evidence_and_scope(self) -> None:
+        guide = (REPOSITORY_ROOT / "code-review" / "references" /
+                 "maintainability-and-solid-checklist.md").read_text(encoding="utf-8")
+        section = guide.split("## Cross-change consistency (conditional)", 1)[1].split(
+            "## Finding guidance", 1)[0]
+        normalized = " ".join(section.split())
+        for invariant in (
+            "violated shared invariant",
+            "unmet established adoption obligation",
+            "concrete risk of divergence",
+            "Similar behavior alone does not establish common ownership",
+            "no mismatch is found",
+            "only for substantiated actionable defects",
+            "unrelated pre-existing debt as out of scope",
+            "Missing material coverage follows the existing review completeness rules",
+            "authorized review scope",
+            "read-only, content-trust and command-authority boundaries",
+            "does not authorize regeneration or execution of untrusted commands",
+            "A clean regeneration diff does not prove semantic parity",
+        ):
+            with self.subTest(invariant=invariant):
+                self.assertIn(invariant, normalized)
+
+        cases = [
+            ("required shared rounding rule", "Report the substantiated inconsistency"),
+            ("Independent bounded contexts", "Do not require consolidation"),
+            ("accepted compatibility contract", "Do not report non-adoption"),
+            ("no inconsistency was found", "no consistency finding"),
+            ("Material consumer evidence is unavailable", "existing completeness rules"),
+            ("isolated edit", "No consistency investigation required"),
+        ]
+        rows = [tuple(cell.strip() for cell in line.strip("|").split("|"))
+                for line in section.splitlines()
+                if line.startswith("| ") and not line.startswith(("| Scenario", "| ---"))]
+        self.assertEqual(len(rows), len(cases))
+        for (scenario, outcome), row in zip(cases, rows):
+            with self.subTest(scenario=scenario):
+                self.assertEqual(len(row), 2)
+                self.assertIn(scenario, row[0])
+                self.assertIn(outcome, row[1])
+
     def test_security_validation_routes_before_source_review(self) -> None:
         skill = (REPOSITORY_ROOT / "code-review" / "SKILL.md").read_text(encoding="utf-8")
         checklist = (REPOSITORY_ROOT / "code-review" / "references" / "review-quality-checklist.md").read_text(encoding="utf-8")

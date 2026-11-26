@@ -24,6 +24,17 @@ class CheckTests(unittest.TestCase):
         self.assertEqual(sum(command.count(module) for command in check.group_commands("repository")), 1)
         self.assertNotIn(module, check.CONTRACT_TESTS)
 
+    def test_threat_modeling_prose_stays_in_the_dependency_equipped_repository_gate(self) -> None:
+        module = "scripts.test_threat_modeling_prose"
+        self.assertEqual(sum(command.count(module) for command in check.group_commands("repository")), 1)
+        self.assertNotIn(module, check.CONTRACT_TESTS)
+
+    def test_human_usability_prose_stays_in_repository_gate(self) -> None:
+        module = "scripts.test_human_usability_prose"
+        self.assertEqual(sum(command.count(module) for command in check.group_commands("repository")), 1)
+        self.assertNotIn(module, check.CONTRACT_TESTS)
+        self.assertTrue(all(module not in command for command in check.group_commands("plugin")))
+
     def test_missing_dependencies_stop_before_any_command(self) -> None:
         with mock.patch.object(check.importlib.util, "find_spec", return_value=None), mock.patch.object(
             check.shutil, "which", return_value="git"
@@ -164,6 +175,12 @@ class CheckTests(unittest.TestCase):
         ])
         for command in commands:
             self.assertEqual(command[:6], [sys.executable, "-X", "utf8", "-m", "skills_ref.cli", "validate"])
+
+    def test_design_handoff_prose_stays_in_repository_gate(self) -> None:
+        module = "scripts.test_design_handoff_prose"
+        self.assertEqual(sum(command.count(module) for command in check.group_commands("repository")), 1)
+        self.assertNotIn(module, check.CONTRACT_TESTS)
+        self.assertFalse(any(module in command for command in check.group_commands("plugin")))
 
     def test_empty_skill_discovery_is_a_failure(self) -> None:
         with mock.patch.object(check, "preflight", return_value=[]), mock.patch.object(
